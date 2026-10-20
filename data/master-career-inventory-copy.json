@@ -1,0 +1,2096 @@
+{
+  "schema_version": "1.2.0",
+  "inventory_generation_date": "2026-10-20",
+  "subject": {
+    "display_name_for_resumes": "Jason/Jem Corraggio",
+    "legal_name_for_official_forms": "Jem/Jason Mer'Whint Corraggio",
+    "note_on_names": "Name order varies by context per subject's stated practice: resume header 'Jason/Jem Corraggio', forms/legal 'Jem/Jason Corraggio'. Currently announced name as of 2026-10-17 is Jason (he/him). Do not record or disclose former legal name or assigned gender at birth.",
+    "location_current": "Cardinal, ON, Canada",
+    "email": "corraggios@gmail.com",
+    "phone_for_resumes": "+1 215-350-1661",
+    "github": "https://github.com/jemjasoncorraggio",
+    "linkedin": "https://www.linkedin.com/in/jem-jason-corraggio-22595272/",
+    "portfolio": "https://jemjasoncorraggio.github.io/Portfolio/",
+    "github_note": "Personal GitHub includes private GreyNoise contributions (used personal account at GreyNoise). Earlier employers issued separate GitHub accounts whose contributions are not reflected. ~790 contributions over four years per 2026-10-19 verification."
+  },
+  "employment_history": [
+    {
+      "id": "EMP-001",
+      "employer": "GreyNoise Intelligence",
+      "job_title": "Lead Software Engineer / On-call Lead",
+      "employment_type": "Full-time, 40 hrs/week",
+      "start_date": "2023-05",
+      "end_date": "2025-05",
+      "end_date_note": "Separated ~2025-05-27. Departure context (from conversation, not for resume use without subject approval): no Canadian presence after subject moved to Canada; technically a layoff after an initial move approval was reversed.",
+      "location": "Remote from Philadelphia, PA",
+      "team_and_business_context": "Threat-intelligence / security-intelligence company; internet-scale data collection and processing, CTI products and security workflows. Series A startup during tenure ($15M Series A June 2022, $21M total — verified online 2026-10-19, external company fact, not a personal accomplishment). Engineering team was ~10 when subject joined (subject recollection).",
+      "role_type": "Hybrid: individual contributor + technical leadership + people management. Coding most days; hands-on vs management split fluctuated a lot, with ~2/3 hands-on vs ~1/3 management 'probably close enough' as an average (subject-confirmed estimate, 2026-10-20 — label as an estimate, not a measured figure).",
+      "team_size": "Led 2 teams of 2 engineers each",
+      "direct_reports": 4,
+      "scope_of_ownership": "Owned the public API and customer data-delivery services (alerts, reports, real-time feed events). Did NOT own or build the underlying data pipeline — the pipeline team owned the Elasticsearch indices and Kafka topics; subject's services read from them. Company-wide on-call lead.",
+      "technologies": [
+        "Go",
+        "Terraform",
+        "Gin",
+        "Elasticsearch",
+        "AWS S3",
+        "Google Cloud Storage (GCS)",
+        "Protocol Buffers (protobuf)",
+        "AWS Lambda",
+        "Webhooks",
+        "Kafka (consumer only)",
+        "Python",
+        "GitHub Actions",
+        "Grafana",
+        "Honeycomb",
+        "PagerDuty",
+        "Atlassian Statuspage",
+        "Incident.io"
+      ],
+      "systems": [
+        "Public customer-facing API (viz.greynoise.io context in metrics notes)",
+        "Customer data-delivery services in a monorepo: alerts, reports, real-time feeds",
+        "Python SDK for API integrations",
+        "Terraform-managed alerting in Grafana and Honeycomb"
+      ],
+      "operational_responsibilities": "Company-wide on-call lead: managed rotations for the entire company (rotation of 10-15 engineers at any given time), triaged and root-caused production incidents (roughly 1-5 incidents/month, varied), ran incident process, implemented Terraform-based alerts.",
+      "accomplishment_ids": [
+        "ACC-001",
+        "ACC-002",
+        "ACC-003",
+        "ACC-004",
+        "ACC-005",
+        "ACC-006",
+        "ACC-007",
+        "ACC-008",
+        "ACC-009",
+        "ACC-010",
+        "ACC-022",
+        "ACC-023",
+        "ACC-025"
+      ],
+      "missing_or_unconfirmed": [
+        "Exact salary/benefits (needed for reference-letter/IRCC purposes, not in resume sources)",
+        "Elasticsearch total dataset/record count — explicitly unknown, do not estimate",
+        "API requests/day, data-delivery volume/day, Python SDK usage — explicitly unknown",
+        "Raw events/day — explicitly unknown; ~1M figure is deduplicated unique IPs/day only",
+        "Hire number — unknown; do not claim a specific early-hire number"
+      ]
+    },
+    {
+      "id": "EMP-002",
+      "employer": "Capital One",
+      "job_title": "Senior Software Engineer",
+      "employment_type": "Full-time, 40 hrs/week",
+      "start_date": "2022-01",
+      "end_date": "2023-04",
+      "location": "Remote from Philadelphia, PA",
+      "team_and_business_context": null,
+      "role_type": "Individual contributor",
+      "team_size": null,
+      "direct_reports": 0,
+      "scope_of_ownership": null,
+      "technologies": [
+        "Scala",
+        "ZIO",
+        "Docker",
+        "WireMock",
+        "Go"
+      ],
+      "systems": [
+        "New Docker microservice (Scala/ZIO endpoints)",
+        "Canary tests running every 10 minutes (Go)"
+      ],
+      "operational_responsibilities": null,
+      "accomplishment_ids": [
+        "ACC-011",
+        "ACC-012",
+        "ACC-013"
+      ],
+      "constraints_and_limitations": [
+        "Nothing subject worked on at Capital One reached production — QA process took years (verified 2026-10-15). Do not claim production impact or volume for Capital One work.",
+        "No volume metrics available for Capital One endpoints."
+      ],
+      "missing_or_unconfirmed": [
+        "Team name/size",
+        "Salary/benefits",
+        "Details of the microservice's domain/purpose"
+      ]
+    },
+    {
+      "id": "EMP-003",
+      "employer": "TrueAccord",
+      "job_title": "Tech Lead of the Multiple Account Project / On-call Admin of the Recover Team",
+      "employment_type": "Full-time, 40 hrs/week",
+      "start_date": "2021-03",
+      "end_date": "2021-12",
+      "location": "Remote from Philadelphia, PA",
+      "team_and_business_context": "Debt-collection / consumer debt platform (Recover team). Pre-project system treated debts, not users, as the primary object: debts were bought in bulk, each debt got its own login/dashboard, and the system was blind to whether debts belonged to the same person.",
+      "role_type": "Technical leadership (tech lead) + on-call admin; individual contributor coding",
+      "team_size": "Multiple Account Project: 4 engineers besides subject, all US, across at least 3 US time zones",
+      "direct_reports": null,
+      "direct_reports_note": "Led/directed the project engineers; whether they were formal direct reports is not stated — treat as tech-lead direction, not people management, unless confirmed.",
+      "scope_of_ownership": "Designed and implemented the Multiple Account technical solution; directed, code-reviewed and assisted project engineers; represented team/project to external engineering teams and product team; managed Recover team on-call shifts/alerts and was first point of escalation.",
+      "technologies": [
+        "Scala",
+        "PostgreSQL",
+        "PostgreSQL jsonb",
+        "Akka",
+        "Play",
+        "Datadog",
+        "Splunk",
+        "React",
+        "Node.js"
+      ],
+      "systems": [
+        "Consumer-level communication and logging for consumers with multiple accounts",
+        "Recover team alerting/on-call (Datadog/Splunk)"
+      ],
+      "operational_responsibilities": "On-call admin for Recover team; first point of escalation; managed on-call shifts and alerts.",
+      "accomplishment_ids": [
+        "ACC-014",
+        "ACC-015",
+        "ACC-016",
+        "ACC-017"
+      ],
+      "missing_or_unconfirmed": [
+        "Consumer/message volume — explicitly unknown, do not invent",
+        "Salary/benefits",
+        "Whether project engineers were direct reports"
+      ]
+    },
+    {
+      "id": "EMP-004",
+      "employer": "Wingspan Technology, an IQVIA Company",
+      "alternate_employer_name": "IQVIA (after acquisition of Wingspan; subject remained with IQVIA for a period after acquisition)",
+      "job_title": "Engineering Lead of the Technical Services Team",
+      "employment_type": "Full-time, 40 hrs/week",
+      "start_date": "2018-05",
+      "end_date": "2021-03",
+      "location": "Blue Bell, PA",
+      "team_and_business_context": "Technical Services team delivering client-specific solutions; subject spoke directly with customers/clients to gather specs and build custom data corrections and tools.",
+      "role_type": "Technical leadership / team lead, hybrid with individual contribution",
+      "team_size": "2 engineers + 1 QA, across 2 countries and 3 time zones (globally distributed); counting subject, team composition as stated in verified metrics 2026-10-15",
+      "direct_reports": 0,
+      "direct_reports_note": "Confirmed by subject 2026-10-20: the other engineers (2 engineers + 1 QA) were NOT formal direct reports; subject led the team without formal reporting lines.",
+      "scope_of_ownership": "Designed and oversaw analysis, development, maintenance and testing of multiple software solutions, including an ongoing cross-team project for time-sensitive client data corrections.",
+      "technologies": [
+        "Scala",
+        "Java"
+      ],
+      "systems": [
+        "Scala API built to migrate 10k documents in a single run while tracking 60+ metadata fields",
+        "Client data-correction tooling/workflows (Scala/Java)"
+      ],
+      "operational_responsibilities": null,
+      "accomplishment_ids": [
+        "ACC-018",
+        "ACC-019",
+        "ACC-020"
+      ],
+      "missing_or_unconfirmed": [
+        "Volume of data corrections — explicitly no reliable figure",
+        "Salary/benefits",
+        "Exact IQVIA acquisition date / title changes after acquisition"
+      ]
+    },
+    {
+      "id": "EMP-005",
+      "employer": "Wyzant Tutoring / 21st Century Cyber Charter School",
+      "job_title": "Math and Science Tutor / Math Teacher",
+      "employment_type": "Teaching/tutoring; full-time teaching for 10 years (subject statement 2026-10-15). Exact employment structure across the two named organizations is not separated in sources.",
+      "start_date": "2009-08",
+      "end_date": "2018-05",
+      "location": "Greater Philadelphia Area, PA",
+      "team_and_business_context": "Mathematics and science teaching/tutoring prior to software-engineering career (career-switch era; personal JavaScript projects also began ~2017).",
+      "role_type": "Individual contributor (teacher/tutor)",
+      "team_size": null,
+      "direct_reports": 0,
+      "scope_of_ownership": "Built an online Statistics course (HTML/CSS); built a scheduling program (C++, then VB).",
+      "technologies": [
+        "HTML",
+        "CSS",
+        "C++",
+        "VB (Visual Basic)"
+      ],
+      "systems": [
+        "Online Statistics course",
+        "Scheduling program"
+      ],
+      "operational_responsibilities": null,
+      "accomplishment_ids": [
+        "ACC-021"
+      ],
+      "metrics_verified": "Tutored 200+ students over the years; taught full-time for 10 years; maximum simultaneous teaching assignment recalled: 120 students.",
+      "missing_or_unconfirmed": [
+        "Which portions belong to Wyzant vs 21st Century Cyber Charter School",
+        "Subjects/grade levels beyond math and science generally"
+      ]
+    }
+  ],
+  "accomplishments": [
+    {
+      "id": "ACC-001",
+      "title": "Owned and maintained the public GreyNoise API",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Customers needed reliable programmatic access to large-scale threat-intelligence data held in Elasticsearch.",
+      "my_contribution": "Owned, iterated on, and maintained the API end to end.",
+      "ownership_level": "Owned / implemented / operated",
+      "technical_details": "Go, Terraform, Gin; querying large Elasticsearch datasets. API served the dataset behind viz.greynoise.io (throttled past 1 day in the metrics notes context).",
+      "scale_and_scope": "~1M unique IPs observed per day after deduplication of repeated raw events. Elasticsearch retention ~90 days; total record count unknown and must not be estimated.",
+      "outcome": "Production public API serving customers at internet scale (exact request volume unknown).",
+      "metrics": [
+        {
+          "value": "~1M",
+          "unit": "unique IPs observed per day (deduplicated)",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics file 2026-10-15",
+      "potential_relevance": [
+        "backend",
+        "APIs",
+        "distributed systems",
+        "platform engineering",
+        "security"
+      ],
+      "resume_bullet_candidates": [
+        "Owned and iterated on a Go/Terraform/Gin API serving queries over large Elasticsearch datasets covering ~1M unique IPs observed daily",
+        "Owned the public Go API at a threat-intelligence firm, querying Elasticsearch at internet scale"
+      ],
+      "verification_questions": [
+        "What were the API's main endpoints/consumers and any latency or availability targets you can defensibly state?"
+      ]
+    },
+    {
+      "id": "ACC-002",
+      "title": "Designed and implemented customer data-delivery services (alerts, reports, real-time feeds)",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Customers needed threat-intelligence data delivered as alerts, reports, and real-time feed events, including to third-party integrations.",
+      "my_contribution": "Designed and implemented multiple additional services in a monorepo to deliver alerts, reports, and real-time feed events to customers.",
+      "ownership_level": "Designed / implemented",
+      "technical_details": "Go, Terraform, AWS S3, Google Cloud Storage, protobuf, Lambda, webhooks; consumed Kafka event streams (consumer only — never set up topics or emitted/produced). Services read from the pipeline team's indices/topics; subject did not build the pipeline.",
+      "scale_and_scope": "Customer data-delivery volume per day is explicitly unknown — do not cite a volume.",
+      "outcome": "Production data-delivery services shipped to customers.",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume; pipeline boundary corrected explicitly 2026-10-09",
+      "potential_relevance": [
+        "backend",
+        "distributed systems",
+        "data delivery",
+        "APIs",
+        "security",
+        "integrations"
+      ],
+      "resume_bullet_candidates": [
+        "Designed and implemented monorepo services delivering alerts, reports, and real-time feed events to customers (Go, Terraform, S3, GCS, protobuf, Lambda, webhooks)",
+        "Owned customer data-delivery services over Kafka event streams at a threat-intelligence firm"
+      ],
+      "verification_questions": [
+        "Which delivery channels/integrations can you name specifically?",
+        "Any defensible counts of integrations, customers, or feed types?"
+      ]
+    },
+    {
+      "id": "ACC-003",
+      "title": "Defined the safe API field set — balancing customer value against sensor-fingerprinting risk",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Customer Success wanted more API fields exposed for packaging/sales, while the Sensor Team warned certain fields or combinations (destination_ip was an obvious example) could let customers fingerprint and evade GreyNoise sensors.",
+      "my_contribution": "Led a joint field-by-field call with both teams, tested configurations, and drove agreement on a compromise that maximized useful fields without dangerous combinations; implementation then began.",
+      "ownership_level": "Led (cross-team facilitation and technical decision)",
+      "technical_details": "Public API field-level exposure design; field/combination risk analysis.",
+      "scale_and_scope": "Cross-team: Customer Success + Sensor Team + API team.",
+      "outcome": "Agreed compromise field set; implementation began. Framed in later resumes as designing access boundaries for the general case, not one-off accommodations.",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — subject-supplied interview story 2026-09-24",
+      "potential_relevance": [
+        "security",
+        "APIs",
+        "platform engineering",
+        "engineering leadership",
+        "cross-functional collaboration"
+      ],
+      "resume_bullet_candidates": [
+        "Partnered with Customer Success and the Sensor team to define the safe API field set, balancing customer data value against sensor-fingerprinting risk",
+        "Led a field-by-field review resolving conflicting customer and security requirements for a public API"
+      ],
+      "verification_questions": [
+        "What was the final outcome after implementation began — did the full field set ship?"
+      ]
+    },
+    {
+      "id": "ACC-004",
+      "title": "Designed field-level permission enforcement for the public API",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "API callers had different entitlements; unauthorized fields had to be reliably stripped without repeated entitlement checks degrading performance.",
+      "my_contribution": "Designed the permission-enforcement layer: fetch each caller's current full permission set once per request, propagate it down the call chain, strip unauthorized fields post-fetch; validated the design with load tests plus production feedback on over- and under-permissioning.",
+      "ownership_level": "Designed / implemented",
+      "technical_details": "Go API; per-request permission-set fetch and propagation; post-fetch filtering; Redis used for caching (confirmed by subject 2026-10-20 — subject does not recall further caching details beyond Redis, and does not recall any specific load-test figures; do not invent either). Design was validated with load tests plus production feedback on over- and under-permissioning (no figures preserved).",
+      "scale_and_scope": "Public API serving ~1M unique IPs/day dataset (see ACC-001).",
+      "outcome": "Permission-enforcement design validated by load tests and production feedback.",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — Resend application-answer details recorded 2026-10-09, from subject-supplied technical details",
+      "potential_relevance": [
+        "security",
+        "APIs",
+        "backend",
+        "platform engineering"
+      ],
+      "resume_bullet_candidates": [
+        "Designed field-level permission enforcement for a customer-facing Go API: full permission set fetched once per request, unauthorized fields stripped post-fetch, validated with load tests"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-005",
+      "title": "Shipped the Alerts project in phases against a hard deadline with a pre-agreed cut candidate",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Hard deadline, December 2024 into January 2025, while the team was down one member and subject's own coding time was partly consumed by hiring the replacement. Subject believes there was pressure to release ahead of a planned customer success announcement, but is not sure — hard deadlines were frequent and reasoning was often not given. Record the announcement link as uncertain.",
+      "my_contribution": "Chunked/sequenced the work, deliberately placed one nice-to-have last and named it the cut candidate up front to the team and stakeholders, protected quality/testing on critical work, and ultimately cut the nice-to-have without surprising stakeholders; also spent part of own time on hiring the replacement.",
+      "ownership_level": "Led (delivery planning) + implemented",
+      "technical_details": "Alerts delivery (see ACC-002). The specific nice-to-have feature is not remembered — keep generic.",
+      "scale_and_scope": "Team delivery, December 2024 - January 2025, short one team member.",
+      "outcome": "Alerts project shipped in planned phases; the cut, when it happened, surprised no one.",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — subject-supplied interview story 2026-09-24",
+      "potential_relevance": [
+        "engineering leadership",
+        "delivery management",
+        "platform engineering",
+        "backend"
+      ],
+      "resume_bullet_candidates": [
+        "Shipped the Alerts project in planned phases against a hard deadline: sequenced work so a nice-to-have landed last and named it the cut candidate up front, so when time ran out the cut surprised no one"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-006",
+      "title": "Migrated incident management from PagerDuty/Statuspage to Incident.io",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Improve the on-call experience and reduce tooling cost.",
+      "my_contribution": "Implemented/led the transition from PagerDuty and Atlassian Statuspage to Incident.io.",
+      "ownership_level": "Led / implemented",
+      "technical_details": "PagerDuty, Atlassian Statuspage, Incident.io.",
+      "scale_and_scope": "Company-wide incident management.",
+      "outcome": "Better on-call product/experience at lower cost.",
+      "metrics": [
+        {
+          "value": "$1",
+          "unit": "saved per seat per month vs PagerDuty",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        },
+        {
+          "value": "$6k",
+          "unit": "saved per year by dropping Atlassian Statuspage",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15",
+      "potential_relevance": [
+        "reliability",
+        "platform engineering",
+        "developer productivity",
+        "engineering leadership"
+      ],
+      "resume_bullet_candidates": [
+        "Led incident-management migration to Incident.io, saving $1/seat/month vs PagerDuty and $6k/year by replacing Atlassian Statuspage, while improving the on-call experience"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-007",
+      "title": "Company-wide on-call leadership and Terraform-based alerting",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "The whole company needed managed on-call coverage and consistent alerting for customer-facing systems.",
+      "my_contribution": "Managed on-call shifts for the entire company; implemented Terraform-based alerts in Grafana and Honeycomb; triaged and root-caused production incidents and ran the incident process.",
+      "ownership_level": "Led / operated",
+      "technical_details": "Terraform, Grafana, Honeycomb; incident response process end to end.",
+      "scale_and_scope": "Rotation of 10-15 engineers at any given time; roughly 1-5 incidents per month (varied a lot).",
+      "outcome": "Company-wide on-call operation under subject's leadership, including formal SLO ownership (confirmed by subject 2026-10-20: SLOs owned at both GreyNoise and TrueAccord).",
+      "metrics": [
+        {
+          "value": "10-15",
+          "unit": "engineers in on-call rotation",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        },
+        {
+          "value": "1-5",
+          "unit": "incidents per month (approx., varied)",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15; SLO ownership confirmed by subject 2026-10-20",
+      "potential_relevance": [
+        "reliability",
+        "incident management",
+        "platform engineering",
+        "engineering leadership"
+      ],
+      "resume_bullet_candidates": [
+        "On-call lead for the entire company: managed a 10-15 engineer rotation, triaged and root-caused production incidents, and built Terraform-based alerts in Grafana and Honeycomb",
+        "On-call lead for the entire company: owned SLOs, managed a 10-15 engineer rotation, and built Terraform-based alerts in Grafana and Honeycomb"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-008",
+      "title": "Led the cross-team Elasticsearch migration: ES7/Postgres/TimescaleDB consolidated to a single source of truth in ES8",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Consolidate several databases to address scalability and reliability issues, upgrade Elasticsearch from ES7 to ES8, and make Elasticsearch the single source of truth.",
+      "my_contribution": "Led/coordinated the cross-team project across roughly 7-8 engineers, breaking down responsibilities between teams and leading architecture and project-boundary discussions; pushed to keep the new architecture simple. Personally hands-on: refactored the API to use the new ES8 instance (the ES7 library was incompatible with ES8, so queries were rewritten using a different library), built the replacement bulk-delivery tool (ACC-025), and helped design testing tools that sent the same requests to old and new implementations and compared results including latency. Did not personally build the core pipeline internals — see pipeline-boundary note.",
+      "ownership_level": "Led (cross-team, ~7-8 engineers) + implemented (API refactor, bulk-delivery tool, comparison testing)",
+      "technical_details": "From: a combination of Elasticsearch 7, PostgreSQL, and TimescaleDB. To: Elasticsearch 8 as the single source of truth. ES7 client library was incompatible with ES8 — queries rewritten with a different library. Migration affected essentially every API endpoint that queried the database. Behavior/latency comparison tooling sent identical requests to old and new implementations. TimescaleDB was discontinued/retired, reducing infrastructure costs.",
+      "scale_and_scope": "Cross-team, roughly 7-8 engineers coordinated. Duration 2-3 months. Dataset covering ~1M unique IPs/day, ~90 days retention (see ACC-001).",
+      "outcome": "Successful migration with NO downtime (subject, 2026-10-20). More resilient architecture with a single source of truth; TimescaleDB retired, reducing infrastructure costs. Subject's own retrospective lesson: would invest earlier in documenting existing behavior and building migration-comparison tooling — discovering those gaps during implementation made the project more time-consuming than needed (see LEAD-009).",
+      "metrics": [
+        {
+          "value": "2-3 months",
+          "unit": "project duration",
+          "confidence": "explicitly_stated_2026-10-20"
+        },
+        {
+          "value": "0",
+          "unit": "downtime during migration",
+          "confidence": "explicitly_stated_2026-10-20"
+        },
+        {
+          "value": "7-8",
+          "unit": "engineers coordinated across teams",
+          "confidence": "explicitly_stated — subject's own Shopify EM application answer, 2026-09-14"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — subject's own Shopify Engineering Manager application answer (2026-09-14, restored 2026-09-25) + subject answers 2026-10-20; reconciled with the 2026-10-09 pipeline-boundary correction (led the migration; personal coding on API, bulk tool, and testing — not pipeline internals)",
+      "potential_relevance": [
+        "distributed systems",
+        "backend",
+        "platform engineering",
+        "reliability"
+      ],
+      "resume_bullet_candidates": [
+        "Led a cross-team migration (7-8 engineers) consolidating Elasticsearch 7, PostgreSQL, and TimescaleDB into a single source of truth in Elasticsearch 8 — refactored the API for ES8, built behavior/latency comparison tooling, and shipped with zero downtime in 2-3 months",
+        "Coordinated an ES7-to-ES8 migration across teams; rewrote API queries after the ES7 library proved incompatible, and retired TimescaleDB to reduce infrastructure cost"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-009",
+      "title": "Maintained the Python SDK for API integrations",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "API consumers needed a maintained Python SDK for integrations.",
+      "my_contribution": "Maintained the SDK and added new endpoints to it; the additions were straightforward because they mirrored endpoints added to the API itself (subject, 2026-10-20).",
+      "ownership_level": "Maintained / extended (added endpoints mirroring API endpoints)",
+      "technical_details": "Python. SDK usage volume is explicitly unknown — do not cite.",
+      "scale_and_scope": null,
+      "outcome": null,
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume",
+      "potential_relevance": [
+        "APIs",
+        "developer experience",
+        "backend"
+      ],
+      "resume_bullet_candidates": [
+        "Maintained a Python SDK for API integrations"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-010",
+      "title": "Led two GreyNoise teams (4 direct reports) while coding most days",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Two engineering teams needed planning, mentoring, code review, and technical direction.",
+      "my_contribution": "Oversaw 2 teams (4 direct reports): planned projects, mentored engineers through 1:1s, reviewed code, set technical direction, conducted formal performance reviews / gave performance feedback (confirmed by subject 2026-10-20), hired at least one replacement team member (during Alerts project); remained hands-on coding most days. One of the teams was a frontend team building in Vue.js — subject reviewed Vue code and guided frontend technical decisions, with limited hands-on Vue coding (see skills). Backend team was 3 people including subject.",
+      "ownership_level": "Led / managed",
+      "technical_details": "1:1s, mentoring, project planning, code review, hiring.",
+      "scale_and_scope": "2 teams x 2 engineers; ~2 years of engineering-management experience in total across career framing.",
+      "outcome": null,
+      "metrics": [
+        {
+          "value": "4",
+          "unit": "direct reports across 2 teams",
+          "confidence": "explicitly_stated"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15; Vue-team detail from tailored-resume correction 2026-10-06",
+      "potential_relevance": [
+        "engineering leadership",
+        "mentoring",
+        "management"
+      ],
+      "resume_bullet_candidates": [
+        "Led 2 teams (4 direct reports) as a player-coach: project planning, 1:1 mentoring, performance feedback, and code review while shipping production code most days",
+        "Managed 2 teams (4 direct reports): 1:1s, mentoring, performance feedback, project planning, and code review"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-011",
+      "title": "Initiated and led a cross-functional investigation into a code change affecting 1500+ systems",
+      "employer_id": "EMP-002",
+      "problem_or_motivation": "A cross-functional, DEI-related code change would affect 1500+ systems; scope and impact needed investigation with technical and non-technical stakeholders.",
+      "my_contribution": "Initiated the investigation; met with technical and non-technical stakeholders; translated technical findings for both audiences (per tailored resumes).",
+      "ownership_level": "Initiated / led",
+      "technical_details": "Investigation/risk assessment across 1500+ systems. Subject matter details beyond 'DEI-related code change' are not preserved — do not embellish.",
+      "scale_and_scope": "1500+ systems.",
+      "outcome": "Capital One ultimately made no change as a result of the DEI-related effort, despite subject's intense advocacy (subject statement, 2026-10-20). Preserved as stated: the accomplishment is initiating/leading the investigation and advocacy across 1500+ systems, not a resulting policy/code change.",
+      "metrics": [
+        {
+          "value": "1500+",
+          "unit": "systems affected by the proposed change",
+          "confidence": "explicitly_stated — base resume, confirmed stands 2026-10-15"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + metrics file",
+      "potential_relevance": [
+        "engineering leadership",
+        "cross-functional collaboration",
+        "platform engineering"
+      ],
+      "resume_bullet_candidates": [
+        "Initiated and led a cross-functional investigation of a code change affecting 1500+ systems, translating technical findings for technical and non-technical stakeholders"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-012",
+      "title": "Developed Scala/ZIO endpoints for a new Docker microservice",
+      "employer_id": "EMP-002",
+      "problem_or_motivation": "A new microservice for creating and updating auto loans needed endpoints (domain confirmed by subject 2026-10-20).",
+      "my_contribution": "Developed endpoints in Scala using ZIO for a new Docker microservice.",
+      "ownership_level": "Implemented",
+      "technical_details": "Scala, ZIO, Docker. Domain: auto loans (create/update). Note limitation: nothing from Capital One reached production (see EMP-002).",
+      "scale_and_scope": null,
+      "outcome": "Endpoints developed (not shipped to production per verified constraint).",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume",
+      "potential_relevance": [
+        "backend",
+        "APIs",
+        "distributed systems"
+      ],
+      "resume_bullet_candidates": [
+        "Developed endpoints in Scala using ZIO for a new Docker microservice"
+      ],
+      "verification_questions": [
+        "What did the microservice do (domain/purpose)?"
+      ]
+    },
+    {
+      "id": "ACC-013",
+      "title": "Testing at Capital One: WireMock service tests and Go canary tests every 10 minutes",
+      "employer_id": "EMP-002",
+      "problem_or_motivation": "Microservices needed unit/service tests and early detection of production regressions.",
+      "my_contribution": "Wrote unit tests and service tests utilizing WireMock; learned Go in order to write canary tests that run every 10 minutes.",
+      "ownership_level": "Implemented",
+      "technical_details": "WireMock, Scala/ZIO services, Go (learned on the job at Capital One — see conflict note in source_notes: Go was learned HERE, not at GreyNoise).",
+      "scale_and_scope": "Canary cadence: every 10 minutes.",
+      "outcome": null,
+      "metrics": [
+        {
+          "value": "10 minutes",
+          "unit": "canary test cadence",
+          "confidence": "explicitly_stated"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume; learning-location corrected 2026-10-19",
+      "potential_relevance": [
+        "backend",
+        "testing",
+        "reliability",
+        "developer productivity"
+      ],
+      "resume_bullet_candidates": [
+        "Wrote unit/service tests with WireMock for Scala/ZIO Docker microservices and Go canary tests on a 10-minute cadence"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-014",
+      "title": "Designed and implemented consumer-level communication/logging for multi-account consumers (Multiple Account Project)",
+      "employer_id": "EMP-003",
+      "problem_or_motivation": "The system treated debts, not users, as the primary object: one person could have multiple logins/dashboards, and no advice or communication could account for all of their debts. Goal: make the user a first-class object with all of a user's debts in a single dashboard.",
+      "my_contribution": "As tech lead, designed and implemented the technical solution to allow communication and logging to occur at the consumer level for consumers with multiple accounts; directed, code-reviewed, and assisted the other engineers; represented the team/project to external engineering teams and the product team.",
+      "ownership_level": "Led / designed / implemented",
+      "technical_details": "Scala, PostgreSQL, PostgreSQL jsonb, Akka, Play. Also contributed occasional React/Node frontend help alongside backend tech-lead duties (per conversation history).",
+      "scale_and_scope": "Project team: 4 engineers besides subject, across at least 3 US time zones. Consumer volume unknown.",
+      "outcome": "Consumer-level communication/logging built. The single-dashboard user model rolled out to all consumers (subject answered 'yes' 2026-10-20 to the rollout question; recorded as full rollout rather than staged-only).",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume + subject's detailed telling 2026-10-19",
+      "potential_relevance": [
+        "backend",
+        "APIs",
+        "distributed systems",
+        "engineering leadership",
+        "fintech"
+      ],
+      "resume_bullet_candidates": [
+        "Tech lead: designed and implemented consumer-level communication and logging for multi-account consumers (Scala, PostgreSQL jsonb, Akka, Play)",
+        "Designed data mapping and transformation for consumer-level communication/logging across multi-account consumers (Scala, Postgres jsonb, Akka, Play)"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-015",
+      "title": "Designed identity-matching UX under an unchangeable data-quality constraint (Multiple Account Project)",
+      "employer_id": "EMP-003",
+      "problem_or_motivation": "Ideal design was to match debts to one user ID on SSN, but incoming third-party debt data was often incomplete or error-ridden — typos in SSNs meant two debts could look like the same person's when they weren't, and vice versa. Auto-merging risked merging the wrong person's debts.",
+      "my_contribution": "Designed matching criteria (SSN + close match on a secondary identifier such as name/phone, OR exact matches on 2+ secondary identifiers plus a close SSN match) to select candidate debts; instead of auto-merging, showed partial information and asked the user to confirm whether a debt was theirs before it appeared on their dashboard; 'not mine' debts split off into a separate account/user object; built a manual-combine feature (enter separate debt logins) so users could merge later if they had made a mistake.",
+      "ownership_level": "Led / designed",
+      "technical_details": "Identity matching heuristics over imperfect third-party data; partial-information confirmation UX; manual combine flow.",
+      "scale_and_scope": "All multi-account consumers (exact volume unknown).",
+      "outcome": "Subject's recollection: most users correctly identified their debts; very few were marked incorrect, and those mostly proved to be genuinely bad data rather than user error. Project was a hit — users were happy to see all debts in one place. (Outcome is subject recollection, not measured metrics.)",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated (design) / subject_recollection (outcome) — subject's own telling 2026-10-19, chosen by subject for Fly.io pre-work",
+      "potential_relevance": [
+        "backend",
+        "product engineering",
+        "UX-sensitive system design",
+        "engineering leadership"
+      ],
+      "resume_bullet_candidates": [
+        "Designed an identity-matching flow for imperfect third-party data: candidate matching on SSN + secondary identifiers, partial-information user confirmation instead of auto-merge, and a manual-combine fallback"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-016",
+      "title": "Root-caused a payment-confirmation email outage: DB connection leak masked by deploy cadence",
+      "employer_id": "EMP-003",
+      "problem_or_motivation": "Shortly after subject became on-call lead for the team, a Sunday-afternoon incident: payment-confirmation emails stopped. Initial belief about the cause turned out to be wrong.",
+      "my_contribution": "As on-call lead/first escalation, worked the incident: mitigated by redeploying, then root-caused by tracing metrics back weeks to a slow memory leak from an unclosed DB connection, which had gone undetected because regular deploys kept resetting the service's memory.",
+      "ownership_level": "Led incident response / root-caused",
+      "technical_details": "Metrics analysis over weeks; DB connection lifecycle; deploy cadence masking a leak.",
+      "scale_and_scope": "Production incident on a consumer-facing service (Recover team).",
+      "outcome": "Service mitigated by redeploy; root cause identified (unclosed DB connection leak); the leak was subsequently fixed in code and alerts/process changes were added (confirmed by subject 2026-10-20: 'yes' to both).",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — subject's incident account recorded 2026-10-02, submitted by subject as Fly.io pre-work",
+      "potential_relevance": [
+        "reliability",
+        "incident management",
+        "backend",
+        "debugging"
+      ],
+      "resume_bullet_candidates": [
+        "Root-caused a production outage to a DB connection leak that regular deploys had masked, tracing metrics back weeks to find it"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-017",
+      "title": "On-call admin and first escalation point for the Recover team",
+      "employer_id": "EMP-003",
+      "problem_or_motivation": "Team needed managed on-call shifts, alerts, and a clear escalation point.",
+      "my_contribution": "Managed on-call shifts and alerts for the team; acted as first point of escalation.",
+      "ownership_level": "Led / operated",
+      "technical_details": "Datadog, Splunk.",
+      "scale_and_scope": "Recover team.",
+      "outcome": "Included formal SLO ownership for the Recover team (confirmed by subject 2026-10-20: SLOs owned at TrueAccord as well as GreyNoise).",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume",
+      "potential_relevance": [
+        "reliability",
+        "incident management",
+        "engineering leadership"
+      ],
+      "resume_bullet_candidates": [
+        "Managed on-call shifts and alerts as the Recover team's first point of escalation (Datadog, Splunk)"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-018",
+      "title": "Built a Scala API to migrate 10k documents in a single run, tracking 60+ metadata fields",
+      "employer_id": "EMP-004",
+      "problem_or_motivation": "Client-specific document migration needed to move large document sets while tracking extensive metadata.",
+      "my_contribution": "Personally coded about 50% of the API and led the other 50% (subject statement, 2026-10-20). Sources were exports from various other medical study document management systems; the target was Wingspan/IQVIA's own medical study document system, the eTMF.",
+      "ownership_level": "Led + implemented (~50% personally coded, ~50% led)",
+      "technical_details": "Scala API; single-run migration of 10k documents; 60+ pieces of metadata tracked. Source: exports from various other medical study document management systems. Target: the eTMF (medical study document system).",
+      "scale_and_scope": "10k documents in a single run; 60+ metadata fields.",
+      "outcome": "Migration capability delivered for client use.",
+      "metrics": [
+        {
+          "value": "10k",
+          "unit": "documents migrated in a single run",
+          "confidence": "explicitly_stated — confirmed stands 2026-10-15"
+        },
+        {
+          "value": "60+",
+          "unit": "metadata fields tracked",
+          "confidence": "explicitly_stated"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + metrics file",
+      "potential_relevance": [
+        "backend",
+        "APIs",
+        "data migration",
+        "engineering leadership"
+      ],
+      "resume_bullet_candidates": [
+        "Led a globally distributed team delivering a Scala API that migrated 10k documents in a single run while tracking 60+ metadata fields"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-019",
+      "title": "Oversaw cross-team project for time-sensitive client data corrections",
+      "employer_id": "EMP-004",
+      "problem_or_motivation": "Clients submitted time-sensitive requests for data corrections that needed analysis, development, maintenance, and testing across teams.",
+      "my_contribution": "Designed and oversaw the analysis, development, maintenance, and testing of multiple software solutions, including this ongoing cross-team corrections project; also spoke directly with customers to gather specs for custom data corrections and tools (per conversation history).",
+      "ownership_level": "Designed / oversaw",
+      "technical_details": "Scala/Java.",
+      "scale_and_scope": "Cross-team; correction volume explicitly has no reliable figure — do not invent.",
+      "outcome": null,
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume; customer-spec detail from conversation 2026-09-28",
+      "potential_relevance": [
+        "backend",
+        "customer-facing engineering",
+        "engineering leadership"
+      ],
+      "resume_bullet_candidates": [
+        "Oversaw analysis, development, maintenance, and testing of software solutions, including a cross-team project handling time-sensitive client data corrections (Scala/Java)"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-020",
+      "title": "Learned Scala on the job and ramped into a large Java/Scala codebase at Wingspan/IQVIA",
+      "employer_id": "EMP-004",
+      "problem_or_motivation": "Role required Scala in a large, complex, primarily Java/Scala codebase that subject had not used before.",
+      "my_contribution": "Learned Scala (read the codebase, shipped small reviewed changes — learning pattern per corrected 2026-10-19 account) and familiarized self with the codebase; Scala became one of subject's strongest languages. NOTE: Scala was learned HERE at IQVIA/Wingspan, not at Capital One — an earlier draft had this backwards (see source_notes).",
+      "ownership_level": "Implemented (skill acquisition in production)",
+      "technical_details": "Scala, Java.",
+      "scale_and_scope": null,
+      "outcome": "Scala became a strongest language, used professionally 2018-2023 across Wingspan, TrueAccord, and Capital One.",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume + correction 2026-10-19",
+      "potential_relevance": [
+        "backend",
+        "quick study / ramp-up"
+      ],
+      "resume_bullet_candidates": [
+        "Learned Scala on the job at IQVIA and ramped into a large Java/Scala codebase"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-021",
+      "title": "Built an online Statistics course and a scheduling program (teaching era)",
+      "employer_id": "EMP-005",
+      "problem_or_motivation": "Teaching work needed an online Statistics course and a scheduling tool.",
+      "my_contribution": "Built the online Statistics course; built the scheduling program (first in C++, then in VB).",
+      "ownership_level": "Implemented",
+      "technical_details": "HTML/CSS (course); C++, then Visual Basic (scheduling program).",
+      "scale_and_scope": "Teaching context: 200+ students tutored over the years; up to 120 students in a simultaneous full-time assignment.",
+      "outcome": null,
+      "metrics": [
+        {
+          "value": "200+",
+          "unit": "students tutored over the years",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        },
+        {
+          "value": "120",
+          "unit": "max students in a simultaneous teaching assignment (recalled)",
+          "confidence": "subject_recollection_2026-10-15"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15",
+      "potential_relevance": [
+        "teaching",
+        "mentoring",
+        "communication"
+      ],
+      "resume_bullet_candidates": [
+        "Built an online statistics course (HTML/CSS) and a scheduling program (C++, VB); tutored 200+ students"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-022",
+      "title": "Used GitHub Actions for CI/CD including Terraform plan/apply workflows",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Build/test/deploy pipelines and infrastructure changes needed CI/CD automation.",
+      "my_contribution": "Used GitHub Actions at GreyNoise for build/test/deploy pipelines, including Terraform plan/apply workflows on pull requests.",
+      "ownership_level": "Operated / contributed (depth of authorship not specified)",
+      "technical_details": "GitHub Actions, Terraform plan/apply on PRs.",
+      "scale_and_scope": "GreyNoise engineering.",
+      "outcome": null,
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — subject confirmed 2026-10-19",
+      "potential_relevance": [
+        "developer productivity",
+        "platform engineering",
+        "CI/CD"
+      ],
+      "resume_bullet_candidates": [
+        "Used GitHub Actions for build/test/deploy pipelines, including Terraform plan/apply workflows on pull requests"
+      ],
+      "verification_questions": [
+        "Did you author the workflows, or primarily use/maintain ones others set up?"
+      ]
+    },
+    {
+      "id": "ACC-023",
+      "title": "Early 'Offline API' project at GreyNoise (did not ship / went nowhere)",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Project started shortly after subject joined GreyNoise.",
+      "my_contribution": "Worked on it during year-one ramp-up (details not preserved).",
+      "ownership_level": "Contributed (unconfirmed)",
+      "technical_details": "Subject learned Helm for this project and authored a Helm chart for it (see ACC-024).",
+      "scale_and_scope": "Year one at GreyNoise; engineering team ~10 at joining.",
+      "outcome": "Project went nowhere (subject's words). Preserved here per completeness instruction — do NOT use on a resume; useful only as an honest year-one framing: major initiatives (Alerts, API field-set work, Incident.io migration) landed in year two.",
+      "metrics": [],
+      "evidence_and_confidence": "subject_recollection — recorded 2026-10-19; subject advised to leave it out of applications",
+      "potential_relevance": [],
+      "resume_bullet_candidates": [],
+      "verification_questions": [
+        "Anything worth preserving about what Offline API was intended to do? (Still unanswered — subject confirmed the Helm link but not the project's purpose.)"
+      ]
+    },
+    {
+      "id": "ACC-024",
+      "title": "Kubernetes operational use and a single client-specific Helm chart",
+      "employer_id": "EMP-001",
+      "employer_note": "Resolved 2026-10-20: the Helm chart was for the GreyNoise 'Offline API' project (ACC-023). Subject learned Helm for it. The project itself never went anywhere, but the Helm skill is real.",
+      "problem_or_motivation": "Client-specific deployment project; operational debugging of services on Kubernetes.",
+      "my_contribution": "Learned Helm and authored a Helm chart for the Offline API project at GreyNoise; used kubectl operationally for debugging/ops as on-call lead.",
+      "ownership_level": "Implemented (single chart) / operated (kubectl)",
+      "technical_details": "Kubernetes, kubectl, Helm. Explicit limitations: no cluster administration, no EKS provisioning.",
+      "scale_and_scope": "Single Helm chart; operational kubectl use only.",
+      "outcome": null,
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — Kubernetes refinement 2026-10-15; employer/project attribution confirmed by subject 2026-10-20",
+      "potential_relevance": [
+        "platform engineering",
+        "reliability"
+      ],
+      "resume_bullet_candidates": [
+        "Used kubectl operationally as an on-call lead and authored a client-specific Helm chart (no cluster-admin experience)"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-025",
+      "title": "Built the replacement bulk data-delivery tool, separated from the core pipeline",
+      "employer_id": "EMP-001",
+      "problem_or_motivation": "Bulk data delivery to customers had historically been part of the data pipeline, tangling concerns. During the ES migration (ACC-008), subject advocated for separating bulk delivery into a dedicated tool owned by his team so the pipeline could focus on processing and storing data. The tool's original specifications were outdated, so legacy behavior had to be reconstructed.",
+      "my_contribution": "Advocated for the separation of concerns, then built the new bulk data-delivery tool. Examined historical customer files and reconstructed how they had been generated so the new system stayed compatible with what customers were already receiving.",
+      "ownership_level": "Designed (architecture advocacy) / implemented (built the tool)",
+      "technical_details": "Built as part of the ES8 migration architecture (ACC-008). Legacy compatibility determined by reverse-engineering historical delivered files.",
+      "scale_and_scope": "Customer bulk data delivery at GreyNoise.",
+      "outcome": "New bulk-delivery tool shipped as part of the successful migration; legacy customer-file compatibility preserved.",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — subject's own Shopify EM application answer (2026-09-14, restored 2026-09-25)",
+      "potential_relevance": [
+        "backend",
+        "data delivery",
+        "platform engineering",
+        "distributed systems"
+      ],
+      "resume_bullet_candidates": [
+        "Built a dedicated bulk data-delivery tool separated from the core pipeline, reconstructing outdated specs from historical files to preserve customer compatibility"
+      ],
+      "verification_questions": []
+    }
+  ],
+  "skills": [
+    {
+      "id": "SK-001",
+      "name": "Go",
+      "aliases": [
+        "Golang"
+      ],
+      "category": "language",
+      "contexts": [
+        "EMP-001 GreyNoise: production API and data-delivery services",
+        "EMP-002 Capital One: canary tests (learned Go here)"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "Capital One 2022-2023 (learning) + GreyNoise 2023-2025 production; one of subject's two strongest languages",
+      "examples": [
+        "ACC-001",
+        "ACC-002",
+        "ACC-013"
+      ],
+      "limitations": "Learned at Capital One, not at GreyNoise (corrected 2026-10-19)."
+    },
+    {
+      "id": "SK-002",
+      "name": "Scala",
+      "aliases": [],
+      "category": "language",
+      "contexts": [
+        "EMP-004 Wingspan/IQVIA: learned Scala here, production APIs",
+        "EMP-003 TrueAccord: Multiple Account Project",
+        "EMP-002 Capital One: ZIO endpoints"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2018-2023 professional; one of subject's two strongest languages",
+      "examples": [
+        "ACC-014",
+        "ACC-018",
+        "ACC-012",
+        "ACC-020"
+      ],
+      "limitations": "Learned at IQVIA/Wingspan, not at Capital One (corrected 2026-10-19)."
+    },
+    {
+      "id": "SK-003",
+      "name": "Python",
+      "aliases": [],
+      "category": "language",
+      "contexts": [
+        "EMP-001 GreyNoise: maintained Python SDK, 2 years professional",
+        "Personal projects ~1 year (incl. job-search tool PROJ-002)"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "~3 years total (2 professional + ~1 personal)",
+      "examples": [
+        "ACC-009",
+        "PROJ-002"
+      ],
+      "limitations": "No Django or Flask experience. Do not claim Python web-framework experience."
+    },
+    {
+      "id": "SK-004",
+      "name": "Java",
+      "aliases": [
+        "JVM"
+      ],
+      "category": "language",
+      "contexts": [
+        "EMP-004 Wingspan: large Java/Scala codebase",
+        "General professional use"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "3 years professional, all JVM-based",
+      "examples": [
+        "ACC-019",
+        "ACC-020"
+      ],
+      "limitations": "No Spring experience. Do not claim Spring/Spring Boot."
+    },
+    {
+      "id": "SK-005",
+      "name": "JavaScript",
+      "aliases": [
+        "JS"
+      ],
+      "category": "language",
+      "contexts": [
+        "Personal projects since 2017",
+        "EMP-003 TrueAccord: occasional professional React/Node help"
+      ],
+      "usage_level": "implemented_code_personal_and_limited_professional",
+      "duration_or_recency": "Since 2017 (~9 years counting personal use, per 2026-10-05 grounded answer — distinguish professional vs personal when stating years)",
+      "examples": [],
+      "limitations": "Not a frontend specialist."
+    },
+    {
+      "id": "SK-006",
+      "name": "TypeScript",
+      "aliases": [
+        "TS"
+      ],
+      "category": "language",
+      "contexts": [
+        "Personal projects only, incl. Mao (PROJ-001) TypeScript/React frontend"
+      ],
+      "usage_level": "implemented_code_personal_projects_only",
+      "duration_or_recency": "Personal projects; described in a Clera draft as 'functional rather than primary'",
+      "examples": [
+        "PROJ-001"
+      ],
+      "limitations": "No professional TypeScript production claim in sources."
+    },
+    {
+      "id": "SK-007",
+      "name": "C++",
+      "aliases": [],
+      "category": "language",
+      "contexts": [
+        "Education: 8 of 12 CS credits at RPI in C++",
+        "EMP-005: scheduling program (first version)",
+        "Personal/early work"
+      ],
+      "usage_level": "implemented_code_academic_and_early_career",
+      "duration_or_recency": "Oldest language experience; not a recent production language in sources",
+      "examples": [
+        "ACC-021"
+      ],
+      "limitations": "Do not present as current production expertise without confirmation. No embedded/firmware experience (Ciena stretch-role note 2026-10-15)."
+    },
+    {
+      "id": "SK-008",
+      "name": "Visual Basic",
+      "aliases": [
+        "VB"
+      ],
+      "category": "language",
+      "contexts": [
+        "EMP-005: scheduling program rewritten in VB",
+        "Listed on base resume"
+      ],
+      "usage_level": "implemented_code_early_career",
+      "duration_or_recency": "Teaching era (pre-2018)",
+      "examples": [
+        "ACC-021"
+      ],
+      "limitations": "Legacy/early-career only."
+    },
+    {
+      "id": "SK-009",
+      "name": "Gin",
+      "aliases": [],
+      "category": "framework",
+      "contexts": [
+        "EMP-001 GreyNoise API"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-001"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-010",
+      "name": "Akka",
+      "aliases": [],
+      "category": "framework",
+      "contexts": [
+        "EMP-003 TrueAccord",
+        "EMP-004 era Scala stack per base resume skills"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2021 (TrueAccord) and earlier",
+      "examples": [
+        "ACC-014"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-011",
+      "name": "Play Framework",
+      "aliases": [
+        "Play"
+      ],
+      "category": "framework",
+      "contexts": [
+        "EMP-003 TrueAccord"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2021",
+      "examples": [
+        "ACC-014"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-012",
+      "name": "ZIO",
+      "aliases": [],
+      "category": "framework",
+      "contexts": [
+        "EMP-002 Capital One endpoints"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2022-2023",
+      "examples": [
+        "ACC-012"
+      ],
+      "limitations": "Work did not reach production (see EMP-002)."
+    },
+    {
+      "id": "SK-013",
+      "name": "Terraform",
+      "aliases": [
+        "IaC",
+        "Infrastructure as Code"
+      ],
+      "category": "infrastructure",
+      "contexts": [
+        "EMP-001 GreyNoise: API/service infrastructure, Terraform-based alerts, GitHub Actions plan/apply workflows"
+      ],
+      "usage_level": "implemented_and_operated_production",
+      "duration_or_recency": "2023-2025; picked up on the job at GreyNoise",
+      "examples": [
+        "ACC-001",
+        "ACC-007",
+        "ACC-022"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-014",
+      "name": "AWS",
+      "aliases": [
+        "Amazon Web Services"
+      ],
+      "category": "cloud",
+      "contexts": [
+        "EMP-001 GreyNoise: S3, Lambda in data-delivery services",
+        "General resume skills"
+      ],
+      "usage_level": "implemented_and_operated_production",
+      "duration_or_recency": "2023-2025 primarily",
+      "examples": [
+        "ACC-002"
+      ],
+      "limitations": "Specific AWS services beyond S3/Lambda appear in some tailored resume skills lines (EC2, RDS) without corroboration in base sources — verify before claiming."
+    },
+    {
+      "id": "SK-015",
+      "name": "GCP",
+      "aliases": [
+        "Google Cloud Platform"
+      ],
+      "category": "cloud",
+      "contexts": [
+        "EMP-001 GreyNoise: Google Cloud Storage in data-delivery services"
+      ],
+      "usage_level": "implemented_and_operated_production",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-002"
+      ],
+      "limitations": "Named GCP service in base sources is GCS; do not broaden without confirmation."
+    },
+    {
+      "id": "SK-016",
+      "name": "Elasticsearch",
+      "aliases": [
+        "ES"
+      ],
+      "category": "database_search",
+      "contexts": [
+        "EMP-001 GreyNoise: API querying large ES datasets; oversaw ES migration"
+      ],
+      "usage_level": "operated_and_designed_around; migration_planning_oversight",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-001",
+        "ACC-008"
+      ],
+      "limitations": "Did not own the pipeline team's ES indices. Dataset/record count unknown. No claim of Elasticsearch internals development."
+    },
+    {
+      "id": "SK-017",
+      "name": "PostgreSQL",
+      "aliases": [
+        "Postgres"
+      ],
+      "category": "database",
+      "contexts": [
+        "EMP-003 TrueAccord: incl. jsonb in Multiple Account Project",
+        "General resume skills"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2021 primarily",
+      "examples": [
+        "ACC-014"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-018",
+      "name": "MongoDB",
+      "aliases": [
+        "Mongo"
+      ],
+      "category": "database",
+      "contexts": [
+        "Personal projects from when subject was switching careers (pre-professional / career-switch era)"
+      ],
+      "usage_level": "implemented_code_personal_projects",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "Personal-project experience only (career-switch era), per subject 2026-10-20. Do not present as professional production MongoDB experience."
+    },
+    {
+      "id": "SK-019",
+      "name": "Kafka",
+      "aliases": [
+        "Apache Kafka"
+      ],
+      "category": "messaging",
+      "contexts": [
+        "EMP-001 GreyNoise: consumed event streams for data-delivery services"
+      ],
+      "usage_level": "consumer_only",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-002"
+      ],
+      "limitations": "CONSUMER ONLY — never set up topics and never emitted/produced. Pipeline team owned the topics. Do not claim Kafka administration or producer experience."
+    },
+    {
+      "id": "SK-020",
+      "name": "Protocol Buffers",
+      "aliases": [
+        "protobuf"
+      ],
+      "category": "data_format",
+      "contexts": [
+        "EMP-001 GreyNoise data-delivery services"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-002"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-021",
+      "name": "REST APIs",
+      "aliases": [
+        "API architecture"
+      ],
+      "category": "domain",
+      "contexts": [
+        "EMP-001 public API ownership",
+        "EMP-003, EMP-004 API work"
+      ],
+      "usage_level": "designed_implemented_operated",
+      "duration_or_recency": "2018-2025",
+      "examples": [
+        "ACC-001",
+        "ACC-018"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-022",
+      "name": "Docker",
+      "aliases": [],
+      "category": "infrastructure",
+      "contexts": [
+        "EMP-002 Capital One microservice",
+        "General stack"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2022-2023 named context",
+      "examples": [
+        "ACC-012"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-023",
+      "name": "Kubernetes",
+      "aliases": [
+        "K8s",
+        "kubectl",
+        "Helm"
+      ],
+      "category": "infrastructure",
+      "contexts": [
+        "EMP-001 GreyNoise: learned Helm and authored a chart for the Offline API project (ACC-023/ACC-024)",
+        "EMP-001 GreyNoise on-call: kubectl debugging/ops"
+      ],
+      "usage_level": "operated_limited; single_helm_chart",
+      "duration_or_recency": "Refined 2026-10-15",
+      "examples": [
+        "ACC-024"
+      ],
+      "limitations": "Single Helm chart for one (ultimately abandoned) project. No cluster administration, no EKS provisioning. Do not present as a Kubernetes engineer."
+    },
+    {
+      "id": "SK-024",
+      "name": "GitHub Actions",
+      "aliases": [
+        "CI/CD"
+      ],
+      "category": "developer_tooling",
+      "contexts": [
+        "EMP-001 GreyNoise build/test/deploy pipelines, Terraform plan/apply on PRs"
+      ],
+      "usage_level": "used_in_production_workflows",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-022"
+      ],
+      "limitations": "Authorship depth unconfirmed (see ACC-022 verification question)."
+    },
+    {
+      "id": "SK-025",
+      "name": "Git / GitHub",
+      "aliases": [
+        "Git"
+      ],
+      "category": "developer_tooling",
+      "contexts": [
+        "All engineering roles"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": "2018-present",
+      "examples": [],
+      "limitations": null
+    },
+    {
+      "id": "SK-026",
+      "name": "Grafana",
+      "aliases": [],
+      "category": "observability",
+      "contexts": [
+        "EMP-001 Terraform-based alerts/dashboards"
+      ],
+      "usage_level": "operated_production",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-007"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-027",
+      "name": "Honeycomb",
+      "aliases": [],
+      "category": "observability",
+      "contexts": [
+        "EMP-001 Terraform-based alerts"
+      ],
+      "usage_level": "operated_production",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-007"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-028",
+      "name": "Datadog",
+      "aliases": [
+        "DataDog"
+      ],
+      "category": "observability",
+      "contexts": [
+        "EMP-003 TrueAccord on-call/alerts",
+        "General resume skills"
+      ],
+      "usage_level": "operated_production",
+      "duration_or_recency": "2021 named context",
+      "examples": [
+        "ACC-017"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-029",
+      "name": "Splunk",
+      "aliases": [],
+      "category": "observability",
+      "contexts": [
+        "EMP-003 TrueAccord on-call/alerts"
+      ],
+      "usage_level": "operated_production",
+      "duration_or_recency": "2021 named context",
+      "examples": [
+        "ACC-017"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-030",
+      "name": "PagerDuty / Statuspage / Incident.io",
+      "aliases": [
+        "incident management tooling"
+      ],
+      "category": "incident_management",
+      "contexts": [
+        "EMP-001: managed company-wide on-call; migrated PagerDuty/Statuspage to Incident.io",
+        "EMP-003: on-call admin"
+      ],
+      "usage_level": "operated_and_migrated_production",
+      "duration_or_recency": "2021-2025",
+      "examples": [
+        "ACC-006",
+        "ACC-007",
+        "ACC-017"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-031",
+      "name": "WireMock",
+      "aliases": [
+        "Wiremock"
+      ],
+      "category": "testing",
+      "contexts": [
+        "EMP-002 service tests for Scala/ZIO microservices"
+      ],
+      "usage_level": "implemented_tests",
+      "duration_or_recency": "2022-2023",
+      "examples": [
+        "ACC-013"
+      ],
+      "limitations": null
+    },
+    {
+      "id": "SK-032",
+      "name": "testify (Go testing)",
+      "aliases": [
+        "testify mock.Mock"
+      ],
+      "category": "testing",
+      "contexts": [
+        "EMP-001 Go unit tests — mock.Mock embedding, m.Called / m.On().Return() pattern; subject's most recently used test-automation framework as of 2026-10-05"
+      ],
+      "usage_level": "implemented_tests",
+      "duration_or_recency": "2023-2025",
+      "examples": [],
+      "limitations": null
+    },
+    {
+      "id": "SK-033",
+      "name": "TDD / testing practices",
+      "aliases": [
+        "TDD",
+        "Swagger",
+        "Jira"
+      ],
+      "category": "practices_and_tools",
+      "contexts": [
+        "Listed on base resume: TDD, Swagger, Jira, OOP and FP"
+      ],
+      "usage_level": "listed_on_base_resume",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "Listed as skills on base resume without a specific preserved accomplishment for each — use as skills-line items, not as demonstrated accomplishments, unless confirmed."
+    },
+    {
+      "id": "SK-034",
+      "name": "React / Node.js",
+      "aliases": [
+        "React",
+        "Node"
+      ],
+      "category": "frontend_fullstack",
+      "contexts": [
+        "Personal projects since 2017",
+        "EMP-003 TrueAccord: occasional professional frontend help when team was short-handed"
+      ],
+      "usage_level": "implemented_code_personal; occasional_professional_contribution",
+      "duration_or_recency": "2017-present personal; 2021 professional (occasional)",
+      "examples": [
+        "PROJ-001"
+      ],
+      "limitations": "Subject is NOT a frontend specialist. Professional use was occasional help, not a frontend role."
+    },
+    {
+      "id": "SK-035",
+      "name": "Vue.js",
+      "aliases": [
+        "Vue"
+      ],
+      "category": "frontend",
+      "contexts": [
+        "EMP-001: led a frontend team building in Vue; reviewed Vue code and guided frontend technical decisions"
+      ],
+      "usage_level": "code_review_only_never_coded",
+      "duration_or_recency": "2023-2025",
+      "examples": [
+        "ACC-010"
+      ],
+      "limitations": "NEVER coded in Vue. Code-review familiarity only. Do not claim Vue development experience."
+    },
+    {
+      "id": "SK-036",
+      "name": "HTML / CSS / jQuery",
+      "aliases": [],
+      "category": "frontend",
+      "contexts": [
+        "EMP-005 online Statistics course (HTML/CSS)",
+        "Base resume skills (jQuery)"
+      ],
+      "usage_level": "implemented_code",
+      "duration_or_recency": "Teaching era + earlier",
+      "examples": [
+        "ACC-021"
+      ],
+      "limitations": "Not a current frontend specialty."
+    },
+    {
+      "id": "SK-037",
+      "name": "AI-assisted development",
+      "aliases": [
+        "ChatGPT",
+        "GitHub Copilot",
+        "Junie",
+        "GitHub Codespaces AI assistant",
+        "Muse"
+      ],
+      "category": "developer_tooling",
+      "contexts": [
+        "Daily/regular workflow: breakdown, planning, boilerplate, debugging",
+        "Junie at GreyNoise: early and light use (routes across multiple models incl. Claude under the hood; subject never used Claude directly)",
+        "ChatGPT extensively; GitHub Copilot; Codespaces built-in AI assistant; Muse a bit"
+      ],
+      "usage_level": "daily_workflow_with_review_discipline",
+      "duration_or_recency": "Current (2026) + Junie during GreyNoise tenure",
+      "examples": [
+        "LEAD-008"
+      ],
+      "limitations": "Subject treats AI output like a very junior dev's work: one tiny piece at a time, code-reviews and tests each piece before moving on; never treats generated code as authoritative. Do not claim direct Claude Code use (corrected 2026-10-14)."
+    },
+    {
+      "id": "SK-038",
+      "name": ".NET / C#",
+      "aliases": [],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "NO .NET experience — explicitly confirmed. Do not claim."
+    },
+    {
+      "id": "SK-039",
+      "name": "Azure",
+      "aliases": [],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "NO Azure experience — explicitly confirmed."
+    },
+    {
+      "id": "SK-040",
+      "name": "PHP / Laravel",
+      "aliases": [],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "NO PHP or Laravel experience — explicitly confirmed 2026-10-06; subject self-screened out a PHP/Laravel role on this basis 2026-10-17."
+    },
+    {
+      "id": "SK-041",
+      "name": "Ruby",
+      "aliases": [],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "Never claim Ruby — explicitly confirmed unsupported."
+    },
+    {
+      "id": "SK-042",
+      "name": "Spring (Java)",
+      "aliases": [
+        "Spring Boot"
+      ],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "3 years professional Java, all JVM, NO Spring — explicitly confirmed."
+    },
+    {
+      "id": "SK-043",
+      "name": "Django / Flask",
+      "aliases": [],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "Python experience exists (SK-003) but NO Django/Flask — explicitly confirmed."
+    },
+    {
+      "id": "SK-044",
+      "name": "Supply-chain / infrastructure hardening",
+      "aliases": [
+        "artifact signing",
+        "dependency scanning",
+        "SLSA provenance"
+      ],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "No supply-chain/infrastructure hardening experience — confirmed unsupported overreach 2026-10-02. Do not claim."
+    },
+    {
+      "id": "SK-045",
+      "name": "C (production) / OS internals / embedded / YANG / firmware",
+      "aliases": [],
+      "category": "negative_qualification",
+      "contexts": [],
+      "usage_level": "no_experience_claimed",
+      "duration_or_recency": null,
+      "examples": [],
+      "limitations": "No C production claim, no OS internals, no embedded/YANG/firmware background — explicitly confirmed boundaries."
+    },
+    {
+      "id": "SK-046",
+      "name": "SQL",
+      "aliases": [],
+      "category": "database",
+      "contexts": [
+        "PostgreSQL work (SK-017); application answers rated subject's SQL as 'Advanced' in one 2026 application context"
+      ],
+      "usage_level": "implemented_production_code",
+      "duration_or_recency": null,
+      "examples": [
+        "ACC-014"
+      ],
+      "limitations": "'Advanced' rating comes from a single application answer, not an independent assessment — use with care."
+    },
+    {
+      "id": "SK-047",
+      "name": "Redis",
+      "aliases": [],
+      "category": "database_cache",
+      "contexts": [
+        "EMP-001 GreyNoise: caching in the public API / permission-enforcement context (ACC-004)"
+      ],
+      "usage_level": "used_in_production",
+      "duration_or_recency": "2023-2025 (GreyNoise)",
+      "examples": [
+        "ACC-004"
+      ],
+      "limitations": "Subject confirmed Redis was the caching layer but does not recall further design details (2026-10-20). Do not claim specific Redis patterns, topologies, or performance figures."
+    }
+  ],
+  "leadership_examples": [
+    {
+      "id": "LEAD-001",
+      "title": "Alerts phased delivery with a pre-agreed cut candidate",
+      "accomplishment_id": "ACC-005",
+      "situation": "Hard deadline, team down one member, lead's coding time split with hiring the replacement.",
+      "actions": "Sequenced work into phases, placed a nice-to-have last as the named cut candidate, told team and stakeholders up front, protected quality/testing on critical work.",
+      "reasoning": "Make the eventual cut a planned, unsurprising event rather than a late failure.",
+      "outcome": "Project shipped in phases; cut candidate was cut without surprising stakeholders."
+    },
+    {
+      "id": "LEAD-002",
+      "title": "Resolving a customer-vs-security conflict over API fields",
+      "accomplishment_id": "ACC-003",
+      "situation": "Customer Success wanted more fields for sales/packaging; Sensor Team warned of sensor-fingerprinting/evasion risk.",
+      "actions": "Led a joint field-by-field call, tested configurations, negotiated a compromise maximizing useful fields without dangerous combinations.",
+      "reasoning": "Solve for the general/safe case rather than the loudest request or a blanket refusal.",
+      "outcome": "Agreed field set; implementation began."
+    },
+    {
+      "id": "LEAD-003",
+      "title": "Leading the Multiple Account Project",
+      "accomplishment_id": "ACC-014",
+      "situation": "Debt-centric system blind to multi-account consumers; 4 other engineers across at least 3 US time zones.",
+      "actions": "Designed the solution, directed/code-reviewed/assisted engineers, represented the team to external engineering and product teams, made the design calls (see ACC-015).",
+      "reasoning": "User needed to become a first-class object without unsafe auto-merging on bad third-party data.",
+      "outcome": "Consumer-level communication/logging built; single-dashboard model designed with user confirmation (subject recollection: project was a hit)."
+    },
+    {
+      "id": "LEAD-004",
+      "title": "Cross-functional investigation affecting 1500+ systems",
+      "accomplishment_id": "ACC-011",
+      "situation": "A DEI-related code change would affect 1500+ systems.",
+      "actions": "Initiated the investigation and met with technical and non-technical stakeholders to determine scope/impact.",
+      "reasoning": null,
+      "outcome": "Not preserved — see verification questions."
+    },
+    {
+      "id": "LEAD-005",
+      "title": "Company-wide on-call leadership and incident-tooling migration",
+      "accomplishment_id": "ACC-006",
+      "related_accomplishment_ids": [
+        "ACC-007"
+      ],
+      "situation": "Company-wide on-call process and tooling needed ownership and improvement.",
+      "actions": "Managed rotations for the whole company (10-15 engineers), ran incident process, migrated PagerDuty/Statuspage to Incident.io, built Terraform-based alerting.",
+      "reasoning": "Improve on-call experience while cutting cost.",
+      "outcome": "$1/seat/month saved vs PagerDuty; $6k/year saved on Statuspage; better product (subject statement)."
+    },
+    {
+      "id": "LEAD-006",
+      "title": "Mentoring and managing two teams while staying hands-on",
+      "accomplishment_id": "ACC-010",
+      "situation": "Two teams (4 direct reports), including a Vue frontend team outside subject's hands-on specialty.",
+      "actions": "Project planning, 1:1 mentoring, code review (including Vue code review without claiming Vue coding), technical direction, hiring.",
+      "reasoning": null,
+      "outcome": null
+    },
+    {
+      "id": "LEAD-007",
+      "title": "Incident leadership: payment-confirmation email outage",
+      "accomplishment_id": "ACC-016",
+      "situation": "Sunday-afternoon outage shortly after becoming team on-call lead; first hypothesis was wrong.",
+      "actions": "Mitigated by redeploy, then traced metrics back weeks to find the DB connection leak masked by deploy cadence.",
+      "reasoning": "Do not stop at the first plausible belief; confirm with evidence over a longer window.",
+      "outcome": "Root cause identified."
+    },
+    {
+      "id": "LEAD-008",
+      "title": "Disciplined AI-assisted development workflow (with a caught AI bug as evidence)",
+      "accomplishment_id": null,
+      "situation": "Regular use of AI coding tools (ChatGPT, Copilot, Junie, Codespaces assistant, Muse) for breakdown, planning, boilerplate, and debugging.",
+      "actions": "Treats AI like a very junior dev: breaks work into tiny pieces, hands over one piece at a time, code-reviews and tests each piece before moving on; never treats generated code as authoritative.",
+      "reasoning": "AI output can pass tests while being wrong.",
+      "outcome": "Verified reusable story (2026-10-19): an AI generated a timestamp format string using month twice (month-month) instead of month-day; all example data was January 1st, so the wrong format produced identical output and every test passed. Subject caught it the next day rehearsing a demo walkthrough out loud, fixed it, and added varied-date test data so that class of mistake cannot hide again."
+    },
+    {
+      "id": "LEAD-009",
+      "title": "Leading the ES8 migration — architecture simplification, comparison testing, and a documented lesson learned",
+      "accomplishment_id": "ACC-008",
+      "related_accomplishment_ids": [
+        "ACC-025"
+      ],
+      "situation": "Multiple databases (ES7, PostgreSQL, TimescaleDB) caused scalability/reliability issues; ES7-to-ES8 upgrade affected essentially every API endpoint; the ES7 library was incompatible with ES8.",
+      "actions": "Coordinated ~7-8 engineers across teams; pushed for the simplest architecture (including separating bulk delivery into its own tool, ACC-025); refactored the API for ES8 and rewrote queries in a new library; helped design request-comparison tooling (results + latency) between old and new implementations.",
+      "reasoning": "Consolidate to a single source of truth, keep the architecture simple, and earn confidence in behavior preservation empirically rather than by assumption.",
+      "outcome": "Migration completed in 2-3 months with zero downtime; TimescaleDB retired, cutting infrastructure cost. Lesson subject stated he would apply next time: invest earlier in documenting existing behavior and building migration-comparison tooling."
+    }
+  ],
+  "projects": [
+    {
+      "id": "PROJ-001",
+      "name": "Mao",
+      "type": "personal_project",
+      "description": "Mao is a card game that subject turned into a web app game. It is fully functional; planned nice-to-haves include hand sorting and card art (not yet added). Go backend with a TypeScript/React frontend. Used by subject as a code sample (GitHub: https://github.com/jemjasoncorraggio/mao) and its README as a technical-writing sample in the Sticker Mule application (2026-10-15).",
+      "my_contribution": "Built the project (personal project; exact feature scope not preserved in sources — do not inflate maturity, usage, or impact).",
+      "technologies": [
+        "Go",
+        "TypeScript",
+        "React"
+      ],
+      "skill_ids": [
+        "SK-001",
+        "SK-006",
+        "SK-034"
+      ],
+      "evidence_and_confidence": "explicitly_stated — imported 2026-09-23; GitHub use confirmed 2026-10-15",
+      "verification_questions": []
+    },
+    {
+      "id": "PROJ-002",
+      "name": "Job-search filtering/ranking tool",
+      "type": "personal_project",
+      "description": "Python tool using Ashby and Gemini that deterministically filters Canadian postings before using AI to rank a small top set, with full job-description analysis reserved for top roles.",
+      "my_contribution": "Built the tool (personal project).",
+      "technologies": [
+        "Python",
+        "Ashby API",
+        "Gemini"
+      ],
+      "skill_ids": [
+        "SK-003",
+        "SK-037"
+      ],
+      "evidence_and_confidence": "explicitly_stated — imported 2026-09-23",
+      "verification_questions": [
+        "Is this tool public, and what is its current state?"
+      ]
+    },
+    {
+      "id": "PROJ-003",
+      "name": "Resume-tailoring tool (in development, 2026-10-20)",
+      "type": "personal_project_in_development",
+      "description": "Separate resume-tailoring application subject began building 2026-10-20 with GPT assisting on coding; this inventory is its intended source of truth. The Cloudflare AI assignment is a separate job-application project, not part of this tool.",
+      "my_contribution": "Building it (in progress; no implementation details preserved yet).",
+      "technologies": [],
+      "skill_ids": [],
+      "evidence_and_confidence": "explicitly_stated — subject message 2026-10-20",
+      "verification_questions": [
+        "Tech stack and repo location once chosen, if you want it recorded."
+      ]
+    }
+  ],
+  "education_and_credentials": [
+    {
+      "id": "EDU-001",
+      "institution": "Rensselaer Polytechnic Institute (RPI)",
+      "credential": "BS, Mathematics",
+      "details": "12 Computer Science credits, including 8 in C++. Emily Roebling Scholarship for Mathematics.",
+      "dates": null,
+      "evidence_and_confidence": "explicitly_stated — base resume"
+    },
+    {
+      "id": "EDU-002",
+      "institution": null,
+      "credential": "Teaching experience (see EMP-005)",
+      "details": "Full-time teaching for 10 years; tutoring through Wyzant and Preply; 200+ students tutored. Any formal teaching certification is NOT stated in sources — do not claim one.",
+      "dates": "2009-08 to 2018-05 (teaching era)",
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15"
+    },
+    {
+      "id": "EDU-003",
+      "institution": null,
+      "credential": "Languages (spoken)",
+      "details": "English — fluent. French — ~B1, learning (uses Duolingo regularly); actively preparing for certification to be eligible for the Francophone Mobility program (LMIA-exempt).",
+      "dates": null,
+      "evidence_and_confidence": "explicitly_stated — base resume + conversation history"
+    }
+  ],
+  "career_preferences": {
+    "targeting_note": "Subjective preferences, kept separate from verifiable qualifications.",
+    "role_types_open_to": [
+      "Individual contributor (Senior/Staff/Lead SWE, backend/platform)",
+      "Engineering management / tech lead"
+    ],
+    "filtering_rule": "Do NOT filter opportunities by IC-vs-manager, role type, seniority, or salary — CUSMA work-permit eligibility is the first filter; visa outranks role type, seniority, and salary.",
+    "technical_work_targeted": [
+      "Backend development",
+      "Platform engineering",
+      "Distributed systems",
+      "APIs",
+      "Reliability / on-call / incident management",
+      "Security / threat-intelligence engineering",
+      "Developer productivity"
+    ],
+    "strengths_positioning": [
+      "Backend/platform systems at internet scale",
+      "Public API ownership and access-boundary design",
+      "On-call and incident leadership",
+      "Quick study on new languages/stacks (Scala learned at IQVIA, Go learned at Capital One — both became strongest languages)"
+    ],
+    "geography_current_search": "Eastern Canada — Ottawa/Kanata, Toronto, Montreal, plus remote anywhere in Canada (per 2026-09-28/29 search preferences).",
+    "contract_rate_stated_2026-09-21": "$90-98/hr would work (contract context; date-stamped, may be stale)",
+    "work_authorization": {
+      "citizenship": "U.S. citizen",
+      "canada_status": "Eligible for a CUSMA Professional (TN) work permit — no LMIA required. Also preparing for Francophone Mobility program eligibility (LMIA-exempt).",
+      "application_form_answers_stated": "Answers 'no' to 'are you currently authorized to work [in Canada]' and 'yes' to 'are you eligible' — honest while allowing a CUSMA explanation, typically in the Additional Information field.",
+      "biggest_obstacle_stated": "Work-authorization auto-filters screen subject out before a human can hear the CUSMA explanation; LinkedIn networking with recruiters is therefore critical."
+    },
+    "cover_letter_preference": "Subject doubts cover letters are useful and treats drafting them as low-value unless he asks — a tailoring-tool default should not require cover letters.",
+    "resume_tailoring_preference": "Subject is hesitant to tailor per application at scale and wants resumes always accurate; the base resume must stay safe, recruiters should receive the same file applied with, and a tailored file's filename must not reveal it was tailored."
+  },
+  "verification_questions": [
+    {
+      "id": "VQ-001",
+      "question": "GreyNoise SLOs: did you formally own SLOs/SLIs for any service? Several tailored resumes claimed SLO ownership, but the base resume and verified metrics do not confirm it.",
+      "affects": [
+        "ACC-007",
+        "SK-026",
+        "SK-027"
+      ],
+      "priority": "high",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Yes — subject owned SLOs at both GreyNoise and TrueAccord. Tailored-resume SLO claims are now corroborated."
+    },
+    {
+      "id": "VQ-002",
+      "question": "GreyNoise management duties: did they include formal performance reviews/performance feedback and performance management, or only 1:1s, mentoring, planning, code review, and hiring?",
+      "affects": [
+        "ACC-010",
+        "EMP-001"
+      ],
+      "priority": "high",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Yes — GreyNoise management duties included formal performance reviews / performance feedback."
+    },
+    {
+      "id": "VQ-003",
+      "question": "Which employer/project was the single Helm chart for (ACC-024)?",
+      "affects": [
+        "ACC-024",
+        "SK-023"
+      ],
+      "priority": "high",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Yes — the Helm chart was for the GreyNoise Offline API project (ACC-023); subject learned Helm for it."
+    },
+    {
+      "id": "VQ-004",
+      "question": "What is your hands-on vs management split, if you want a defensible figure recorded? A Clera draft estimated ~2/3 vs ~1/3 — is that accurate enough to keep, labeled as an estimate?",
+      "affects": [
+        "EMP-001"
+      ],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Split fluctuated a lot; ~2/3 hands-on vs ~1/3 management is close enough as an average estimate."
+    },
+    {
+      "id": "VQ-005",
+      "question": "Capital One: what did the Scala/ZIO microservice do, what team were you on, and what was the DEI-investigation's conclusion / did the change proceed?",
+      "affects": [
+        "ACC-011",
+        "ACC-012",
+        "EMP-002"
+      ],
+      "priority": "high",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Microservice was for creating and updating auto loans. The DEI-related change at Capital One ultimately did NOT change anything, despite subject's intense advocacy (see ACC-011 outcome). Team name still not provided."
+    },
+    {
+      "id": "VQ-006",
+      "question": "TrueAccord: after the email-outage incident, was the DB leak fixed in code and were alerts added? And did the single-dashboard model roll out to all consumers or in stages?",
+      "affects": [
+        "ACC-016",
+        "ACC-014"
+      ],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Yes to all: (1) DB leak fixed in code after the incident, (2) alerts/process changes added, (3) single-dashboard model rolled out to all consumers."
+    },
+    {
+      "id": "VQ-007",
+      "question": "Wingspan: how much of the 10k-document migration API did you personally code vs lead, and what were the source/target document systems? Were the Technical Services engineers your formal direct reports?",
+      "affects": [
+        "ACC-018",
+        "EMP-004"
+      ],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Coded ~50%, led the other ~50%. Sources: exports from other medical study document management systems. Target: the eTMF. The other engineers were not formal direct reports."
+    },
+    {
+      "id": "VQ-008",
+      "question": "Elasticsearch migration at GreyNoise: what kind (version upgrade, cluster move, reindex, cloud migration), over what timeframe, and did it complete with zero/minor downtime you can state?",
+      "affects": [
+        "ACC-008"
+      ],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Moved from ES7 + PostgreSQL + TimescaleDB to a single source of truth in ES8; took 2-3 months; no downtime. Enriched from subject's own Shopify application answer: coordinated ~7-8 engineers, refactored API for ES8, comparison testing, TimescaleDB retired."
+    },
+    {
+      "id": "VQ-009",
+      "question": "GreyNoise API permission design: can you describe the caching design referenced in the Motion questionnaire, and any load-test figures you can defend?",
+      "affects": [
+        "ACC-004"
+      ],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Caching was Redis. Subject does not recall further details and does not recall any specific load-test figures — none recorded."
+    },
+    {
+      "id": "VQ-010",
+      "question": "MongoDB: where did you actually use it (employer/project, what for)? It is on the base resume but has no demonstrating accomplishment in the sources.",
+      "affects": [
+        "SK-018"
+      ],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "MongoDB experience was from personal projects during subject's career switch — not professional production use."
+    },
+    {
+      "id": "VQ-011",
+      "question": "GitHub contributions discrepancy: one 2026-10-19 note said public counts underrepresent GreyNoise work (private repos), while MEMORY.md records that private contributions ARE included on your profile (~790 over four years: 2023: 157, 2024: 397, 2025: 171; 67 in the past year). Which account is correct for external use?",
+      "affects": [],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "At GreyNoise, subject used his personal GitHub, so private contributions are included in the counts. Earlier employers gave separate GitHub accounts, so those contributions are not reflected in the personal account."
+    },
+    {
+      "id": "VQ-012",
+      "question": "Mao (PROJ-001): what does it do, what is built vs planned, and is it deployed anywhere? Needed to write any project bullet stronger than the current minimal record.",
+      "affects": [
+        "PROJ-001"
+      ],
+      "priority": "medium",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Mao was originally a card game, turned into a web app game. Fully functional; nice-to-haves not yet added: hand sorting and card art."
+    },
+    {
+      "id": "VQ-013",
+      "question": "Salaries/benefits per employer (needed for IRCC reference-letter completeness, not for resumes): do you want these recorded in a separate private section of the inventory?",
+      "affects": [
+        "EMP-001",
+        "EMP-002",
+        "EMP-003",
+        "EMP-004"
+      ],
+      "priority": "low",
+      "status": "deferred_by_subject",
+      "answer": "Subject said 2026-10-20: handle salaries/benefits separately (outside this inventory for now)."
+    },
+    {
+      "id": "VQ-014",
+      "question": "Alerts project at GreyNoise: approximate dates/duration, and what drove the hard deadline? Do you now recall the cut nice-to-have feature?",
+      "affects": [
+        "ACC-005"
+      ],
+      "priority": "low",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Alerts project ran December 2024 into January 2025. Subject believes the deadline was pressure to release ahead of a planned customer success announcement but is not certain. The cut nice-to-have is still not recalled — keep it generic."
+    },
+    {
+      "id": "VQ-015",
+      "question": "Python SDK at GreyNoise: maintenance only, or did you build major parts/features?",
+      "affects": [
+        "ACC-009"
+      ],
+      "priority": "low",
+      "status": "answered",
+      "answered_date": "2026-10-20",
+      "answer": "Subject added new endpoints to the Python SDK, mirroring endpoints added to the API itself; otherwise maintenance."
+    }
+  ],
+  "source_notes": [
+    {
+      "id": "SRC-001",
+      "source": "Base resume: ~/workspace/CorraggioResume2026.pdf (archived base: ~/workspace/resumes/resume-base_2026-10-05.pdf)",
+      "role": "Primary source of truth for employment, titles, dates, and base bullets. English version used; French version in the same file is a translation of the same content."
+    },
+    {
+      "id": "SRC-002",
+      "source": "Verified metrics: ~/workspace/resumes/metrics_2026-10-15.md (subject's own answers, 2026-10-15)",
+      "role": "Authoritative for all numbers. Explicit unknowns recorded there are preserved as unknowns in this inventory."
+    },
+    {
+      "id": "SRC-003",
+      "source": "Conversation history / long-term memory (~/MEMORY.md and daily notes 2026-09-21 to 2026-10-20)",
+      "role": "Source for corrections, interview stories, and details not on the resume. Key items: pipeline-boundary correction 2026-10-09; GreyNoise stories 2026-09-24; TrueAccord incident 2026-10-02; TrueAccord Multiple Accounts detailed telling 2026-10-19; testify confirmation 2026-10-05; GitHub Actions confirmation 2026-10-19; Kubernetes refinement 2026-10-15."
+    },
+    {
+      "id": "SRC-004",
+      "source": "Tailored resumes: ~/workspace/resumes/*.html (Oct 2026)",
+      "role": "Used ONLY where corroborated by SRC-001/002/003. Tailored resumes contain role-specific reframing and some claims not corroborated elsewhere (e.g., formal SLO ownership, performance feedback, AWS EC2/RDS skills lines). Those uncorroborated claims were NOT promoted to facts; they are flagged in verification_questions instead."
+    },
+    {
+      "id": "SRC-005",
+      "source": "Access limitation (stated honestly per task rules)",
+      "role": "This inventory was built from the base resume file, the verified metrics file, workspace resume versions, and the assistant's saved memory/daily notes of prior conversations. The assistant did not re-read every raw transcript message of every prior conversation; where memory notes summarize a conversation, the summary was treated as the available evidence and items are labeled accordingly. Nothing was invented to fill gaps."
+    },
+    {
+      "id": "SRC-006",
+      "source": "CONFLICT preserved: language learning locations",
+      "role": "An earlier assistant draft (Beacon application, pre-2026-10-19) wrongly stated Go was learned at GreyNoise and Scala at Capital One. Subject corrected it 2026-10-19: Scala learned at IQVIA/Wingspan, Go learned at Capital One. This inventory uses the CORRECTED version everywhere and flags the old version here so a future importer does not resurrect it."
+    },
+    {
+      "id": "SRC-007",
+      "source": "CONFLICT preserved: GreyNoise pipeline ownership",
+      "role": "Some tailored resumes describe 'building data/detection pipelines'. Subject corrected this 2026-10-09: he did NOT own/build the data pipeline (pipeline team owned ES indices and Kafka topics); he owned the public API + data delivery reading from them, and oversaw the ES migration at planning level. This inventory uses the corrected framing."
+    },
+    {
+      "id": "SRC-008",
+      "source": "CONFLICT preserved: GitHub contribution counts",
+      "role": "RESOLVED 2026-10-20 by subject: during the GreyNoise years he used his PERSONAL GitHub account, so private GreyNoise contributions ARE included in his personal profile counts (~790 over four years: 2023: 157, 2024: 397, 2025: 171; 67 in the past year). Before GreyNoise, most employers gave him a separate GitHub account, so contributions from those accounts are NOT reflected in his personal profile — the counts therefore represent mainly the GreyNoise era and underrepresent earlier employers. Safe external framing: counts reflect personal-account activity including private GreyNoise work; earlier employers' work lived on separate accounts."
+    },
+    {
+      "id": "SRC-009",
+      "source": "Sensitive-information handling",
+      "role": "No former legal name, no assigned-gender information, no family members' private details, and no confidential employer-dispute details were included. Work-authorization facts are included only because the subject explicitly provides them on applications."
+    },
+    {
+      "id": "SRC-010",
+      "source": "Subject's own Shopify Engineering Manager application answer (written 2026-09-14, restored into conversation 2026-09-25) + subject's verification answers 2026-10-20",
+      "role": "Primary source for the enriched ES-migration record (ACC-008), the bulk-delivery tool (ACC-025), and LEAD-009, and for resolving VQ-001 to VQ-015 (except VQ-013, deferred). Added in inventory revision 1.1.0 on 2026-10-20."
+    }
+  ],
+  "inventory_revision_date": "2026-10-20"
+}
