@@ -305,7 +305,7 @@ Replace the Python API runtime with a Cloudflare Workers-compatible backend so t
 - Document how the Pages frontend connects to the deployed Worker.
 - Record any behavioral differences from the Python implementation.
 
-## Acceptance criteria
+### Acceptance criteria
 - The inventory inspection API runs on Cloudflare Workers without requiring a conventional Python server.
 - The deployed API loads the canonical inventory and returns the expected records and validation status.
 - Existing API behavior and response contracts are preserved.
@@ -313,7 +313,29 @@ Replace the Python API runtime with a Cloudflare Workers-compatible backend so t
 - The Pages UI can inspect inventory through the deployed Worker.
 - Deployment instructions are sufficient for a clean setup.
 
-## Out of scope
+### Out of scope
 - Redesigning the API request or response schemas.
 - Adding inventory mutation or upload features.
 - Reworking the frontend beyond the changes needed for Worker integration.
+
+## 9. Task: Configure Workers AI and verify model invocation
+Configure the Worker to call Workers AI using the chosen model and return a predictable result to the application.
+
+### Implementation requirements
+- Add the AI binding to the existing Worker configuration.
+- Use the Llama 3.3 model identifier.
+- Keep model invocation in a small reusable module or function.
+- Use a simple prompt and small input for the initial smoke test.
+- Configure the Workers AI invocation with a default maximum of 2,048 output tokens. 
+- Store token limit in configuration rather than hardcoding them across the application. 
+- Verify that token limit is passed to the model invocation and that token-limit truncation or malformed output is handled as a controlled failure.
+- Handle invocation failures and unusable model output without exposing internal details to the browser.
+- Keep credentials and configuration out of source control.
+
+### Acceptance criteria
+- The Worker builds and deploys with the AI binding configured.
+- A test invocation successfully calls the selected model.
+- The model response is accessible to application code.
+- Model failures produce a controlled, testable error.
+- No API keys or secrets are committed.
+- A short README section explains how to configure and test the binding.

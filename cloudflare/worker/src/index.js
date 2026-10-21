@@ -1,4 +1,5 @@
 import { auditInventory } from "./validation.js";
+import { runSmokeTest } from "./ai.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
 const loadFailure = {
@@ -15,6 +16,26 @@ function jsonResponse(payload, status = 200) {
 
 export async function handleRequest(request, env) {
   const url = new URL(request.url);
+  if (url.pathname === "/api/ai/smoke-test") {
+    if (request.method !== "POST") {
+      return new Response("Method not allowed", {
+        status: 405,
+        headers: { Allow: "POST" },
+      });
+    }
+
+    try {
+      const response = await runSmokeTest(env.AI, env.AI_MAX_TOKENS);
+      return jsonResponse({ ok: true, response });
+    } catch (error) {
+      console.error("Workers AI smoke test failed:", error);
+      return jsonResponse(
+        { ok: false, error: "The AI smoke test could not be completed." },
+        502,
+      );
+    }
+  }
+
   if (url.pathname !== "/api/inventory") {
     return new Response("Not found", { status: 404 });
   }

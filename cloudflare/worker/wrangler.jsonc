@@ -9,6 +9,12 @@
     "binding": "INVENTORY_ASSETS",
     "run_worker_first": true
   },
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "AI_MAX_TOKENS": 2048
+  },
   "observability": {
     "enabled": true
   }

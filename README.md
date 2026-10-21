@@ -113,27 +113,57 @@ name in each Pages environment.
 
 The inventory file is included in the Worker deployment artifact, not
 published in the Pages `public/` directory. The Worker invokes its handler
-before checking bundled static assets and answers only `/api/inventory`, so
-the raw inventory asset is not served as a public URL. The Pages Function
-exposes only the read-only API path. Before deploying the personal inventory,
-protect the Pages custom domain, `pages.dev` hostname, and preview deployments
-with Cloudflare Access; the Worker is not directly reachable, and its Service
-Binding is only available to the Pages Function. Authentication is not
-implemented by this repository.
+before checking bundled static assets and answers `/api/inventory` and
+`/api/ai/smoke-test`, so the raw inventory asset is not served as a public URL.
+The Pages Functions expose only these API routes. Before deploying the personal
+inventory, protect the Pages custom domain, `pages.dev` hostname, and preview
+deployments with Cloudflare Access; the Worker is not directly reachable, and
+its Service Binding is only available to the Pages Functions. Authentication is
+not implemented by this repository.
+
+#### Workers AI smoke test
+
+The Worker has a Workers AI binding for
+`@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Wrangler configuration sets
+`AI_MAX_TOKENS` to `2048`; the smoke-test invocation reads this value from
+`cloudflare/worker/wrangler.jsonc` and passes it as `max_tokens`. No API key is
+needed or stored in the repository. Authenticate Wrangler with `npx wrangler
+login` and use a remote Worker session to invoke the model:
+
+```sh
+cd cloudflare/worker
+npm run dev -- --remote
+```
+
+In another terminal, call the fixed-prompt endpoint:
+
+```sh
+curl -X POST http://127.0.0.1:8787/api/ai/smoke-test
+```
+
+A successful call returns `{ "ok": true, "response": "Workers AI is ready." }`.
+The same endpoint is available to application code at
+`POST /api/ai/smoke-test` through the Pages Service Binding. Invalid, truncated,
+or unexpected model output and invocation errors return a generic HTTP 502
+response; internal provider details are logged by the Worker and are not sent
+to the browser. Run the Worker unit tests with `npm test` from
+`cloudflare/worker` to verify the configured token limit and failure behavior
+without making a billed model request.
 
 #### Component and validation dependencies
 
 - **Frontend:** `public/index.html`, `public/styles.css`, and `public/app.js`;
   configured in `public/config.js` to use `/api/inventory`.
-- **Pages routing:** `functions/api/inventory.js` and the
-  `INVENTORY_API` Service Binding in `wrangler.jsonc`.
+- **Pages routing:** `functions/api/inventory.js`,
+  `functions/api/ai/smoke-test.js`, and the `INVENTORY_API` Service Binding in
+  `wrangler.jsonc`.
 - **Backend:** `cloudflare/worker/src/index.js` is a JavaScript Cloudflare
   Worker. Its Wrangler configuration is
   [`cloudflare/worker/wrangler.jsonc`](./cloudflare/worker/wrangler.jsonc);
   `cloudflare/worker/package.json` supplies local development, test, and deploy
   scripts and declares Wrangler as a development dependency. The Worker uses
-  Wrangler's `INVENTORY_ASSETS` binding to load the inventory and needs no
-  runtime API service or external dependency.
+  Wrangler's `INVENTORY_ASSETS` binding for the inventory and `AI` binding for
+  Workers AI; it needs no API keys or third-party runtime dependencies.
 - **Inventory:** `data/master-career-inventory.json`, bundled with the Worker
   from the repository during deployment.
 - **Validation:** the local Python tools use
