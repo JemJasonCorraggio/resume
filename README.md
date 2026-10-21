@@ -3,7 +3,7 @@ An AI tool for tailoring a resume to a given job description while using only ve
 
 ## Career inventory schema
 
-[`cloudflare/worker/career_inventory_schema.py`](./cloudflare/worker/career_inventory_schema.py) defines the Python 3.11+ typed schema and standard-library validator for [`data/master-career-inventory.json`](./data/master-career-inventory.json). [`career_inventory_schema.py`](./career_inventory_schema.py) is the compatibility entrypoint for existing imports and CLI use. The current schema version is **1.2.0**. The validator also accepts the baseline's **1.1.0** version for backward compatibility; use 1.2.0 for new or updated inventories. Additive optional fields require a minor version bump; incompatible changes require a major version bump.
+[`career_inventory_schema.py`](./career_inventory_schema.py) defines the Python 3.11+ typed schema and standard-library validator for [`data/master-career-inventory.json`](./data/master-career-inventory.json). It is the source of truth for the local Python tools. The current schema version is **1.2.0**. The validator also accepts the baseline's **1.1.0** version for backward compatibility; use 1.2.0 for new or updated inventories. Additive optional fields require a minor version bump; incompatible changes require a major version bump.
 
 Run the inventory audit and regression tests from the repository root:
 
@@ -24,12 +24,16 @@ The audit exits unsuccessfully for schema, duplicate-ID, or broken-reference err
 The browser consists of static HTML, CSS, and JavaScript in [`public/`](./public/).
 The browser calls the same-origin `/api/inventory` endpoint. In Cloudflare, a
 Pages Function in [`functions/api/inventory.js`](./functions/api/inventory.js)
-forwards that request through a Service Binding to the Python Worker in
-[`cloudflare/worker/`](./cloudflare/worker/). The Worker reads the bundled
-inventory from the Cloudflare Assets binding and calls the existing
-`audit_inventory()` validator. Pages cannot run the local Python HTTP server
-or read the repository's working-tree files at runtime; the Worker is the
-deployed Python runtime, and Wrangler packages the inventory JSON with it.
+forwards that request through a Service Binding to the JavaScript Worker in
+[`cloudflare/worker/`](./cloudflare/worker/). The Worker reads the canonical
+inventory bundled through its Cloudflare Assets binding and runs the
+JavaScript port of the schema and audit rules in
+[`cloudflare/worker/src/validation.js`](./cloudflare/worker/src/validation.js).
+The root [`career_inventory_schema.py`](./career_inventory_schema.py) remains
+the validator source of truth for local Python tools; parity tests compare the
+Worker validator against it. Pages cannot run the local Python HTTP server or
+read the repository's working-tree files at runtime, so the Worker package
+includes the inventory needed in production.
 
 The API response contains `loaded`, `inventory`, and `validation` (`errors`
 and `warnings`). A file retrieval or JSON parse failure returns HTTP 500 with
@@ -45,36 +49,57 @@ python -m career_inventory_api
 
 Open <http://127.0.0.1:8000>. This local server reads
 `data/master-career-inventory.json` directly and serves the same UI and API
-without Cloudflare. Use `--inventory /path/to/inventory.json` or
+without Cloudflare. It uses Python's standard-library `http.server` and the
+existing inventory service and validator, with no third-party Python
+dependencies. Use `--inventory /path/to/inventory.json` or
 `CAREER_INVENTORY_PATH` to test another local file.
 
-For an end-to-end Cloudflare local preview, install `uv` and Node.js, then use
-two terminals:
+For an end-to-end Cloudflare local preview, install Node.js 22+ and npm, then
+install the Worker tooling:
 
 ```sh
 cd cloudflare/worker
-uv run pywrangler dev
+npm install
 ```
 
+Use two terminals. Start the Worker:
+
 ```sh
-npx wrangler pages dev ./public --service INVENTORY_API=career-inventory-api
+cd cloudflare/worker
+npm run dev
+```
+
+Start Pages from the repository root:
+
+```sh
+npm --prefix cloudflare/worker exec -- wrangler pages dev ./public --service INVENTORY_API=career-inventory-api
 ```
 
 Open the Pages dev URL (normally <http://127.0.0.1:8788>). The service binding
-routes `/api/inventory` to the local Python Worker. The simple Python server
-above remains available for backend/UI development without Cloudflare tooling.
+routes `/api/inventory` to the local JavaScript Worker. The Python server above
+remains available for local backend/UI development without Cloudflare tooling.
 
-#### Deploying to Cloudflare
-
-Deploy the Worker first, then the Pages site. Requirements are Node.js, `uv`,
-Python 3.12 or newer for the Worker tooling, a Cloudflare account, and Wrangler
-authentication (`npx wrangler login`).
+Run the Worker contract tests and the cross-language compatibility tests from
+the repository root:
 
 ```sh
 cd cloudflare/worker
-uv run pywrangler deploy
+npm test
 cd ../..
-npx wrangler pages deploy ./public --project-name career-inventory
+python -m unittest test_cloudflare_worker.py test_career_inventory_api.py test_career_inventory_schema.py
+```
+
+#### Deploying to Cloudflare
+
+Deploy the Worker first, then the Pages site. Requirements are Node.js 22+/npm
+and a Cloudflare account. Authenticate from the Worker directory with
+`npx wrangler login`. The deployed backend does not require a Python runtime.
+
+```sh
+cd cloudflare/worker
+npm run deploy
+cd ../..
+npm --prefix cloudflare/worker exec -- wrangler pages deploy ./public --project-name career-inventory
 ```
 
 `cloudflare/worker/wrangler.jsonc` names the Worker `career-inventory-api`,
@@ -83,8 +108,8 @@ bundles `data/` as its internal asset binding, and disables the public
 and binds the Pages Function's `INVENTORY_API` service to that Worker. The
 frontend continues to call `/api/inventory`, so there is no hard-coded API
 hostname, production URL replacement, or cross-origin CORS configuration.
-For separate preview and production backends, set the `INVENTORY_API` service
-binding to the corresponding Worker name in each Pages environment.
+Keep the configured Worker service name consistent with the deployed Worker
+name in each Pages environment.
 
 The inventory file is included in the Worker deployment artifact, not
 published in the Pages `public/` directory. The Worker invokes its handler
@@ -102,15 +127,26 @@ implemented by this repository.
   configured in `public/config.js` to use `/api/inventory`.
 - **Pages routing:** `functions/api/inventory.js` and the
   `INVENTORY_API` Service Binding in `wrangler.jsonc`.
-- **Backend:** `cloudflare/worker/entry.py` runs as a Cloudflare Python Worker;
-  it reads the inventory through the bound static-assets API.
+- **Backend:** `cloudflare/worker/src/index.js` is a JavaScript Cloudflare
+  Worker. Its Wrangler configuration is
+  [`cloudflare/worker/wrangler.jsonc`](./cloudflare/worker/wrangler.jsonc);
+  `cloudflare/worker/package.json` supplies local development, test, and deploy
+  scripts and declares Wrangler as a development dependency. The Worker uses
+  Wrangler's `INVENTORY_ASSETS` binding to load the inventory and needs no
+  runtime API service or external dependency.
 - **Inventory:** `data/master-career-inventory.json`, bundled with the Worker
   from the repository during deployment.
-- **Validation:** `cloudflare/worker/career_inventory_schema.py` contains the
-  existing schema and audit implementation; the root
-  [`career_inventory_schema.py`](./career_inventory_schema.py) remains a
-  compatibility entrypoint for existing commands and imports. Both the local
-  API and deployed Worker use the same shared response helpers and validator.
+- **Validation:** the local Python tools use
+  [`career_inventory_schema.py`](./career_inventory_schema.py); the Worker
+  ports those schema and cross-reference rules in
+  [`cloudflare/worker/src/validation.js`](./cloudflare/worker/src/validation.js).
+  `test_cloudflare_worker.py` compares the Worker audit output with the Python
+  validator for the canonical inventory and representative invalid cases.
+- **Behavior differences:** the schema versions, rules, diagnostic structure,
+  and API response shape are covered by parity tests. JavaScript's JSON parser
+  cannot distinguish an integer token such as `1` from a decimal token such as
+  `1.0`; both parse as a number, while Python distinguishes them during
+  integer validation.
 
 ### Updating the inventory fixture
 

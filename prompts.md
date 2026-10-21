@@ -267,3 +267,53 @@ Note some of these will need to be checked by a human. Check what you can.
 ### Out of scope
 - Changing the inventory schema or existing validation rules.
 - Adding persistent job history or resume records.
+
+## 8. Task: Port inventory API to a cloudflare worker
+The current inventory API is implemented in Python and works locally, but a standard Python API server cannot run directly as a conventional Cloudflare Worker.
+
+The application must use Cloudflare Workers for its deployed backend. The existing inventory JSON, schema, validation rules, and observable behavior are the source of truth.
+
+Replace the Python API runtime with a Cloudflare Workers-compatible backend so the deployed Cloudflare Pages frontend can inspect the canonical career inventory.
+
+### 1. Inspect the existing implementation
+- Identify the current API framework, routes, request/response behavior, inventory loading logic, validation logic, and dependencies.
+- Identify which Python components can be reused conceptually and which require replacement for Workers.
+- Document the existing behavior before making changes.
+- Do not redesign the API contract as part of this task.
+
+### 2. Implement the Worker backend
+- Implement the existing inventory inspection API using JavaScript or TypeScript supported by Cloudflare Workers.
+- Preserve the current route behavior, response fields, HTTP status codes, and error semantics wherever practical.
+- Load the canonical inventory from a source available in the deployed Worker environment; do not depend on local filesystem paths or files that are absent from the deployment.
+- Reimplement the existing schema and cross-reference validation behavior, including actionable errors and warnings.
+- Keep validation centralized within the backend rather than duplicating it in the Pages frontend.
+- Use the existing inventory IDs and preserve all inventory content and claim boundaries.
+- Do not add inventory editing or uploading.
+
+### 3. Integrate with Pages
+- Configure the Pages frontend to call the Worker API using an explicit environment configuration.
+- Handle API failures and unsuccessful responses in the existing UI.
+- Configure only the cross-origin request controls needed by the chosen deployment arrangement.
+
+### 4. Test compatibility
+- Compare the Worker implementation against the existing Python implementation using the same inventory and representative test cases.
+- Confirm that the Worker preserves the existing API contract.
+- Test the deployed Worker and Pages integration, not just local emulation.
+
+### 5. Document the deployment
+- Document how to run the Worker locally, run its tests, configure required environment variables or bindings, and deploy it.
+- Document how the Pages frontend connects to the deployed Worker.
+- Record any behavioral differences from the Python implementation.
+
+## Acceptance criteria
+- The inventory inspection API runs on Cloudflare Workers without requiring a conventional Python server.
+- The deployed API loads the canonical inventory and returns the expected records and validation status.
+- Existing API behavior and response contracts are preserved.
+- Automated tests cover success and failure cases.
+- The Pages UI can inspect inventory through the deployed Worker.
+- Deployment instructions are sufficient for a clean setup.
+
+## Out of scope
+- Redesigning the API request or response schemas.
+- Adding inventory mutation or upload features.
+- Reworking the frontend beyond the changes needed for Worker integration.
