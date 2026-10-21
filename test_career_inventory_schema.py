@@ -4,9 +4,18 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from career_inventory import (
+    get_accomplishment,
+    get_employment,
+    get_leadership_example,
+    get_project,
+    get_related_evidence,
+    get_skill,
+)
 from career_inventory_schema import (
     SCHEMA_VERSION,
     SUPPORTED_INVENTORY_VERSIONS,
+    audit_inventory,
     validate_inventory,
 )
 from tools.update_inventory_fixture import update_inventory_fixture
@@ -49,6 +58,88 @@ class CareerInventorySchemaTests(unittest.TestCase):
         self.assertTrue(
             any("unknown or wrong-kind reference 'ACC-999'" in e
                 for e in validate_inventory(inventory))
+        )
+
+    def test_rejects_duplicate_ids_across_collections(self):
+        inventory = copy.deepcopy(self.inventory)
+        inventory["skills"][0]["id"] = inventory["accomplishments"][0]["id"]
+        self.assertTrue(
+            any("skills[0].id: duplicate ID 'ACC-001'" in e
+                for e in validate_inventory(inventory))
+        )
+
+    def test_accepts_missing_optional_references(self):
+        inventory = copy.deepcopy(self.inventory)
+        leadership = inventory["leadership_examples"][0]
+        leadership["accomplishment_id"] = None
+        leadership.pop("related_accomplishment_ids", None)
+        inventory["projects"][0]["skill_ids"] = []
+        self.assertEqual(validate_inventory(inventory), [])
+
+    def test_audit_reports_unresolved_questions_and_source_conflicts_as_warnings(self):
+        report = audit_inventory(self.inventory)
+        self.assertEqual(report["errors"], [])
+        self.assertTrue(
+            any("verification_questions[12] (VQ-013).status" in warning
+                for warning in report["warnings"])
+        )
+        self.assertTrue(
+            any("source_notes[5] (SRC-006).source" in warning
+                for warning in report["warnings"])
+        )
+        self.assertTrue(
+            any("accomplishments[" in warning and ".verification_questions[" in warning
+                for warning in report["warnings"])
+        )
+
+    def test_record_lookups_return_records_by_id(self):
+        lookups = (
+            (get_accomplishment, "ACC-001", "accomplishments"),
+            (get_skill, "SK-001", "skills"),
+            (get_employment, "EMP-001", "employment_history"),
+            (get_project, "PROJ-001", "projects"),
+            (get_leadership_example, "LEAD-001", "leadership_examples"),
+        )
+        for lookup, record_id, collection in lookups:
+            with self.subTest(record_id=record_id):
+                record = lookup(self.inventory, record_id)
+                self.assertIsNotNone(record)
+                self.assertEqual(record["id"], record_id)
+                self.assertIn(record, self.inventory[collection])
+
+    def test_record_lookups_return_none_for_unknown_ids(self):
+        for lookup in (
+            get_accomplishment,
+            get_skill,
+            get_employment,
+            get_project,
+            get_leadership_example,
+        ):
+            with self.subTest(lookup=lookup.__name__):
+                self.assertIsNone(lookup(self.inventory, "UNKNOWN-999"))
+        self.assertIsNone(get_related_evidence(self.inventory, "UNKNOWN-999"))
+
+    def test_related_evidence_resolves_explicit_references(self):
+        related = get_related_evidence(self.inventory, "ACC-005")
+        self.assertIsNotNone(related)
+        related_ids = {record["id"] for record in related}
+        self.assertIn("EMP-001", related_ids)
+        self.assertIn("LEAD-001", related_ids)
+
+    def test_lookup_results_do_not_mutate_inventory(self):
+        inventory = copy.deepcopy(self.inventory)
+        original_name = inventory["skills"][0]["name"]
+        result = get_skill(inventory, "SK-001")
+        result["name"] = "Changed"
+        result["aliases"].append("Changed")
+        self.assertEqual(inventory["skills"][0]["name"], original_name)
+        self.assertNotIn("Changed", inventory["skills"][0]["aliases"])
+
+        related = get_related_evidence(inventory, "ACC-005")
+        employment = next(record for record in related if record["id"] == "EMP-001")
+        employment["employer"] = "Changed"
+        self.assertNotEqual(
+            inventory["employment_history"][0]["employer"], "Changed"
         )
 
     def test_accepts_documented_negative_qualification(self):

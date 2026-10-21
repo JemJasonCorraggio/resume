@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>Career inventory</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/config.js"></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Private workspace</p>
+        <h1>Career inventory</h1>
+        <p class="subtitle">Browse records and review inventory validation.</p>
+      </div>
+      <div id="load-status" class="status status-loading" role="status" aria-live="polite">
+        Loading inventory…
+      </div>
+    </header>
+
+    <main>
+      <section class="overview" aria-label="Inventory status">
+        <div class="overview-heading">
+          <h2>Inventory status</h2>
+          <button id="reload-button" class="button button-secondary" type="button">Reload</button>
+        </div>
+        <p id="inventory-summary" class="muted">Waiting for the inventory API.</p>
+        <div id="validation-summary" class="validation-summary"></div>
+        <div id="diagnostics" class="diagnostics" aria-live="polite"></div>
+      </section>
+
+      <section class="browser" aria-label="Browse inventory">
+        <aside class="record-list">
+          <h2>Records</h2>
+          <label for="record-search">Search ID, name, title, or field</label>
+          <input id="record-search" type="search" placeholder="e.g. ACC-001 or engineer" disabled>
+          <label for="record-type">Record type</label>
+          <select id="record-type" disabled>
+            <option value="">All types</option>
+          </select>
+          <p id="result-count" class="muted" aria-live="polite"></p>
+          <ul id="records" class="records" aria-label="Inventory records"></ul>
+          <p id="empty-results" class="empty-state" hidden>No records match this search.</p>
+        </aside>
+
+        <article id="record-detail" class="record-detail" aria-live="polite">
+          <p class="empty-state">Record details will appear here after the inventory loads.</p>
+        </article>
+      </section>
+    </main>
+    <footer>Read-only browser · Validation is provided by the inventory API.</footer>
+  </body>
+</html>

@@ -1,5 +1,5 @@
 # Prompts
-## 1. Task: Build My Master Career Accomplishment and Skills Inventory
+## 1. Task: Build my master career accomplishment and skills inventory
 
 I am building a reusable master career inventory that will serve as the source of truth for tailoring resumes to specific job descriptions in the future.
 
@@ -159,7 +159,7 @@ Finally, provide a short summary of coverage, important omissions, and unresolve
 
 **The goal is completeness and traceability, not brevity. Preserve as much useful career evidence as possible so that future resume tailoring can be selective without losing information.**
 
-## 2. Task: Use Master Career Inventory to Define Inventory Schema
+## 2. Task: Use master career inventory to define inventory schema
 master-career-inventory.json is a file that details a person's career history. Use this file as a baseline to define a schema in Python to be used to input and update a person's career history. Document the expected structure of the inventory: employment history, accomplishments, skills, leadership examples, projects, education, career preferences, and verification questions.
 
 Acceptance criteria
@@ -170,7 +170,7 @@ Acceptance criteria
 - The schema is versioned.
 - Known limitations and negative qualifications can be represented without inventing experience.
 
-## 3. Task: Add Inventory Versioning
+## 3. Task: Add inventory versioning
 Store the JSON inventory in the project in a directory called data. Add a method to upload a new version of the inventory and update the version number. Keep it separate from application code.
 
 Acceptance criteria
@@ -178,3 +178,67 @@ Acceptance criteria
 - The original IDs are preserved.
 - The inventory revision is recorded.
 - The README explains how to update the fixture.
+
+## 4. Task: Validate record IDs and cross-references
+Add checks beyond basic JSON schema validation to detect duplicate IDs and broken references between accomplishments, skills, leadership examples, and projects.
+
+Acceptance criteria
+- Duplicate IDs are reported.
+- References to nonexistent records are reported.
+- Missing optional references are not incorrectly treated as errors.
+- Source inconsistencies and unresolved questions are surfaced as warnings.
+- The report identifies the offending record and field.
+
+## 5. Task: Implement inventory query functions
+Provide reusable functions to retrieve an accomplishment, skill, employment record, project, or leadership example by ID. Add a function to retrieve related evidence.
+
+Acceptance criteria
+- A valid ID returns the matching record.
+- An unknown ID returns a predictable not-found result.
+- Related records can be retrieved through explicit references.
+- Querying does not mutate the underlying inventory.
+- The functions have unit tests.
+
+## 6. Task: Cloudflare Pages inventory inspection UI
+Provide a minimal browser-based interface, to be hosted on Cloudflare Pages, for inspecting the career inventory and its validation status.
+
+### 1. Static frontend setup
+- Add a dedicated static asset directory (for example, `public/`) containing the HTML, CSS, and JavaScript files used by Pages.
+- Keep the frontend lightweight; do not introduce a large framework.
+- Document how to run the frontend locally and deploy it to Pages.
+
+### 2. Inventory status
+- Display whether the inventory loaded successfully.
+- Display schema-validation and cross-reference validation errors and warnings from the existing validation logic.
+- Make errors actionable and identify the relevant record or field wherever possible.
+- Do not reimplement validation rules in frontend JavaScript.
+
+### 3. Inventory browsing
+- List inventory records, grouped or filterable by record type.
+- Allow searching by record ID and, where practical, record name or title.
+- Allow selecting a record to inspect its fields and associated references.
+- Display missing or unresolved references clearly.
+- Handle empty results and loading or request failures gracefully.
+- Do not provide inventory editing or upload functionality in this ticket.
+
+### 4. Backend integration
+- The frontend must retrieve inventory data and validation results from a defined interface.
+- Keep the existing inventory loader and validator as the source of truth.
+- Do not assume static Pages hosting can execute Python or read the project's local inventory file at runtime.
+
+
+## Acceptance criteria
+Note some of these will need to be checked manually by a human, check what you can.
+- The frontend deploys successfully to Cloudflare Pages.
+- The UI shows inventory load and validation status.
+- Users can browse and search records and inspect a selected record's fields and references.
+- Validation rules remain centralized in the existing loader/validator.
+- Loading failures, validation failures, and empty search results are handled clearly.
+- The deployed interface does not expose the inventory or API to unauthorized visitors.
+- Local development and deployment instructions are documented.
+
+## Out of scope
+- Editing or uploading the inventory.
+- LLM integration, semantic search, or resume generation.
+- Authentication implementation 
+- Database or durable inventory versioning.

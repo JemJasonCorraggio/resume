@@ -3,6 +3,10 @@
 Requires Python 3.11 or newer. The current schema is version 1.2.0.
 """
 
+import argparse
+import json
+from pathlib import Path
+import sys
 from typing import NotRequired, TypedDict, get_args, get_origin, get_type_hints
 import types
 import typing
@@ -255,18 +259,22 @@ def _validate_typed_dict(
 
 def _check_ids_and_references(data: CareerInventory, errors: list[str]) -> None:
     ids: dict[str, set[str]] = {}
+    first_occurrence: dict[str, str] = {}
     for prefix, collection_name in _COLLECTIONS.items():
         collection = data[collection_name]
-        seen: set[str] = set()
         for index, record in enumerate(collection):
             record_id = record["id"]
             path = f"{collection_name}[{index}].id"
             if not record_id.startswith(f"{prefix}-") or not record_id[len(prefix) + 1 :]:
                 errors.append(f"{path}: expected an ID beginning with {prefix}-")
-            if record_id in seen:
-                errors.append(f"{path}: duplicate ID {record_id!r}")
-            seen.add(record_id)
-        ids[prefix] = seen
+            if record_id in first_occurrence:
+                errors.append(
+                    f"{path}: duplicate ID {record_id!r}; first used at "
+                    f"{first_occurrence[record_id]}"
+                )
+            else:
+                first_occurrence[record_id] = path
+            ids.setdefault(prefix, set()).add(record_id)
 
     def reference(value: str, allowed: tuple[str, ...], path: str) -> None:
         prefix = value.partition("-")[0]
@@ -310,6 +318,50 @@ def _check_ids_and_references(data: CareerInventory, errors: list[str]) -> None:
             )
 
 
+def _check_warnings(data: CareerInventory) -> list[str]:
+    warnings: list[str] = []
+    for collection_name, records in (
+        ("accomplishments", data["accomplishments"]),
+        ("projects", data["projects"]),
+    ):
+        for index, record in enumerate(records):
+            for question_index, question in enumerate(record["verification_questions"]):
+                warnings.append(
+                    f"{collection_name}[{index}] ({record['id']})."
+                    f"verification_questions[{question_index}]: unresolved question: "
+                    f"{question}"
+                )
+
+    for index, record in enumerate(data["verification_questions"]):
+        if record["status"].casefold() != "answered":
+            warnings.append(
+                f"verification_questions[{index}] ({record['id']}).status: "
+                f"question is unresolved (status {record['status']!r})"
+            )
+
+    for index, record in enumerate(data["source_notes"]):
+        for field in ("source", "role"):
+            value = record[field]
+            lowered = value.casefold()
+            if any(marker in lowered for marker in ("conflict", "inconsisten", "uncorroborated")):
+                warnings.append(
+                    f"source_notes[{index}] ({record['id']}).{field}: "
+                    "source note flags a conflict or uncorroborated claim; "
+                    "review the canonical inventory value"
+                )
+                break
+    return warnings
+
+
+def audit_inventory(value: object) -> dict[str, list[str]]:
+    """Return blocking validation errors and non-blocking inventory warnings."""
+    errors = validate_inventory(value)
+    warnings: list[str] = []
+    if not errors:
+        warnings = _check_warnings(value)
+    return {"errors": errors, "warnings": warnings}
+
+
 def validate_inventory(value: object) -> list[str]:
     """Return validation errors; an empty list means the inventory is valid."""
     errors: list[str] = []
@@ -325,3 +377,28 @@ def validate_inventory(value: object) -> list[str]:
         )
     _check_ids_and_references(inventory, errors)
     return errors
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Validate and audit a career inventory.")
+    parser.add_argument("inventory", type=Path, help="path to the inventory JSON file")
+    args = parser.parse_args()
+
+    try:
+        with args.inventory.open(encoding="utf-8") as inventory_file:
+            value = json.load(inventory_file)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Could not read valid JSON from {args.inventory}: {exc}", file=sys.stderr)
+        return 1
+
+    report = audit_inventory(value)
+    for severity in ("errors", "warnings"):
+        for message in report[severity]:
+            print(f"{severity[:-1].upper()}: {message}")
+    if not report["errors"] and not report["warnings"]:
+        print("Inventory is valid; no warnings.")
+    return bool(report["errors"])
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
