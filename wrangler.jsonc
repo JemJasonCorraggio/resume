@@ -1,12 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "career-inventory",
-  "pages_build_output_dir": "./public",
+  "name": "resume",
   "compatibility_date": "2026-10-21",
-  "services": [
-    {
-      "binding": "INVENTORY_API",
-      "service": "career-inventory-api"
-    }
-  ]
+  "assets": {
+    "directory": "./public"
+  }
 }
+
