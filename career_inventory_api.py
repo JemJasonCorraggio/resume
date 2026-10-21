@@ -7,7 +7,10 @@ import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from career_inventory_schema import audit_inventory
+from career_inventory_service import (
+    build_inventory_load_failure,
+    build_inventory_response as build_loaded_inventory_response,
+)
 
 
 ROOT = Path(__file__).parent
@@ -24,16 +27,9 @@ def build_inventory_response(
             inventory = json.load(inventory_file)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         print(f"Could not load career inventory: {exc}")
-        return 500, {
-            "loaded": False,
-            "error": "The inventory could not be loaded. Check the API server logs.",
-        }
+        return 500, build_inventory_load_failure()
 
-    return 200, {
-        "loaded": True,
-        "inventory": inventory,
-        "validation": audit_inventory(inventory),
-    }
+    return 200, build_loaded_inventory_response(inventory)
 
 
 class InventoryRequestHandler(SimpleHTTPRequestHandler):

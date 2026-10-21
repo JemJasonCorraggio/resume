@@ -227,7 +227,7 @@ Provide a minimal browser-based interface, to be hosted on Cloudflare Pages, for
 - Do not assume static Pages hosting can execute Python or read the project's local inventory file at runtime.
 
 
-## Acceptance criteria
+### Acceptance criteria
 Note some of these will need to be checked manually by a human, check what you can.
 - The frontend deploys successfully to Cloudflare Pages.
 - The UI shows inventory load and validation status.
@@ -237,8 +237,33 @@ Note some of these will need to be checked manually by a human, check what you c
 - The deployed interface does not expose the inventory or API to unauthorized visitors.
 - Local development and deployment instructions are documented.
 
-## Out of scope
+### Out of scope
 - Editing or uploading the inventory.
 - LLM integration, semantic search, or resume generation.
 - Authentication implementation 
 - Database or durable inventory versioning.
+
+## 7. Task: # Deploy inventory backend and verify pages integration
+Ensure the deployed Cloudflare Pages application can access the inventory inspection functionality, not just the local development environment.
+
+### Tasks
+- Identify how the inventory backend currently runs locally and why it is unavailable in the deployed Pages environment.
+- Document the current frontend, backend, inventory file, and validation dependencies.
+- Implement the smallest compatible Cloudflare deployment architecture that supports the existing inventory inspection functionality.
+- Ensure the backend can load and validate the inventory in the deployed environment.
+- Configure the Pages frontend to call the deployed backend using the correct environment-specific URL.
+- Configure CORS or other necessary request controls if the frontend and backend use different origins.
+- Test both successful inventory retrieval and validation/error responses in the deployed environment.
+- Do not add inventory editing or uploading.
+
+### Acceptance criteria
+Note some of these will need to be checked by a human. Check what you can.
+- The Pages frontend can retrieve and display inventory records from the deployed backend.
+- Inventory validation status and errors are visible in the deployed UI.
+- The deployed backend does not depend on files or processes available only in the local development environment.
+- Local development continues to work.
+- Deployment instructions and required environment configuration are documented.
+
+### Out of scope
+- Changing the inventory schema or existing validation rules.
+- Adding persistent job history or resume records.

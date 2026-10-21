@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "career-inventory-api",
+  "main": "entry.py",
+  "compatibility_date": "2026-10-21",
+  "compatibility_flags": ["python_workers"],
+  "workers_dev": false,
+  "assets": {
+    "directory": "../../data",
+    "binding": "INVENTORY_ASSETS",
+    "run_worker_first": true
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,2 +1,2 @@
-// Set this to the protected API URL when the API is hosted separately.
+// Pages routes this same-origin path to the Python Worker through a service binding.
 window.CAREER_INVENTORY_API_URL = "/api/inventory";

@@ -3,7 +3,7 @@ An AI tool for tailoring a resume to a given job description while using only ve
 
 ## Career inventory schema
 
-[`career_inventory_schema.py`](./career_inventory_schema.py) defines the Python 3.11+ typed schema and standard-library validator for [`data/master-career-inventory.json`](./data/master-career-inventory.json). The current schema version is **1.2.0**. The validator also accepts the baseline's **1.1.0** version for backward compatibility; use 1.2.0 for new or updated inventories. Additive optional fields require a minor version bump; incompatible changes require a major version bump.
+[`cloudflare/worker/career_inventory_schema.py`](./cloudflare/worker/career_inventory_schema.py) defines the Python 3.11+ typed schema and standard-library validator for [`data/master-career-inventory.json`](./data/master-career-inventory.json). [`career_inventory_schema.py`](./career_inventory_schema.py) is the compatibility entrypoint for existing imports and CLI use. The current schema version is **1.2.0**. The validator also accepts the baseline's **1.1.0** version for backward compatibility; use 1.2.0 for new or updated inventories. Additive optional fields require a minor version bump; incompatible changes require a major version bump.
 
 Run the inventory audit and regression tests from the repository root:
 
@@ -19,54 +19,98 @@ The audit exits unsuccessfully for schema, duplicate-ID, or broken-reference err
 
 [`career_inventory.py`](./career_inventory.py) provides `get_accomplishment()`, `get_skill()`, `get_employment()`, `get_project()`, and `get_leadership_example()` helpers. Each takes the loaded inventory and an ID, and returns a deep-copied record or `None` when the ID is not found. `get_related_evidence()` returns deep copies of records explicitly linked to the requested record in either direction; it returns an empty list for a known record without links and `None` for an unknown ID. Returned copies can be edited by callers without changing the source inventory.
 
-### Read-only inventory browser
+### Read-only inventory browser and Cloudflare deployment
 
-The lightweight static UI is in [`public/`](./public/). Its read-only API is
-[`career_inventory_api.py`](./career_inventory_api.py), which loads the
-configured JSON file and calls `audit_inventory()` from the schema module. The
-API response is JSON with `loaded`, `inventory`, and `validation` (`errors`
-and `warnings`) fields. A load failure returns HTTP 500 and an error message;
-validation failures return the loaded inventory and actionable audit messages.
-The browser displays records from the API response and does not implement
-validation rules or provide editing/upload features.
+The browser consists of static HTML, CSS, and JavaScript in [`public/`](./public/).
+The browser calls the same-origin `/api/inventory` endpoint. In Cloudflare, a
+Pages Function in [`functions/api/inventory.js`](./functions/api/inventory.js)
+forwards that request through a Service Binding to the Python Worker in
+[`cloudflare/worker/`](./cloudflare/worker/). The Worker reads the bundled
+inventory from the Cloudflare Assets binding and calls the existing
+`audit_inventory()` validator. Pages cannot run the local Python HTTP server
+or read the repository's working-tree files at runtime; the Worker is the
+deployed Python runtime, and Wrangler packages the inventory JSON with it.
 
-Run the UI and API together locally from the repository root:
+The API response contains `loaded`, `inventory`, and `validation` (`errors`
+and `warnings`). A file retrieval or JSON parse failure returns HTTP 500 with
+`loaded: false`; validation failures return the loaded inventory with the
+canonical audit errors. The frontend only renders these results; it does not
+implement validation rules or editing/upload features.
+
+Run the local development server from the repository root:
 
 ```sh
 python -m career_inventory_api
 ```
 
-Open <http://127.0.0.1:8000>. The server binds to localhost by default. Use
-`--inventory /path/to/inventory.json` or `CAREER_INVENTORY_PATH` to select a
-different JSON file.
+Open <http://127.0.0.1:8000>. This local server reads
+`data/master-career-inventory.json` directly and serves the same UI and API
+without Cloudflare. Use `--inventory /path/to/inventory.json` or
+`CAREER_INVENTORY_PATH` to test another local file.
 
-#### Cloudflare Pages deployment
-
-Pages serves only the static files in `public/`; it cannot run this Python
-loader or read the repository's inventory at runtime. Deploy the API separately
-on a Python-capable, TLS-enabled host that can access the inventory file. Run
-the API behind a reverse proxy on a private origin, for example:
+For an end-to-end Cloudflare local preview, install `uv` and Node.js, then use
+two terminals:
 
 ```sh
-CAREER_INVENTORY_PATH=/srv/private/master-career-inventory.json \
-CAREER_INVENTORY_ALLOWED_ORIGIN=https://your-pages-host.example \
-python -m career_inventory_api --host 127.0.0.1 --port 8000
+cd cloudflare/worker
+uv run pywrangler dev
 ```
 
-Configure the proxy to route `/api/inventory` to this service and keep the
-origin inaccessible from the public internet. Set
-`window.CAREER_INVENTORY_API_URL` in `public/config.js` to the API's
-`https://` URL before deploying the frontend. The API permits cross-origin
-browser requests only from the exact configured origin; this CORS setting is
-not authentication.
+```sh
+npx wrangler pages dev ./public --service INVENTORY_API=career-inventory-api
+```
 
-In Cloudflare Pages, create a project for this repository with the build
-command left blank and `public` as the build output directory. Before exposing
-either hostname, configure Cloudflare Access to require authorization for
-**both** the Pages site and the API hostname, and ensure the API origin cannot
-be reached around that Access-protected ingress. The inventory contains
-personal and sensitive career information; do not publish the Pages site or
-API as public endpoints. This repository does not implement authentication.
+Open the Pages dev URL (normally <http://127.0.0.1:8788>). The service binding
+routes `/api/inventory` to the local Python Worker. The simple Python server
+above remains available for backend/UI development without Cloudflare tooling.
+
+#### Deploying to Cloudflare
+
+Deploy the Worker first, then the Pages site. Requirements are Node.js, `uv`,
+Python 3.12 or newer for the Worker tooling, a Cloudflare account, and Wrangler
+authentication (`npx wrangler login`).
+
+```sh
+cd cloudflare/worker
+uv run pywrangler deploy
+cd ../..
+npx wrangler pages deploy ./public --project-name career-inventory
+```
+
+`cloudflare/worker/wrangler.jsonc` names the Worker `career-inventory-api`,
+bundles `data/` as its internal asset binding, and disables the public
+`workers.dev` endpoint. `wrangler.jsonc` configures the Pages output directory
+and binds the Pages Function's `INVENTORY_API` service to that Worker. The
+frontend continues to call `/api/inventory`, so there is no hard-coded API
+hostname, production URL replacement, or cross-origin CORS configuration.
+For separate preview and production backends, set the `INVENTORY_API` service
+binding to the corresponding Worker name in each Pages environment.
+
+The inventory file is included in the Worker deployment artifact, not
+published in the Pages `public/` directory. The Worker invokes its handler
+before checking bundled static assets and answers only `/api/inventory`, so
+the raw inventory asset is not served as a public URL. The Pages Function
+exposes only the read-only API path. Before deploying the personal inventory,
+protect the Pages custom domain, `pages.dev` hostname, and preview deployments
+with Cloudflare Access; the Worker is not directly reachable, and its Service
+Binding is only available to the Pages Function. Authentication is not
+implemented by this repository.
+
+#### Component and validation dependencies
+
+- **Frontend:** `public/index.html`, `public/styles.css`, and `public/app.js`;
+  configured in `public/config.js` to use `/api/inventory`.
+- **Pages routing:** `functions/api/inventory.js` and the
+  `INVENTORY_API` Service Binding in `wrangler.jsonc`.
+- **Backend:** `cloudflare/worker/entry.py` runs as a Cloudflare Python Worker;
+  it reads the inventory through the bound static-assets API.
+- **Inventory:** `data/master-career-inventory.json`, bundled with the Worker
+  from the repository during deployment.
+- **Validation:** `cloudflare/worker/career_inventory_schema.py` contains the
+  existing schema and audit implementation; the root
+  [`career_inventory_schema.py`](./career_inventory_schema.py) remains a
+  compatibility entrypoint for existing commands and imports. Both the local
+  API and deployed Worker use the same shared response helpers and validator.
 
 ### Updating the inventory fixture
 

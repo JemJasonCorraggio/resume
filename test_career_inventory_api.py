@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 from career_inventory_api import build_inventory_response
+from career_inventory_service import build_inventory_response as build_service_response
 
 
 class CareerInventoryApiTests(unittest.TestCase):
@@ -21,15 +22,21 @@ class CareerInventoryApiTests(unittest.TestCase):
         self.assertIn("warnings", payload["validation"])
 
     def test_validation_failures_are_returned_with_loaded_inventory(self):
-        with tempfile.TemporaryDirectory() as directory:
-            inventory_path = Path(directory) / "inventory.json"
-            inventory_path.write_text(json.dumps({"schema_version": "invalid"}))
+        inventory_path = (
+            Path(__file__).parent / "data" / "master-career-inventory.json"
+        )
+        inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+        inventory["schema_version"] = "0.0.1"
+        payload = build_service_response(inventory)
 
-            status, payload = build_inventory_response(inventory_path)
-
-        self.assertEqual(status, 200)
         self.assertTrue(payload["loaded"])
         self.assertTrue(payload["validation"]["errors"])
+        self.assertTrue(
+            any(
+                "inventory.schema_version" in error
+                for error in payload["validation"]["errors"]
+            )
+        )
 
     def test_load_failures_are_reported(self):
         with tempfile.TemporaryDirectory() as directory:
