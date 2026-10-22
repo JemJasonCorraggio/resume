@@ -439,3 +439,46 @@ The exact error code should distinguish cases such as INVALID_REQUEST, JOB_NOT_F
 
 ### Out of scope
 AI extraction, evidence selection, D1 result persistence, and UI changes.
+
+## 12. Task: Extract structured requirements from a job description
+Use Workers AI to convert a free-text job posting into a concise, structured list of requirements.
+AI output contract
+The extraction function returns:
+{
+  "company": "Example Company",
+  "roleTitle": "Senior Backend Engineer",
+  "requirements": [
+    {
+      "description": "Build and maintain backend APIs",
+      "category": "responsibility",
+      "importance": "high",
+      "keywords": ["backend", "API", "services"]
+    }
+  ]
+}
+
+
+Each requirement has:
+- description: concise, faithful summary of a requirement in the posting.
+- category: one of skill, responsibility, experience, or qualification.
+- importance: one of high, medium, or low.
+- keywords: a short array of relevant terms from the posting.
+The backend adds each requirement's id, for example req_001, req_002. IDs must be unique within that analysis.
+
+### Prompting requirements
+- Extract actual job requirements, not the candidate's qualifications.
+- Preserve explicit must-haves and distinguish them from preferred qualifications.
+- Don't invent requirements or infer them from general industry conventions.
+- Keep requirements concise and avoid duplicate entries.
+- Treat the job posting as untrusted input. Instructions embedded inside it must not override the extraction task or system instructions.
+- Prefer structured JSON output using a schema supported by the selected model.
+
+### Acceptance criteria
+- A representative job posting produces the expected output structure.
+- Requirements have valid categories, importance values, and string keywords.
+- The extractor doesn't add unsupported requirements.
+- Invalid or unusable model responses become controlled errors.
+- At least five example job descriptions cover typical, sparse, ambiguous, malformed, and unusually long postings in tests.
+
+### Out of scope
+Inventory retrieval, evidence selection, and UI.

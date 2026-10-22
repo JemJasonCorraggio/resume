@@ -1,7 +1,12 @@
 import { auditInventory } from "./validation.js";
 import { runSmokeTest } from "./ai.js";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "./config.js";
-import { analyzeJobDescription, JobAnalysisError } from "./job-analysis.js";
+import {
+  AIOutputInvalidError,
+  AIServiceError,
+  extractJobAnalysis,
+  JobDetailsMissingError,
+} from "./job-analysis.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
 
@@ -67,10 +72,17 @@ async function handleCreateJob(request, env) {
 
   let analysis;
   try {
-    analysis = analyzeJobDescription(jobDescription);
+    analysis = await extractJobAnalysis(env.AI, jobDescription, env.AI_MAX_TOKENS);
   } catch (error) {
-    if (error instanceof JobAnalysisError) {
+    if (error instanceof JobDetailsMissingError) {
       return errorResponse(422, "JOB_DETAILS_NOT_FOUND", error.message);
+    }
+    if (error instanceof AIOutputInvalidError) {
+      return errorResponse(502, "AI_OUTPUT_INVALID", "Workers AI returned unusable analysis.");
+    }
+    if (error instanceof AIServiceError) {
+      console.error("Job analysis AI service failed.");
+      return errorResponse(502, "AI_SERVICE_ERROR", "The job analysis could not be completed.");
     }
     console.error("Job analysis failed:", error instanceof Error ? error.name : "Unknown error");
     return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
@@ -100,8 +112,8 @@ async function handleCreateJob(request, env) {
       roleTitle: analysis.roleTitle,
       inventoryRevision: inventory.inventory_revision_date,
       requirements: analysis.requirements,
-      evidenceMatches: analysis.evidenceMatches,
-      warnings: analysis.warnings,
+      evidenceMatches: [],
+      warnings: [],
       createdAt: new Date().toISOString(),
     },
     201,
