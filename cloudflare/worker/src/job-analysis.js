@@ -15,7 +15,7 @@ Return one JSON object with exactly these fields:
     }
   ]
 }
-Use empty strings for company or roleTitle only when the posting does not provide them. Use an empty requirements array when no actual requirements are stated.`;
+Use an empty requirements array when no actual requirements are stated.`;
 
 export class JobDetailsMissingError extends Error {}
 
