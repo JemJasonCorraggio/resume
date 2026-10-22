@@ -111,7 +111,7 @@ export async function extractJobAnalysis(ai, description, maxTokens) {
   }
 
   if (!result || typeof result !== "object" || typeof result.response !== "string") {
-    throw new AIOutputInvalidError("Workers AI returned an invalid response:" + result);
+    throw new AIOutputInvalidError("Workers AI returned an invalid response:" + result.response);
   }
 
   let parsed;
