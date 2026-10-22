@@ -15,6 +15,14 @@
   "vars": {
     "AI_MAX_TOKENS": 2048
   },
+  "d1_databases": [
+    {
+      "binding": "career_inventory-db",
+      "database_name": "career-inventory-db",
+      "database_id": "94f5d31e-6aa8-406f-9097-6982b0043871",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": {
     "enabled": true
   }
