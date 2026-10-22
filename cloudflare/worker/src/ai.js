@@ -19,7 +19,7 @@ export async function runSmokeTest(ai, maxTokens) {
   });
 
   if (!result || typeof result !== "object" || typeof result.response !== "string") {
-    console.info(result)
+    console.info("result: " + result)
     throw new Error("Workers AI returned an invalid response");
   }
 
