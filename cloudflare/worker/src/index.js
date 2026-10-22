@@ -78,7 +78,7 @@ async function handleCreateJob(request, env) {
       return errorResponse(422, "JOB_DETAILS_NOT_FOUND", error.message);
     }
     if (error instanceof AIOutputInvalidError) {
-      console.error(error)
+      console.error(error.message)
       return errorResponse(502, "AI_OUTPUT_INVALID", "Workers AI returned unusable analysis.");
     }
     if (error instanceof AIServiceError) {
