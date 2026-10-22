@@ -339,3 +339,103 @@ Configure the Worker to call Workers AI using the chosen model and return a pred
 - Model failures produce a controlled, testable error.
 - No API keys or secrets are committed.
 - A short README section explains how to configure and test the binding.
+
+## 10. Task: Create D1 database and initial schema
+Create the initial persistence layer for analyzed job descriptions.
+Database contract
+Create a jobs table with these fields:
+Field	            |   Type                |	Purpose
+id	                |   TEXT primary key	|   Unique job-analysis ID
+job_description	    |   TEXT	            |   Original submitted description
+company	            |   TEXT nullable	    |   Extracted company name
+role_title	        |   TEXT nullable	    |   Extracted job title
+inventory_revision	|   TEXT	            |   Inventory version used
+requirements_json	|   TEXT	            |   Serialized requirements
+evidence_matches_json|	TEXT	            |   Serialized evidence matches
+warnings_json	    |   TEXT	            |   Serialized warnings
+status	            |   TEXT	            |   Analysis status
+created_at	        |   TEXT	            |   UTC ISO 8601 timestamp
+For the first version, the API will only return completed analyses. The status field may initially contain completed; don't build asynchronous job processing just to make the field useful.
+
+### Implementation requirements
+- Use the existing Cloudflare project configuration and migration conventions where possible.
+- Add a version-controlled SQL migration.
+- Add the D1 binding to the Worker.
+- Document local development and deployed database setup.
+- Use parameterized SQL statements.
+- Don't store AI prompts, raw inventory copies, or redundant inventory snapshots in each job record.
+
+### Acceptance criteria
+- A fresh database can be created from the migration.
+- The Worker can insert and retrieve a test record.
+- Serialized JSON fields round-trip without data loss.
+- SQL queries use bound parameters.
+- The migration and setup steps are documented.
+
+## 11. Task: Implement job-analysis API request validation
+Establish the public contract for submitting a job description.
+
+Endpoint
+POST /api/jobs
+
+Request:
+{
+  "jobDescription": "Full text of the job posting..."
+}
+
+jobDescription is the only required field. Company and role title should be extracted from the posting. If they cannot be extracted, throw an error so the description can be ammended. Set a maximum jobDescription length to 50,000 Unicode characters, measured after JSON parsing. Keep the limit in a named configuration constant. Enforce the limit in the Worker before invoking Workers AI or performing inventory retrieval.
+
+Success response
+Return 201 Created after a successful, completed analysis. The full response contract is:
+{
+  "jobId": "generated-unique-id",
+  "status": "completed",
+  "company": "Example Company",
+  "roleTitle": "Senior Backend Engineer",
+  "inventoryRevision": "inventory-version",
+  "requirements": [],
+  "evidenceMatches": [],
+  "warnings": [],
+  "createdAt": "2026-10-21T16:00:00Z"
+}
+
+
+The arrays will be populated by subsequent tasks. Use a real generated ID and UTC timestamp rather than the example values.
+
+Standard error response
+{
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "jobDescription is required."
+  }
+}
+
+
+Use this shape consistently for API errors.
+HTTP status	Meaning
+400	Invalid JSON or malformed request
+404	Requested job ID doesn't exist or isn't accessible
+413	Request exceeds configured size limit
+422	Input is valid JSON but cannot be meaningfully analyzed
+429	Rate limit exceeded
+500	Unexpected internal error
+502	AI service failure or unusable model output
+
+The exact error code should distinguish cases such as INVALID_REQUEST, JOB_NOT_FOUND, AI_OUTPUT_INVALID, and AI_SERVICE_ERROR.
+
+### Implementation requirements
+- Validate content type, JSON parsing, field types, and non-empty job description.
+- Establish a configurable maximum job-description length defaulted to 50,000 characters.
+- Return consistent JSON errors and correct HTTP statuses.
+- Avoid logging full job descriptions, inventory records, or secrets.
+
+### Acceptance criteria
+- Valid input is accepted and reaches a placeholder analysis function.
+- Missing, empty, wrong-type, and malformed inputs return controlled 400 errors.
+- Oversized input returns 413.
+- Every error response follows the standard JSON shape.
+- The API doesn't expose stack traces or internal exceptions.
+- API behavior is covered by automated tests.
+
+### Out of scope
+AI extraction, evidence selection, D1 result persistence, and UI changes.

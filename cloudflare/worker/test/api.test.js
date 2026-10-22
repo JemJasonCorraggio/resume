@@ -35,7 +35,7 @@ test("GET inventory returns loaded data and canonical validation results", async
   assert.ok(body.validation.errors.some((error) => error.includes("inventory.career_preferences")));
 });
 
-test("inventory load failures preserve the failure response contract", async () => {
+test("inventory load failures use the standard API error response", async () => {
   const response = await handleRequest(
     new Request("https://worker.example/api/inventory"),
     {
@@ -48,8 +48,10 @@ test("inventory load failures preserve the failure response contract", async () 
 
   assert.equal(response.status, 500);
   assert.deepEqual(body, {
-    loaded: false,
-    error: "The inventory could not be loaded. Check the API server logs.",
+    error: {
+      code: "INTERNAL_ERROR",
+      message: "The inventory could not be loaded.",
+    },
   });
 });
 
@@ -64,8 +66,18 @@ test("unsupported routes and methods retain their HTTP status", async () => {
   );
 
   assert.equal(missing.status, 404);
-  assert.equal(await missing.text(), "Not found");
+  assert.deepEqual(await missing.json(), {
+    error: {
+      code: "NOT_FOUND",
+      message: "The requested resource was not found.",
+    },
+  });
   assert.equal(method.status, 405);
   assert.equal(method.headers.get("allow"), "GET");
-  assert.equal(await method.text(), "Method not allowed");
+  assert.deepEqual(await method.json(), {
+    error: {
+      code: "METHOD_NOT_ALLOWED",
+      message: "Method not allowed.",
+    },
+  });
 });

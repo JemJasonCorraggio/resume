@@ -113,13 +113,13 @@ name in each Pages environment.
 
 The inventory file is included in the Worker deployment artifact, not
 published in the Pages `public/` directory. The Worker invokes its handler
-before checking bundled static assets and answers `/api/inventory` and
-`/api/ai/smoke-test`, so the raw inventory asset is not served as a public URL.
-The Pages Functions expose only these API routes. Before deploying the personal
-inventory, protect the Pages custom domain, `pages.dev` hostname, and preview
-deployments with Cloudflare Access; the Worker is not directly reachable, and
-its Service Binding is only available to the Pages Functions. Authentication is
-not implemented by this repository.
+before checking bundled static assets and answers `/api/inventory`,
+`/api/ai/smoke-test`, and `/api/jobs`, so the raw inventory asset is not served
+as a public URL. The Pages Functions expose only these API routes. Before
+deploying the personal inventory, protect the Pages custom domain, `pages.dev`
+hostname, and preview deployments with Cloudflare Access; the Worker is not
+directly reachable, and its Service Binding is only available to the Pages
+Functions. Authentication is not implemented by this repository.
 
 #### Workers AI smoke test
 
@@ -145,25 +145,73 @@ A successful call returns `{ "ok": true, "response": "Workers AI is ready." }`.
 The same endpoint is available to application code at
 `POST /api/ai/smoke-test` through the Pages Service Binding. Invalid, truncated,
 or unexpected model output and invocation errors return a generic HTTP 502
-response; internal provider details are logged by the Worker and are not sent
-to the browser. Run the Worker unit tests with `npm test` from
+response; internal provider details are neither logged nor sent to the browser.
+Run the Worker unit tests with `npm test` from
 `cloudflare/worker` to verify the configured token limit and failure behavior
 without making a billed model request.
+
+#### Job-analysis API
+
+`POST /api/jobs` accepts a JSON object with a non-empty `jobDescription` string.
+The Worker enforces a maximum of 50,000 Unicode code points after JSON parsing.
+The current placeholder analyzer requires `Company:` and `Role Title:` lines;
+it returns 422 when either value cannot be identified. Completed placeholder
+analyses return HTTP 201 with generated job IDs and UTC timestamps. API errors
+use an `{ "error": { "code": "...", "message": "..." } }` response envelope.
+
+#### D1 jobs database
+
+The Worker binds the `career-inventory` D1 database as `env.DB`. The initial
+migration in `cloudflare/worker/migrations/0001_create_jobs.sql` creates a
+`jobs` table for completed analyses. The repository helpers in
+`cloudflare/worker/src/jobs.js` write JSON fields as serialized JSON using
+bound parameters, and parse them back when retrieving a record. Job rows store
+the inventory revision used, not a redundant inventory snapshot or AI prompt.
+
+To create and migrate a local database, run these commands from
+`cloudflare/worker`:
+
+```sh
+npx wrangler d1 migrations apply career-inventory --local
+npm run dev
+```
+
+For a deployed database, authenticate Wrangler and create the database once:
+
+```sh
+npx wrangler login
+npx wrangler d1 create career-inventory
+```
+
+Copy the returned `database_id` into the `DB` entry under `d1_databases` in
+`cloudflare/worker/wrangler.jsonc`, then apply the version-controlled schema and
+deploy the Worker:
+
+```sh
+npx wrangler d1 migrations apply career-inventory --remote
+npm run deploy
+```
+
+The database ID identifies the Cloudflare account resource; it is not an API
+credential. Do not put API tokens or other secrets in Wrangler config or source
+control. `npm test` exercises parameterized insert/retrieve behavior and
+round-trips nested JSON fields without connecting to a remote database.
 
 #### Component and validation dependencies
 
 - **Frontend:** `public/index.html`, `public/styles.css`, and `public/app.js`;
   configured in `public/config.js` to use `/api/inventory`.
 - **Pages routing:** `functions/api/inventory.js`,
-  `functions/api/ai/smoke-test.js`, and the `INVENTORY_API` Service Binding in
-  `wrangler.jsonc`.
+  `functions/api/ai/smoke-test.js`, `functions/api/jobs.js`, and the
+  `INVENTORY_API` Service Binding in `wrangler.jsonc`.
 - **Backend:** `cloudflare/worker/src/index.js` is a JavaScript Cloudflare
   Worker. Its Wrangler configuration is
   [`cloudflare/worker/wrangler.jsonc`](./cloudflare/worker/wrangler.jsonc);
   `cloudflare/worker/package.json` supplies local development, test, and deploy
   scripts and declares Wrangler as a development dependency. The Worker uses
-  Wrangler's `INVENTORY_ASSETS` binding for the inventory and `AI` binding for
-  Workers AI; it needs no API keys or third-party runtime dependencies.
+  Wrangler's `INVENTORY_ASSETS` binding for the inventory, `AI` binding for
+  Workers AI, and `DB` binding for D1 persistence; it needs no API keys or
+  third-party runtime dependencies.
 - **Inventory:** `data/master-career-inventory.json`, bundled with the Worker
   from the repository during deployment.
 - **Validation:** the local Python tools use

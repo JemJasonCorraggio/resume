@@ -74,8 +74,10 @@ test("AI route returns a generic controlled error when invocation fails", async 
   assert.equal(response.status, 502);
   const body = await response.json();
   assert.deepEqual(body, {
-    ok: false,
-    error: "The AI smoke test could not be completed.",
+    error: {
+      code: "AI_SERVICE_ERROR",
+      message: "The AI smoke test could not be completed.",
+    },
   });
   assert.doesNotMatch(JSON.stringify(body), /provider details/);
 });
@@ -93,8 +95,10 @@ test("AI route returns a controlled error for truncated model output", async () 
 
   assert.equal(response.status, 502);
   assert.deepEqual(await response.json(), {
-    ok: false,
-    error: "The AI smoke test could not be completed.",
+    error: {
+      code: "AI_SERVICE_ERROR",
+      message: "The AI smoke test could not be completed.",
+    },
   });
 });
 
