@@ -110,17 +110,31 @@ export async function extractJobAnalysis(ai, description, maxTokens) {
     throw new AIServiceError("Workers AI invocation failed");
   }
 
-  if (!result || typeof result !== "object" || typeof result.response !== "string") {
-    console.error("AI raw result:", JSON.stringify(result));
-    throw new AIOutputInvalidError("Workers AI returned an invalid response");
-  }
+  if (!result || typeof result !== "object") {
+  console.error("AI raw result:", JSON.stringify(result));
+  throw new AIOutputInvalidError("Workers AI returned no result");
+}
 
-  let parsed;
+let parsed;
+
+if (typeof result.response === "string") {
+  // Text model — response is a JSON string, parse it
   try {
     parsed = JSON.parse(result.response);
   } catch {
     throw new AIOutputInvalidError("Workers AI returned malformed JSON");
   }
+} else if (result.response && typeof result.response === "object") {
+  // JSON-mode model — response is already parsed, validate it's safe to use
+  try {
+    parsed = JSON.parse(JSON.stringify(result.response));
+  } catch {
+    throw new AIOutputInvalidError("Workers AI returned malformed JSON");
+  }
+} else {
+  console.error("AI raw result:", JSON.stringify(result));
+  throw new AIOutputInvalidError("Workers AI returned an invalid response");
+}
 
   const analysis = validateExtraction(parsed);
   if (!analysis.company || !analysis.roleTitle) {
