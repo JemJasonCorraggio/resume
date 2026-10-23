@@ -15,7 +15,7 @@ Return one JSON object with exactly this shape:
     }
   ]
 }
-Use only evidence record IDs from the supplied candidates. Return exactly one match for the supplied requirement.`;
+All keys are required to be present in every match object, for example, id there are no matching evidence records this evidenceRecordIds should be present with an empty array as a value. Use only evidence record IDs from the supplied candidates. Return exactly one match for the supplied requirement.`;
 
 function invalidOutput() {
   throw new AIOutputInvalidError("Workers AI returned invalid evidence matches");
