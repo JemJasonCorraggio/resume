@@ -78,6 +78,7 @@ function validateMatches(value, requirementCandidates) {
     !Array.isArray(value.matches) ||
     value.matches.length !== requirementCandidates.length
   ) {
+    console.info (value)
     invalidOutput();
   }
 
