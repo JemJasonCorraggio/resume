@@ -186,7 +186,11 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
       ],
       response_format: {
         type: "json_schema",
-        schema: MATCHING_SCHEMA,
+        json_schema: {
+          name: "match_result",
+          schema: MATCHING_SCHEMA,
+          strinct: true,
+        },
       },
       max_tokens: maxTokens,
       temperature: 0,

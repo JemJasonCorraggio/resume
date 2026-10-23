@@ -1,7 +1,7 @@
 export const SMOKE_TEST_RESPONSE = "Workers AI is ready.";
 
 export const FREE_TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-export const JSON_MODEL = "@cf/meta/llama-3.3-70b-json";
+export const JSON_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const PROMPT = `Reply with exactly "${SMOKE_TEST_RESPONSE}" and no other text.`;
 
 export async function runSmokeTest(ai, maxTokens) {
