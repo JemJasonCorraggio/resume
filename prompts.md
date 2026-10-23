@@ -643,3 +643,35 @@ Treat `MATCHING_SCHEMA` as the authoritative output-format contract and `MATCHIN
 
 ## 17. Task: Update AI model
 Change the AI model to use a json version of llama 3.3 such as @cf/meta/llama-3.3-70b-json when expecting a json response. Have both the free text and json models defined as configurable constants.
+
+## 18. Task: Normalize omitted optional evidence fields
+Make evidence-matching output resilient to the model omitting `evidenceRecordIds` when it has no supporting evidence, while preserving strict validation of substantive claims.
+
+### Implementation requirements
+1. Keep the existing evidence-matching prompt and response contract.
+2. Add a deterministic normalization step between parsing the Workers AI response and running validation.
+3. Treat `evidenceRecordIds` as optional in the raw model response, even if the model is still asked to include it.
+4. Apply these rules:
+   - If `matchStrength` is `none` and `evidenceRecordIds` is omitted, normalize it to `[]`.
+   - If `evidenceRecordIds` is present, require it to be an array of strings.
+   - If `matchStrength` is `strong` or `partial` and `evidenceRecordIds` is omitted or empty, reject the match as invalid rather than inventing evidence or silently downgrading the match.
+   - Never replace invalid, unknown, or unauthorized evidence IDs with an empty array.
+5. Preserve the existing `gap` contract. Apply explicit, documented normalization rules only where the intended meaning is unambiguous; otherwise reject the response.
+6. Pass the normalized result through the existing validation step before persistence.
+7. Keep normalization separate from the AI invocation and business-logic validation so it can be unit-tested independently.
+
+### Acceptance criteria
+- A no-match result that omits `evidenceRecordIds` becomes a valid result with `evidenceRecordIds: []`.
+- A no-match result with an explicit empty array remains valid.
+- A strong or partial match without evidence IDs is rejected.
+- Unknown evidence IDs are never silently discarded.
+- Missing or malformed required fields are handled predictably.
+- Normalized results pass through to validation.
+- Unit tests cover omitted, empty, valid, malformed, and unauthorized evidence IDs.
+- Existing valid model responses continue to work unchanged.
+
+### Out of scope
+- Changing evidence-selection logic.
+- Automatically retrying the model or switching models.
+- Relaxing evidence-reference validation.
+- Changing the persisted API response contract.

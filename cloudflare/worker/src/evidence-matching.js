@@ -85,6 +85,34 @@ function validateCandidateGroups(requirements, candidateGroups) {
   }));
 }
 
+export function normalizeEvidenceMatches(value) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    !Array.isArray(value.matches)
+  ) {
+    return value;
+  }
+
+  return {
+    ...value,
+    matches: value.matches.map((match) => {
+      if (
+        !match ||
+        typeof match !== "object" ||
+        Array.isArray(match) ||
+        match.matchStrength !== "none" ||
+        Object.hasOwn(match, "evidenceRecordIds")
+      ) {
+        return match;
+      }
+
+      return { ...match, evidenceRecordIds: [] };
+    }),
+  };
+}
+
 function validateMatches(value, requirementCandidates) {
   if (
     !value ||
@@ -226,5 +254,5 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
     invalidOutput(result, "Workers AI returned invalid evidence matches");
   }
 
-  return validateMatches(parsed, requirementCandidates);
+  return validateMatches(normalizeEvidenceMatches(parsed), requirementCandidates);
 }

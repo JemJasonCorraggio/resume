@@ -8,6 +8,7 @@ import {
 import {
   MATCHING_SCHEMA,
   matchRequirementsToEvidence,
+  normalizeEvidenceMatches,
 } from "../src/evidence-matching.js";
 
 const requirements = [
@@ -108,7 +109,11 @@ test("matching returns validated strong, partial, and none results", async () =>
   assert.equal(invocation.model, JSON_MODEL);
   assert.deepEqual(invocation.options.response_format, {
     type: "json_schema",
-    schema: MATCHING_SCHEMA,
+    json_schema: {
+      name: "match_result",
+      schema: MATCHING_SCHEMA,
+      strict: true,
+    },
   });
   assert.deepEqual(MATCHING_SCHEMA.required, ["matches"]);
   assert.deepEqual(MATCHING_SCHEMA.properties.matches.items.required, [
@@ -142,15 +147,54 @@ test("matching returns validated strong, partial, and none results", async () =>
   assert.match(invocation.options.messages[0].content, /Do not infer ownership/);
 });
 
+test("normalization defaults only omitted evidence IDs on no-match results", () => {
+  const omittedNone = { ...matches[2] };
+  delete omittedNone.evidenceRecordIds;
+  const omittedStrong = { ...matches[0] };
+  delete omittedStrong.evidenceRecordIds;
+  const unknownEvidence = { ...matches[2], evidenceRecordIds: ["ACC-999"] };
+  const malformedEvidence = { ...matches[2], evidenceRecordIds: "ACC-001" };
+
+  assert.deepEqual(
+    normalizeEvidenceMatches({
+      matches: [omittedNone, omittedStrong, unknownEvidence, malformedEvidence],
+    }),
+    {
+      matches: [
+        { ...matches[2], evidenceRecordIds: [] },
+        omittedStrong,
+        unknownEvidence,
+        malformedEvidence,
+      ],
+    },
+  );
+});
+
+test("matching accepts a no-match result with omitted evidence IDs", async () => {
+  const omittedNone = { ...matches[2] };
+  delete omittedNone.evidenceRecordIds;
+
+  const result = await matchRequirementsToEvidence(
+    aiReturning({ matches: [...matches.slice(0, 2), omittedNone] }),
+    requirements,
+    candidateGroups,
+    2048,
+  );
+
+  assert.deepEqual(result, matches);
+});
+
 test("matching rejects malformed or out-of-scope model output", async () => {
   const omittedGap = { ...matches[0] };
   delete omittedGap.gap;
-  const omittedEvidenceIds = { ...matches[2] };
-  delete omittedEvidenceIds.evidenceRecordIds;
+  const omittedStrongEvidenceIds = { ...matches[0] };
+  delete omittedStrongEvidenceIds.evidenceRecordIds;
   const invalidOutputs = [
     "not JSON",
     { matches: matches.slice(0, 2) },
     { matches: [{ ...matches[0], evidenceRecordIds: ["ACC-999"] }, ...matches.slice(1)] },
+    { matches: [{ ...matches[0], evidenceRecordIds: "ACC-001" }, ...matches.slice(1)] },
+    { matches: [{ ...matches[0], evidenceRecordIds: ["ACC-001", 1] }, ...matches.slice(1)] },
     { matches: [{ ...matches[0], requirementId: "req_fake" }, ...matches.slice(1)] },
     { matches: [{ ...matches[0], matchStrength: "maybe" }, ...matches.slice(1)] },
     { matches: [{ ...matches[0], evidenceRecordIds: ["ACC-001", "ACC-001"] }, ...matches.slice(1)] },
@@ -158,7 +202,7 @@ test("matching rejects malformed or out-of-scope model output", async () => {
     { matches: [{ ...matches[2], evidenceRecordIds: ["ACC-001"] }, ...matches.slice(0, 2)] },
     { matches: [{ ...matches[0], extra: true }, ...matches.slice(1)] },
     { matches: [omittedGap, ...matches.slice(1)] },
-    { matches: [...matches.slice(0, 2), omittedEvidenceIds] },
+    { matches: [omittedStrongEvidenceIds, ...matches.slice(1)] },
   ];
 
   const loggedErrors = [];
