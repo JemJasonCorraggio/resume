@@ -74,7 +74,6 @@ function validateMatches(value, requirementCandidates) {
     !value ||
     typeof value !== "object" ||
     Array.isArray(value) ||
-    Object.keys(value).length !== 1 ||
     !Object.hasOwn(value, "matches") ||
     !Array.isArray(value.matches) ||
     value.matches.length !== requirementCandidates.length
