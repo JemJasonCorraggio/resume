@@ -86,6 +86,7 @@ function validateCandidateGroups(requirements, candidateGroups) {
 }
 
 export function normalizeEvidenceMatches(value) {
+  console.info("normalization")
   if (
     !value ||
     typeof value !== "object" ||
