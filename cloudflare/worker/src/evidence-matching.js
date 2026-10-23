@@ -181,8 +181,6 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
     throw new AIOutputInvalidError("Workers AI returned no evidence matches");
   }
 
-  console.info(result.response)
-
   let parsed;
   if (typeof result.response === "string") {
     try {
@@ -197,6 +195,7 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
       throw new AIOutputInvalidError("Workers AI returned malformed evidence-match JSON");
     }
   } else {
+    console.error(result)
     throw new AIOutputInvalidError("Workers AI returned invalid evidence matches");
   }
 
