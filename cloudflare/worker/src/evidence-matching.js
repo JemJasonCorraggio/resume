@@ -253,8 +253,12 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
       invalidOutput(result.response, "Workers AI returned malformed evidence-match JSON");
     }
   } else {
+    console.info("respsponse not found")
     invalidOutput(result, "Workers AI returned invalid evidence matches");
   }
 
-  return validateMatches(normalizeEvidenceMatches(parsed), requirementCandidates);
+  normalized = normalizeEvidenceMatches(parsed)
+  console.info(normalized)
+
+  return validateMatches(normalized, requirementCandidates);
 }
