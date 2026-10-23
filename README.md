@@ -163,19 +163,21 @@ most 50 characters each; company and role titles are limited to 200 characters.
 Unsupported or malformed model output returns a controlled 502 response, and
 postings without an identifiable company or role title return 422. Completed
 analyses return HTTP 201 with UTC timestamps and preserve the original
-`jobDescription` separately from normalized analysis fields. Each
+`jobDescription` separately from normalized analysis fields.
 Before matching, deterministic retrieval selects up to five candidates per
 requirement from the validated inventory, preserving each record's original
 ID and limitations. Workers AI assesses each requirement using only those
 candidates. The API's `evidenceMatches` contains one assessment per
 requirement: match strength, selected evidence record IDs, concise rationale,
-and any evidence gap. Output is checked for one result per requirement, valid
-match strengths, and evidence IDs restricted to that requirement's candidate
-records. The prompt prohibits treating shared keywords as proof or inferring
-unsupported ownership, seniority, scale, metrics, or production experience.
-Job creation rejects an inventory that fails the existing schema validator.
-AI matching failures and malformed output return controlled 502 responses.
-API errors use an
+and any evidence gap. Workers AI is invoked with a JSON Schema response format
+requiring all match fields, including `evidenceRecordIds` and `gap`; application
+validation still checks output structure, match strengths, and evidence IDs
+against each requirement's candidates. The prompt prohibits treating shared
+keywords as proof or inferring unsupported ownership, seniority, scale,
+metrics, or production experience. Job creation rejects an inventory that
+fails the existing schema validator. AI matching failures and malformed output
+return controlled 502 responses and are logged for inspection. API errors use
+an
 `{ "error": { "code": "...", "message": "..." } }` response envelope. The
 Worker tests mock AI responses and do not make billed model requests.
 

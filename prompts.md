@@ -584,3 +584,59 @@ Each match has:
 - The model does not invent experience or metrics in rationales.
 - AI failures and malformed output are surfaced as controlled errors.
 - Tests use fixed example inventories and requirements to check strong, partial, and no-match behavior.
+
+## 16. Task: Enforce evidence-matching JSON schema using Workers AI response format
+Update the evidence-matching Workers AI invocation to use Cloudflare Workers AI's `response_format` with `type: "json_schema"`, rather than relying on prompt instructions alone to make the model return every required JSON field.
+
+The response must include all required fields, including `gap` when its value is `null`, and `evidenceRecordIds` when its value is an empty array.
+
+### Implementation requirements
+
+1. Define a reusable `MATCHING_SCHEMA` that matches the existing evidence-matching response contract:
+
+   - Top-level object with required `matches` array.
+   - Each match requires `requirementId`, `matchStrength`, `evidenceRecordIds`, `rationale`, and `gap`.
+   - `matchStrength` must be `strong`, `partial`, or `none`.
+   - `evidenceRecordIds` must be an array of strings.
+   - `gap` must accept either a string or `null`.
+   - All five match fields must appear in every match object, including when a field has an empty array or `null` value.
+
+2. Pass the schema through the Workers AI invocation's `response_format`:
+
+   ```js
+   response_format: {
+     type: "json_schema",
+     schema: MATCHING_SCHEMA,
+   }
+   ```
+
+5. Keep `MATCHING_INSTRUCTIONS` separate from the schema. The prompt should describe the semantic requirements for evidence matching, while the schema defines the required output structure.
+
+6. Keep the existing input contract unchanged: the model receives the requirement and its candidate inventory records. Do not broaden the candidate set or allow the model to invent evidence IDs.
+
+7. Keep application-side response parsing and validation. Structured output reduces formatting errors but does not replace validation of the response.
+
+8. If the model returns an API error, invalid response, or output that cannot be parsed or validated, handle it using the existing controlled error path. Do not save the invalid result as a completed analysis. However, do log the invalid response to the console for inspection.
+
+### Acceptance criteria
+
+- The evidence-matching invocation passes `response_format` with `type: "json_schema"` and the matching schema.
+- Every match includes all five required fields.
+- A no-match response includes `evidenceRecordIds: []` and an explicit `gap` value.
+- A response with no identified gap includes `"gap": null`, not an omitted field.
+- Existing match-strength values and field names remain unchanged.
+- Application-side parsing and validation remain in place.
+- Tests cover strong, partial, and no-match outputs, including empty arrays and `null` values.
+- Tests verify that invalid model output follows the existing controlled error path.
+- The implementation and tests are documented in the ticket's completion notes.
+
+### Out of scope
+
+- Changing the evidence-matching algorithm or prompt semantics.
+- Changing the requirement or evidence-match data models.
+- Relaxing inventory-ID validation.
+- Adding retries, fallback models, or a new orchestration layer unless required to handle a documented compatibility issue.
+
+### Implementation note
+
+Treat `MATCHING_SCHEMA` as the authoritative output-format contract and `MATCHING_INSTRUCTIONS` as the semantic instruction set. Do not duplicate the entire schema in the prompt. The model's response must still be treated as untrusted input and validated before persistence.

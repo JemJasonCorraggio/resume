@@ -5,7 +5,10 @@ import {
   AIOutputInvalidError,
   AIServiceError,
 } from "../src/job-analysis.js";
-import { matchRequirementsToEvidence } from "../src/evidence-matching.js";
+import {
+  MATCHING_SCHEMA,
+  matchRequirementsToEvidence,
+} from "../src/evidence-matching.js";
 
 const requirements = [
   {
@@ -103,7 +106,28 @@ test("matching returns validated strong, partial, and none results", async () =>
 
   assert.deepEqual(result, matches);
   assert.equal(invocation.model, MODEL);
-  assert.equal(invocation.options.response_format.type, "json_object");
+  assert.deepEqual(invocation.options.response_format, {
+    type: "json_schema",
+    schema: MATCHING_SCHEMA,
+  });
+  assert.deepEqual(MATCHING_SCHEMA.required, ["matches"]);
+  assert.deepEqual(MATCHING_SCHEMA.properties.matches.items.required, [
+    "requirementId",
+    "matchStrength",
+    "evidenceRecordIds",
+    "rationale",
+    "gap",
+  ]);
+  assert.deepEqual(MATCHING_SCHEMA.properties.matches.items.properties.matchStrength.enum, [
+    "strong",
+    "partial",
+    "none",
+  ]);
+  assert.deepEqual(MATCHING_SCHEMA.properties.matches.items.properties.gap.type, ["string", "null"]);
+  assert.deepEqual(result[0].evidenceRecordIds, ["ACC-001"]);
+  assert.equal(result[0].gap, null);
+  assert.deepEqual(result[2].evidenceRecordIds, []);
+  assert.equal(typeof result[2].gap, "string");
   assert.equal(invocation.options.max_tokens, 2048);
   assert.equal(invocation.options.temperature, 0);
   const input = JSON.parse(invocation.options.messages[1].content);
@@ -119,6 +143,10 @@ test("matching returns validated strong, partial, and none results", async () =>
 });
 
 test("matching rejects malformed or out-of-scope model output", async () => {
+  const omittedGap = { ...matches[0] };
+  delete omittedGap.gap;
+  const omittedEvidenceIds = { ...matches[2] };
+  delete omittedEvidenceIds.evidenceRecordIds;
   const invalidOutputs = [
     "not JSON",
     { matches: matches.slice(0, 2) },
@@ -129,17 +157,27 @@ test("matching rejects malformed or out-of-scope model output", async () => {
     { matches: [{ ...matches[0], evidenceRecordIds: [] }, ...matches.slice(1)] },
     { matches: [{ ...matches[2], evidenceRecordIds: ["ACC-001"] }, ...matches.slice(0, 2)] },
     { matches: [{ ...matches[0], extra: true }, ...matches.slice(1)] },
+    { matches: [omittedGap, ...matches.slice(1)] },
+    { matches: [...matches.slice(0, 2), omittedEvidenceIds] },
   ];
 
-  for (const response of invalidOutputs) {
-    const ai = typeof response === "string"
-      ? { run: async () => ({ response }) }
-      : aiReturning(response);
-    await assert.rejects(
-      matchRequirementsToEvidence(ai, requirements, candidateGroups, 2048),
-      AIOutputInvalidError,
-    );
+  const loggedErrors = [];
+  const originalConsoleError = console.error;
+  console.error = (...args) => loggedErrors.push(args);
+  try {
+    for (const response of invalidOutputs) {
+      const ai = typeof response === "string"
+        ? { run: async () => ({ response }) }
+        : aiReturning(response);
+      await assert.rejects(
+        matchRequirementsToEvidence(ai, requirements, candidateGroups, 2048),
+        AIOutputInvalidError,
+      );
+    }
+  } finally {
+    console.error = originalConsoleError;
   }
+  assert.ok(loggedErrors.some((args) => args.includes("not JSON")));
 });
 
 test("matching surfaces AI service failures and rejects invalid configuration", async () => {
@@ -158,6 +196,15 @@ test("matching surfaces AI service failures and rejects invalid configuration", 
   );
   await assert.rejects(
     matchRequirementsToEvidence(undefined, requirements, candidateGroups, 2048),
+    AIServiceError,
+  );
+  await assert.rejects(
+    matchRequirementsToEvidence(
+      { run: async () => ({ errors: [{ message: "model unavailable" }] }) },
+      requirements,
+      candidateGroups,
+      2048,
+    ),
     AIServiceError,
   );
 });
