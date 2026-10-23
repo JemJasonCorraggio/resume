@@ -17,70 +17,114 @@ Return one JSON object with exactly these fields:
 }
 Use an empty requirements array when no actual requirements are stated.`;
 
+const JOB_ANALYSIS_SCHEMA = {
+  type: "object",
+  required: ["company", "roleTitle", "requirements"],
+  additionalProperties: false,
+  properties: {
+    company: { type: "string", maxLength: 200 },
+    roleTitle: { type: "string", maxLength: 200 },
+    requirements: {
+      type: "array",
+      maxItems: 25,
+      items: {
+        type: "object",
+        required: ["description", "category", "importance", "keywords"],
+        additionalProperties: false,
+        properties: {
+          description: { type: "string", minLength: 1, maxLength: 500 },
+          category: {
+            type: "string",
+            enum: ["skill", "responsibility", "experience", "qualification"],
+          },
+          importance: { type: "string", enum: ["high", "medium", "low"] },
+          keywords: {
+            type: "array",
+            maxItems: 10,
+            items: { type: "string", minLength: 1, maxLength: 50 },
+          },
+        },
+      },
+    },
+  },
+};
+
 export class JobDetailsMissingError extends Error {}
 
 export class AIOutputInvalidError extends Error {}
 
 export class AIServiceError extends Error {}
 
-function requireString(value, field, allowEmpty = false) {
-  if (typeof value !== "string" || (!allowEmpty && !value.trim())) {
-    throw new AIOutputInvalidError(`Workers AI returned an invalid ${field}`);
-  }
-  return value.trim();
+function invalidSchema(path) {
+  throw new AIOutputInvalidError(`Workers AI returned invalid job analysis at ${path}`);
 }
 
-function validateRequirement(requirement, index) {
-  if (!requirement || typeof requirement !== "object" || Array.isArray(requirement)) {
-    throw new AIOutputInvalidError(`Workers AI returned an invalid requirement at index ${index}`);
+function validateAgainstSchema(value, schema, path = "$") {
+  if (schema.type === "object") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) invalidSchema(path);
+
+    for (const field of schema.required) {
+      if (!Object.hasOwn(value, field)) invalidSchema(`${path}.${field}`);
+    }
+    if (schema.additionalProperties === false) {
+      for (const field of Object.keys(value)) {
+        if (!Object.hasOwn(schema.properties, field)) invalidSchema(`${path}.${field}`);
+      }
+    }
+    for (const [field, fieldSchema] of Object.entries(schema.properties)) {
+      if (Object.hasOwn(value, field)) {
+        validateAgainstSchema(value[field], fieldSchema, `${path}.${field}`);
+      }
+    }
+    return;
   }
 
-  const description = requireString(requirement.description, `requirement description at index ${index}`);
-  const categories = ["skill", "responsibility", "experience", "qualification"];
-  const importances = ["high", "medium", "low"];
-  if (!categories.includes(requirement.category)) {
-    throw new AIOutputInvalidError(`Workers AI returned an invalid requirement category at index ${index}`);
-  }
-  if (!importances.includes(requirement.importance)) {
-    throw new AIOutputInvalidError(`Workers AI returned an invalid requirement importance at index ${index}`);
-  }
-  if (
-    !Array.isArray(requirement.keywords) ||
-    requirement.keywords.length > 10 ||
-    requirement.keywords.some((keyword) => typeof keyword !== "string" || !keyword.trim())
-  ) {
-    throw new AIOutputInvalidError(`Workers AI returned invalid requirement keywords at index ${index}`);
+  if (schema.type === "array") {
+    if (!Array.isArray(value) || value.length > schema.maxItems) invalidSchema(path);
+    value.forEach((item, index) => {
+      validateAgainstSchema(item, schema.items, `${path}[${index}]`);
+    });
+    return;
   }
 
-  return {
-    id: `req_${String(index + 1).padStart(3, "0")}`,
-    description,
-    category: requirement.category,
-    importance: requirement.importance,
-    keywords: requirement.keywords.map((keyword) => keyword.trim()),
-  };
+  if (schema.type === "string") {
+    if (typeof value !== "string") invalidSchema(path);
+    const length = Array.from(value.trim()).length;
+    if (
+      (schema.minLength !== undefined && length < schema.minLength) ||
+      (schema.maxLength !== undefined && length > schema.maxLength) ||
+      (schema.enum && !schema.enum.includes(value))
+    ) {
+      invalidSchema(path);
+    }
+  }
 }
 
 function validateExtraction(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new AIOutputInvalidError("Workers AI returned an invalid job analysis");
+  validateAgainstSchema(value, JOB_ANALYSIS_SCHEMA);
+
+  const company = value.company.trim();
+  const roleTitle = value.roleTitle.trim();
+  if (!company || !roleTitle) {
+    throw new JobDetailsMissingError(
+      "Could not identify the company and role title. Please amend the job description.",
+    );
   }
 
-  const company = requireString(value.company, "company", true);
-  const roleTitle = requireString(value.roleTitle, "role title", true);
-  if (!Array.isArray(value.requirements)) {
-    throw new AIOutputInvalidError("Workers AI returned invalid requirements");
-  }
-
-  const seenDescriptions = new Set();
+  const seenRequirements = new Set();
   const requirements = [];
-  for (const [index, requirement] of value.requirements.entries()) {
-    const validated = validateRequirement(requirement, index);
-    const key = validated.description.toLowerCase().replace(/\s+/g, " ");
-    if (seenDescriptions.has(key)) continue;
-    seenDescriptions.add(key);
-    validated.id = `req_${String(requirements.length + 1).padStart(3, "0")}`;
-    requirements.push(validated);
+  for (const requirement of value.requirements) {
+    const description = requirement.description.trim().replace(/\s+/gu, " ");
+    const key = JSON.stringify([description, requirement.category]);
+    if (seenRequirements.has(key)) continue;
+    seenRequirements.add(key);
+    requirements.push({
+      id: `req_${String(requirements.length + 1).padStart(3, "0")}`,
+      description,
+      category: requirement.category,
+      importance: requirement.importance,
+      keywords: requirement.keywords.map((keyword) => keyword.trim()),
+    });
   }
 
   return { company, roleTitle, requirements };
@@ -111,36 +155,27 @@ export async function extractJobAnalysis(ai, description, maxTokens) {
   }
 
   if (!result || typeof result !== "object") {
-  console.error("AI raw result:", JSON.stringify(result));
-  throw new AIOutputInvalidError("Workers AI returned no result");
-}
-
-let parsed;
-
-if (typeof result.response === "string") {
-  // Text model — response is a JSON string, parse it
-  try {
-    parsed = JSON.parse(result.response);
-  } catch {
-    throw new AIOutputInvalidError("Workers AI returned malformed JSON");
+    throw new AIOutputInvalidError("Workers AI returned no result");
   }
-} else if (result.response && typeof result.response === "object") {
-  // JSON-mode model — response is already parsed, validate it's safe to use
-  try {
-    parsed = JSON.parse(JSON.stringify(result.response));
-  } catch {
-    throw new AIOutputInvalidError("Workers AI returned malformed JSON");
+
+  let parsed;
+
+  if (typeof result.response === "string") {
+    try {
+      parsed = JSON.parse(result.response);
+    } catch {
+      throw new AIOutputInvalidError("Workers AI returned malformed JSON");
+    }
+  } else if (result.response && typeof result.response === "object") {
+    try {
+      parsed = JSON.parse(JSON.stringify(result.response));
+    } catch {
+      throw new AIOutputInvalidError("Workers AI returned malformed JSON");
+    }
+  } else {
+    throw new AIOutputInvalidError("Workers AI returned an invalid response");
   }
-} else {
-  console.error("AI raw result:", JSON.stringify(result));
-  throw new AIOutputInvalidError("Workers AI returned an invalid response");
-}
 
   const analysis = validateExtraction(parsed);
-  if (!analysis.company || !analysis.roleTitle) {
-    throw new JobDetailsMissingError(
-      "Could not identify the company and role title. Please amend the job description.",
-    );
-  }
   return analysis;
 }

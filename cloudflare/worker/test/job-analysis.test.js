@@ -124,7 +124,8 @@ test("extractJobAnalysis deduplicates identical requirements and regenerates IDs
       roleTitle: "Engineer",
       requirements: [
         { description: "Build APIs", category: "responsibility", importance: "high", keywords: ["API"] },
-        { description: " build   apis ", category: "skill", importance: "medium", keywords: ["backend"] },
+        { description: "  Build   APIs  ", category: "responsibility", importance: "medium", keywords: ["backend"] },
+        { description: "Build APIs", category: "skill", importance: "medium", keywords: ["backend"] },
         { description: "Review code", category: "responsibility", importance: "medium", keywords: ["review"] },
       ],
     }),
@@ -133,14 +134,135 @@ test("extractJobAnalysis deduplicates identical requirements and regenerates IDs
   );
 
   assert.deepEqual(
-    result.requirements.map(({ id }) => id),
-    ["req_001", "req_002"],
+    result.requirements.map(({ id, description, category }) => ({ id, description, category })),
+    [
+      { id: "req_001", description: "Build APIs", category: "responsibility" },
+      { id: "req_002", description: "Build APIs", category: "skill" },
+      { id: "req_003", description: "Review code", category: "responsibility" },
+    ],
+  );
+});
+
+test("extractJobAnalysis accepts values exactly at every normalization limit", async () => {
+  const result = await extractJobAnalysis(
+    aiReturning({
+      company: ` ${"c".repeat(200)} `,
+      roleTitle: ` ${"r".repeat(200)} `,
+      requirements: Array.from({ length: 25 }, (_, index) => ({
+        description: ` ${String(index).padEnd(500, "d")} `,
+        category: "skill",
+        importance: "medium",
+        keywords: Array.from({ length: 10 }, () => ` ${"k".repeat(50)} `),
+      })),
+    }),
+    "Example posting",
+    2048,
+  );
+
+  assert.equal(result.company.length, 200);
+  assert.equal(result.roleTitle.length, 200);
+  assert.equal(result.requirements.length, 25);
+  assert.equal(result.requirements[0].description.length, 500);
+  assert.equal(result.requirements[0].keywords.length, 10);
+  assert.equal(result.requirements[0].keywords[0].length, 50);
+  assert.equal(new Set(result.requirements.map(({ id }) => id)).size, 25);
+});
+
+test("extractJobAnalysis rejects values one item or character over each limit", async () => {
+  const validRequirement = {
+    description: "Build APIs",
+    category: "responsibility",
+    importance: "high",
+    keywords: ["API"],
+  };
+  const validAnalysis = {
+    company: "Example",
+    roleTitle: "Engineer",
+    requirements: [validRequirement],
+  };
+  const invalidAnalyses = [
+    { ...validAnalysis, company: `${"c".repeat(201)}` },
+    { ...validAnalysis, roleTitle: `${"r".repeat(201)}` },
+    {
+      ...validAnalysis,
+      requirements: [{ ...validRequirement, description: "d".repeat(501) }],
+    },
+    {
+      ...validAnalysis,
+      requirements: [{ ...validRequirement, keywords: ["k".repeat(51)] }],
+    },
+    {
+      ...validAnalysis,
+      requirements: [{ ...validRequirement, keywords: Array.from({ length: 11 }, () => "x") }],
+    },
+    {
+      ...validAnalysis,
+      requirements: Array.from({ length: 26 }, (_, index) => ({
+        ...validRequirement,
+        description: `Requirement ${index}`,
+      })),
+    },
+  ];
+
+  for (const response of invalidAnalyses) {
+    await assert.rejects(
+      extractJobAnalysis(aiReturning(response), "Example posting", 2048),
+      AIOutputInvalidError,
+    );
+  }
+});
+
+test("extractJobAnalysis rejects whitespace-only values and invalid enums", async () => {
+  const validRequirement = {
+    description: "Build APIs",
+    category: "responsibility",
+    importance: "high",
+    keywords: ["API"],
+  };
+  const invalidOutputs = [
+    {
+      company: "Example",
+      roleTitle: "Engineer",
+      requirements: [{ ...validRequirement, description: " \n\t " }],
+    },
+    {
+      company: "Example",
+      roleTitle: "Engineer",
+      requirements: [{ ...validRequirement, keywords: [" \n\t "] }],
+    },
+    {
+      company: "Example",
+      roleTitle: "Engineer",
+      requirements: [{ ...validRequirement, category: "technology" }],
+    },
+    {
+      company: "Example",
+      roleTitle: "Engineer",
+      requirements: [{ ...validRequirement, importance: "urgent" }],
+    },
+  ];
+
+  for (const response of invalidOutputs) {
+    await assert.rejects(
+      extractJobAnalysis(aiReturning(response), "Example posting", 2048),
+      AIOutputInvalidError,
+    );
+  }
+
+  await assert.rejects(
+    extractJobAnalysis(
+      aiReturning({ company: "  ", roleTitle: "Engineer", requirements: [] }),
+      "Example posting",
+      2048,
+    ),
+    JobDetailsMissingError,
   );
 });
 
 test("extractJobAnalysis rejects malformed or structurally invalid model output", async () => {
   const invalidOutputs = [
     "not JSON",
+    JSON.stringify({ company: "Example", requirements: [] }),
     JSON.stringify({ company: "Example", roleTitle: "Engineer", requirements: {} }),
     JSON.stringify({
       company: "Example",
@@ -160,6 +282,15 @@ test("extractJobAnalysis rejects malformed or structurally invalid model output"
         category: "skill",
         importance: "high",
         keywords: ["API", 3],
+      }],
+    }),
+    JSON.stringify({
+      company: "Example",
+      roleTitle: "Engineer",
+      requirements: [{
+        description: "Build APIs",
+        category: "skill",
+        importance: "high",
       }],
     }),
   ];

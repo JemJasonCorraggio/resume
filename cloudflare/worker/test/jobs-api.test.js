@@ -61,8 +61,9 @@ async function responseBody(response) {
 
 test("POST jobs completes AI analysis with generated requirement IDs", async () => {
   const environment = envForInventory();
+  const originalJobDescription = ` ${extractableDescription}\n `;
   const response = await handleRequest(
-    jobsRequest(JSON.stringify({ jobDescription: extractableDescription })),
+    jobsRequest(JSON.stringify({ jobDescription: originalJobDescription })),
     environment.env,
   );
   const body = await responseBody(response);
@@ -71,6 +72,7 @@ test("POST jobs completes AI analysis with generated requirement IDs", async () 
   assert.deepEqual(Object.keys(body), [
     "jobId",
     "status",
+    "jobDescription",
     "company",
     "roleTitle",
     "inventoryRevision",
@@ -81,6 +83,7 @@ test("POST jobs completes AI analysis with generated requirement IDs", async () 
   ]);
   assert.match(body.jobId, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   assert.equal(body.status, "completed");
+  assert.equal(body.jobDescription, originalJobDescription);
   assert.equal(body.company, "Example Company");
   assert.equal(body.roleTitle, "Senior Backend Engineer");
   assert.equal(body.inventoryRevision, inventory.inventory_revision_date);

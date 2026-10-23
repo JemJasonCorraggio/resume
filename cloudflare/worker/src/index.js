@@ -109,6 +109,7 @@ async function handleCreateJob(request, env) {
     {
       jobId: crypto.randomUUID(),
       status: "completed",
+      jobDescription,
       company: analysis.company,
       roleTitle: analysis.roleTitle,
       inventoryRevision: inventory.inventory_revision_date,

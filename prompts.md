@@ -482,3 +482,37 @@ The backend adds each requirement's id, for example req_001, req_002. IDs must b
 
 ### Out of scope
 Inventory retrieval, evidence selection, and UI.
+
+## 13. Task: Validate and normalize extracted requirements
+Create a deterministic validation layer between the LLM and the rest of the application.
+
+### Validation and normalization limits
+Enforce the following limits on extracted job-analysis output:
+- Maximum requirements: 25 per job posting. If the model returns more than 25 requirements, reject the extraction with a controlled validation error. Do not silently truncate the list.
+- Requirement description: 1–500 characters after trimming surrounding whitespace. Reject empty descriptions.
+- Keywords: 0–10 keywords per requirement. Each keyword must be a non-empty string of at most 50 characters after trimming.
+- Company name: a non-empty string of at most 200 characters after trimming.
+- Role title: a non-empty string of at most 200 characters after trimming.
+- Enums: category must be one of skill, responsibility, experience, or qualification. importance must be one of high, medium, or low.
+- Requirement IDs: assign IDs on the backend after validation and normalization. IDs must be unique within an analysis.
+- Normalization: trim surrounding whitespace and remove exact duplicate requirements when their normalized descriptions and categories match. Do not merge requirements merely because their wording or keywords are similar.
+- Invalid output: reject malformed or out-of-limit output with a controlled error. Do not silently drop requirements, truncate descriptions, or invent replacement values.
+- Add tests for values exactly at each limit, values one character/item over each limit, whitespace-only strings, duplicate requirements, and invalid enum values.
+
+### Implementation requirements
+- Validate the output against an application-owned schema.
+- Check required fields and enum values.
+- Reject malformed entries rather than silently discarding them.
+- Normalize whitespace and remove exact duplicate requirements where safe.
+- Assign requirement IDs on the backend.
+- Enforce the normalization limits on the number and length of requirements.
+- Preserve the original job description independently of the normalized output.
+Do not introduce confidence scores, a complex skill taxonomy, or model-generated evidence IDs at this stage.
+
+### Acceptance criteria
+- Valid extracted output is normalized into the expected schema.
+- Every requirement has a unique ID within the analysis.
+- Invalid categories, importance values, and field types are rejected.
+- Empty or excessive output is handled predictably.
+- Duplicate removal doesn't merge meaningfully different requirements.
+- Tests cover malformed JSON, missing fields, duplicate requirements, and invalid enums.
