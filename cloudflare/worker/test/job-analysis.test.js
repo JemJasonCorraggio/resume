@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "../src/config.js";
+import { JSON_MODEL } from "../src/ai.js";
 import {
   AIOutputInvalidError,
   AIServiceError,
@@ -101,7 +102,7 @@ for (const example of examples) {
       result.requirements.map((requirement) => requirement.id),
       example.response.requirements.map((_, index) => `req_${String(index + 1).padStart(3, "0")}`),
     );
-    assert.equal(invocation.model, "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+    assert.equal(invocation.model, JSON_MODEL);
     assert.equal(invocation.options.response_format.type, "json_object");
     assert.equal(invocation.options.max_tokens, 2048);
     assert.equal(invocation.options.temperature, 0);

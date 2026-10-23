@@ -1,6 +1,7 @@
 export const SMOKE_TEST_RESPONSE = "Workers AI is ready.";
 
-export const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+export const FREE_TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+export const JSON_MODEL = "@cf/meta/llama-3.3-70b-json";
 const PROMPT = `Reply with exactly "${SMOKE_TEST_RESPONSE}" and no other text.`;
 
 export async function runSmokeTest(ai, maxTokens) {
@@ -11,7 +12,7 @@ export async function runSmokeTest(ai, maxTokens) {
     throw new Error("AI_MAX_TOKENS must be a positive integer");
   }
 
-  const result = await ai.run(MODEL, {
+  const result = await ai.run(FREE_TEXT_MODEL, {
     prompt: PROMPT,
     max_tokens: maxTokens,
     temperature: 0,

@@ -640,3 +640,6 @@ The response must include all required fields, including `gap` when its value is
 ### Implementation note
 
 Treat `MATCHING_SCHEMA` as the authoritative output-format contract and `MATCHING_INSTRUCTIONS` as the semantic instruction set. Do not duplicate the entire schema in the prompt. The model's response must still be treated as untrusted input and validated before persistence.
+
+## 17. Task: Update AI model
+Change the AI model to use a json version of llama 3.3 such as @cf/meta/llama-3.3-70b-json when expecting a json response. Have both the free text and json models defined as configurable constants.

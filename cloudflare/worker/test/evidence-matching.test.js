@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { MODEL } from "../src/ai.js";
+import { JSON_MODEL } from "../src/ai.js";
 import {
   AIOutputInvalidError,
   AIServiceError,
@@ -105,7 +105,7 @@ test("matching returns validated strong, partial, and none results", async () =>
   );
 
   assert.deepEqual(result, matches);
-  assert.equal(invocation.model, MODEL);
+  assert.equal(invocation.model, JSON_MODEL);
   assert.deepEqual(invocation.options.response_format, {
     type: "json_schema",
     schema: MATCHING_SCHEMA,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { handleRequest } from "../src/index.js";
-import { SMOKE_TEST_RESPONSE, runSmokeTest } from "../src/ai.js";
+import { FREE_TEXT_MODEL, SMOKE_TEST_RESPONSE, runSmokeTest } from "../src/ai.js";
 
 const maxTokens = 2048;
 
@@ -17,7 +17,7 @@ test("smoke test invokes Llama 3.3 with configured token limit", async () => {
   const response = await runSmokeTest(ai, maxTokens);
 
   assert.equal(response, SMOKE_TEST_RESPONSE);
-  assert.equal(invocation[0], "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+  assert.equal(invocation[0], FREE_TEXT_MODEL);
   assert.equal(invocation[1].max_tokens, maxTokens);
   assert.match(invocation[1].prompt, /Workers AI is ready\./);
   assert.equal(invocation[1].temperature, 0);
@@ -42,7 +42,7 @@ test("AI route returns a successful invocation result to application code", asyn
     {
       AI: {
         run: async (model, options) => {
-          assert.equal(model, "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+          assert.equal(model, FREE_TEXT_MODEL);
           assert.equal(options.max_tokens, maxTokens);
           return { response: SMOKE_TEST_RESPONSE };
         },

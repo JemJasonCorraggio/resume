@@ -1,4 +1,4 @@
-import { MODEL } from "./ai.js";
+import { JSON_MODEL } from "./ai.js";
 import { AIOutputInvalidError, AIServiceError } from "./job-analysis.js";
 
 export const MATCHING_SCHEMA = {
@@ -165,7 +165,7 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
 
   let result;
   try {
-    result = await ai.run(MODEL, {
+    result = await ai.run(JSON_MODEL, {
       messages: [
         { role: "system", content: MATCHING_INSTRUCTIONS },
         {
