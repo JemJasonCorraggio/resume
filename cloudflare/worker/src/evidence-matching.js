@@ -86,7 +86,6 @@ function validateCandidateGroups(requirements, candidateGroups) {
 }
 
 export function normalizeEvidenceMatches(value) {
-  console.info("normalization")
   if (
     !value ||
     typeof value !== "object" ||
@@ -229,6 +228,8 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
     console.error("Workers AI evidence matching invocation failed:", error);
     throw new AIServiceError("Workers AI evidence matching invocation failed");
   }
+
+  console.info(result)
 
   if (!result || typeof result !== "object") {
     invalidOutput(result, "Workers AI returned no evidence matches");
