@@ -516,3 +516,71 @@ Do not introduce confidence scores, a complex skill taxonomy, or model-generated
 - Empty or excessive output is handled predictably.
 - Duplicate removal doesn't merge meaningfully different requirements.
 - Tests cover malformed JSON, missing fields, duplicate requirements, and invalid enums.
+
+## 14. Task: Retrieve candidate inventory evidence deterministically
+Find a small, relevant candidate set of inventory records for each job requirement before involving the model in evidence matching.
+
+### Implementation requirements
+- Reuse the existing inventory loader and schema validation.
+- Read existing record IDs, types, descriptions, and relevant metadata.
+- Use deterministic keyword matching and appropriate record-type filtering.
+- Return existing inventory records with their original IDs intact.
+- Allow a requirement to return zero candidate records.
+- Keep retrieval logic independent of Workers AI so it can be tested without inference calls.
+- Set a configurable limit of 5 on candidates per requirement.
+Start with simple token/keyword matching and existing metadata. Do not add embeddings, vector search, a separate search service, or a new database for inventory retrieval.
+
+### Important evidence boundaries
+The retrieval system must not turn a related keyword into a stronger claim than the inventory supports. For example:
+- Kafka consumer experience is not evidence of Kafka producer ownership.
+- Reviewing Vue code is not evidence of implementing Vue features.
+- Owning a public API is not evidence of owning the underlying data pipeline.
+The retrieval layer finds candidates; it doesn't decide that a candidate proves a requirement.
+
+Acceptance criteria
+- A requirement returns matching inventory records with their original IDs.
+- No matches produces an empty list, not a fabricated record.
+- Results are deterministic for the same inventory and requirement.
+- Candidate count is bounded.
+- All returned records pass the existing inventory validation rules.
+- Tests cover strong matches, weak/ambiguous matches, no matches, and the evidence boundaries above.
+
+## 15. Task: Match requirements to candidate evidence with Workers AI
+Have the model assess whether the retrieved inventory records support each requirement.
+AI output contract
+{
+  "matches": [
+    {
+      "requirementId": "req_001",
+      "matchStrength": "strong",
+      "evidenceRecordIds": ["accomplishment_123"],
+      "rationale": "The record documents ownership of a public Go API.",
+      "gap": null
+    }
+  ]
+}
+
+
+Each match has:
+- requirementId: ID of an extracted requirement.
+- matchStrength: strong, partial, or none.
+- evidenceRecordIds: IDs selected only from the candidates supplied to the model.
+- rationale: short explanation of relevance, grounded in the record.
+- gap: a brief description of missing evidence, or null.
+
+### Prompting requirements
+- Provide only the requirement and the relevant candidate records.
+- Tell the model explicitly that candidate evidence is the only source of candidate experience.
+- Do not treat a shared keyword as sufficient proof.
+- Do not infer ownership, seniority, scale, metrics, or production experience unless the record supports it.
+- Require a none match when no evidence supports the requirement.
+- Use structured output where supported, but don't trust the model's schema compliance alone.
+- Keep the rationale concise; no lengthy chain-of-thought output.
+
+### Acceptance criteria
+- The response follows the expected structure.
+- The model selects only candidate IDs supplied to it.
+- Unsupported requirements can be marked none.
+- The model does not invent experience or metrics in rationales.
+- AI failures and malformed output are surfaced as controlled errors.
+- Tests use fixed example inventories and requirements to check strong, partial, and no-match behavior.

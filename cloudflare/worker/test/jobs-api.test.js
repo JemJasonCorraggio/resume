@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "../src/config.js";
 import { handleRequest } from "../src/index.js";
+import { retrieveEvidenceCandidates } from "../src/evidence-retrieval.js";
 
-const inventory = { inventory_revision_date: "2026-10-21" };
+const inventory = JSON.parse(readFileSync(
+  new URL("../../../data/master-career-inventory.json", import.meta.url),
+  "utf8",
+));
 const extractableDescription = "Company: Example Company\nRole Title: Senior Backend Engineer";
 const analysis = {
   company: "Example Company",
@@ -44,9 +49,25 @@ function envForInventory(fetch = async () => Response.json(inventory), aiRun) {
         },
       },
       AI: {
-        run: async (...args) => {
+        run: async (model, options) => {
           aiCount += 1;
-          if (aiRun) return aiRun(...args);
+          if (aiRun) return aiRun(model, options);
+          if (options.messages[0].content.includes("Assess whether the supplied candidate")) {
+            const { requirements } = JSON.parse(options.messages[1].content);
+            return {
+              response: JSON.stringify({
+                matches: requirements.map(({ requirement, candidates }) => ({
+                  requirementId: requirement.id,
+                  matchStrength: candidates.length ? "strong" : "none",
+                  evidenceRecordIds: candidates.length ? [candidates[0].record.id] : [],
+                  rationale: candidates.length
+                    ? "A supplied record contains relevant experience."
+                    : "No supplied candidate record supports this requirement.",
+                  gap: candidates.length ? null : "No supporting evidence was retrieved.",
+                })),
+              }),
+            };
+          }
           return { response: JSON.stringify(analysis) };
         },
       },
@@ -91,11 +112,18 @@ test("POST jobs completes AI analysis with generated requirement IDs", async () 
     ...analysis.requirements[0],
     id: "req_001",
   }]);
-  assert.deepEqual(body.evidenceMatches, []);
+  const candidates = retrieveEvidenceCandidates(inventory, body.requirements);
+  assert.deepEqual(body.evidenceMatches, [{
+    requirementId: "req_001",
+    matchStrength: "strong",
+    evidenceRecordIds: [candidates[0].candidates[0].record.id],
+    rationale: "A supplied record contains relevant experience.",
+    gap: null,
+  }]);
   assert.deepEqual(body.warnings, []);
   assert.ok(Number.isFinite(Date.parse(body.createdAt)));
   assert.match(body.createdAt, /Z$/);
-  assert.equal(environment.aiCount, 1);
+  assert.equal(environment.aiCount, 2);
   assert.equal(environment.fetchCount, 1);
 });
 
@@ -230,6 +258,64 @@ test("POST jobs hides inventory failures behind the standard error shape", async
     },
   });
   assert.doesNotMatch(JSON.stringify(body), /private inventory details/);
+});
+
+test("POST jobs rejects an inventory that fails schema validation", async () => {
+  const environment = envForInventory(async () => Response.json({
+    inventory_revision_date: "2026-10-21",
+  }));
+  const response = await handleRequest(
+    jobsRequest(JSON.stringify({ jobDescription: extractableDescription })),
+    environment.env,
+  );
+
+  assert.equal(response.status, 500);
+  assert.deepEqual(await responseBody(response), {
+    error: {
+      code: "INTERNAL_ERROR",
+      message: "The job analysis could not be completed.",
+    },
+  });
+});
+
+test("POST jobs returns controlled errors for failed evidence matching", async () => {
+  let calls = 0;
+  const malformedMatch = envForInventory(undefined, async () => {
+    calls += 1;
+    if (calls === 1) return { response: JSON.stringify(analysis) };
+    return { response: JSON.stringify({ matches: [] }) };
+  });
+  const invalidResponse = await handleRequest(
+    jobsRequest(JSON.stringify({ jobDescription: extractableDescription })),
+    malformedMatch.env,
+  );
+  assert.equal(invalidResponse.status, 502);
+  assert.deepEqual(await responseBody(invalidResponse), {
+    error: {
+      code: "AI_OUTPUT_INVALID",
+      message: "Workers AI returned unusable evidence matches.",
+    },
+  });
+  assert.equal(malformedMatch.fetchCount, 1);
+
+  calls = 0;
+  const unavailableMatcher = envForInventory(undefined, async () => {
+    calls += 1;
+    if (calls === 1) return { response: JSON.stringify(analysis) };
+    throw new Error("private provider details");
+  });
+  const serviceResponse = await handleRequest(
+    jobsRequest(JSON.stringify({ jobDescription: extractableDescription })),
+    unavailableMatcher.env,
+  );
+  assert.equal(serviceResponse.status, 502);
+  assert.deepEqual(await responseBody(serviceResponse), {
+    error: {
+      code: "AI_SERVICE_ERROR",
+      message: "The job analysis could not be completed.",
+    },
+  });
+  assert.equal(unavailableMatcher.fetchCount, 1);
 });
 
 test("POST jobs rejects unsupported methods with a standard JSON error", async () => {

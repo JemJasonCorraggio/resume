@@ -1,6 +1,8 @@
-import { auditInventory } from "./validation.js";
+import { auditInventory, validateInventory } from "./validation.js";
 import { runSmokeTest } from "./ai.js";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "./config.js";
+import { matchRequirementsToEvidence } from "./evidence-matching.js";
+import { retrieveEvidenceCandidates } from "./evidence-retrieval.js";
 import {
   AIOutputInvalidError,
   AIServiceError,
@@ -92,6 +94,10 @@ async function handleCreateJob(request, env) {
   let inventory;
   try {
     inventory = await loadInventory(env);
+    const validationErrors = validateInventory(inventory);
+    if (validationErrors.length) {
+      throw new Error("Bundled career inventory failed schema validation");
+    }
   } catch (error) {
     console.error("Could not load career inventory:", error instanceof Error ? error.name : "Unknown error");
     return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
@@ -105,6 +111,28 @@ async function handleCreateJob(request, env) {
     return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
   }
 
+  const candidateGroups = retrieveEvidenceCandidates(inventory, analysis.requirements);
+  let evidenceMatches;
+  try {
+    evidenceMatches = await matchRequirementsToEvidence(
+      env.AI,
+      analysis.requirements,
+      candidateGroups,
+      env.AI_MAX_TOKENS,
+    );
+  } catch (error) {
+    if (error instanceof AIOutputInvalidError) {
+      console.error(error.message);
+      return errorResponse(502, "AI_OUTPUT_INVALID", "Workers AI returned unusable evidence matches.");
+    }
+    if (error instanceof AIServiceError) {
+      console.error("Evidence matching AI service failed.");
+      return errorResponse(502, "AI_SERVICE_ERROR", "The job analysis could not be completed.");
+    }
+    console.error("Evidence matching failed:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
+  }
+
   return jsonResponse(
     {
       jobId: crypto.randomUUID(),
@@ -114,7 +142,7 @@ async function handleCreateJob(request, env) {
       roleTitle: analysis.roleTitle,
       inventoryRevision: inventory.inventory_revision_date,
       requirements: analysis.requirements,
-      evidenceMatches: [],
+      evidenceMatches,
       warnings: [],
       createdAt: new Date().toISOString(),
     },
