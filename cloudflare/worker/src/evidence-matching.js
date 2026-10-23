@@ -189,7 +189,7 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
         json_schema: {
           name: "match_result",
           schema: MATCHING_SCHEMA,
-          strinct: true,
+          strict: true,
         },
       },
       max_tokens: maxTokens,
