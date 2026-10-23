@@ -70,6 +70,7 @@ function validateCandidateGroups(requirements, candidateGroups) {
 }
 
 function validateMatches(value, requirementCandidates) {
+  console.info (value)
   if (
     !value ||
     typeof value !== "object" ||
@@ -78,7 +79,6 @@ function validateMatches(value, requirementCandidates) {
     !Array.isArray(value.matches) ||
     value.matches.length !== requirementCandidates.length
   ) {
-    console.info (value)
     invalidOutput();
   }
 
@@ -95,7 +95,6 @@ function validateMatches(value, requirementCandidates) {
       !match ||
       typeof match !== "object" ||
       Array.isArray(match) ||
-      Object.keys(match).length !== 5 ||
       !Object.hasOwn(match, "requirementId") ||
       !Object.hasOwn(match, "matchStrength") ||
       !Object.hasOwn(match, "evidenceRecordIds") ||
