@@ -93,6 +93,7 @@ export function normalizeEvidenceMatches(value) {
     !Array.isArray(value.matches)
   ) {
     return value;
+    console.info("NORMALIZER: returning input unchanged");
   }
 
   return {
@@ -107,7 +108,7 @@ export function normalizeEvidenceMatches(value) {
       ) {
         return match;
       }
-
+      console.info("NORMALIZER: adding empty IDs array", match.requirementId);
       return { ...match, evidenceRecordIds: [] };
     }),
   };
