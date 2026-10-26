@@ -92,7 +92,6 @@ export function normalizeEvidenceMatches(value) {
     Array.isArray(value) ||
     !Array.isArray(value.matches)
   ) {
-    console.info("NORMALIZER: returning input unchanged");
     return value;
   }
 
@@ -106,10 +105,8 @@ export function normalizeEvidenceMatches(value) {
         match.matchStrength !== "none" ||
         Array.isArray(match.evidenceRecordIds)
       ) {
-        console.info("NORMALIZER: returning match unchanged", match.requirementId)
         return match;
       }
-      console.info("NORMALIZER: adding empty IDs array", match.requirementId);
       return { ...match, evidenceRecordIds: [] };
     }),
   };
@@ -157,7 +154,7 @@ function validateMatches(value, requirementCandidates) {
       !match.rationale.trim() ||
       !(match.gap === null || (typeof match.gap === "string" && match.gap.trim()))
     ) {
-      console.info("Match failed key requirements:", match)
+      console.info("Match failed key requirements:", match);
       invalidOutput(value);
     }
 
@@ -169,7 +166,9 @@ function validateMatches(value, requirementCandidates) {
       (match.matchStrength === "none" && selectedIds.size !== 0) ||
       (match.matchStrength !== "none" && selectedIds.size === 0)
     ) {
-      console.info("Match failed evidence record ids check:", match)
+      console.info("Match failed evidence record ids check:", match);
+      console.info(selectedIds)
+      console.info(availableIds)
       invalidOutput(value);
     }
 
