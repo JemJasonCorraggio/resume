@@ -675,3 +675,33 @@ Make evidence-matching output resilient to the model omitting `evidenceRecordIds
 - Automatically retrying the model or switching models.
 - Relaxing evidence-reference validation.
 - Changing the persisted API response contract.
+
+## 19. Task: Expand employment candidates to include related accomplishments
+When candidate retrieval selects an employment record for a job requirement, automatically include its associated accomplishment records in that requirement’s candidate group. This ensures the evidence-matching model can select specific accomplishments related to an employment record it was given.
+Do not weaken evidence validation to permit IDs that were not supplied to the model.
+
+### Requirements
+1. Preserve existing retrieval behavior. Keep the current requirement-matching logic and its existing candidate selection behavior.
+2. Expand selected employment records. For each requirement’s candidate group, when an employment record is selected, include its associated accomplishment records from the canonical inventory.
+3. Preserve record structure and IDs. Use the existing inventory records without rewriting their contents or generating new IDs. Preserve the existing candidate representation, including record types.
+4. Avoid duplicates. If an accomplishment is already in the candidate group, do not add it a second time.
+5. Preserve evidence boundaries. Only include accomplishments actually associated with the selected employment record according to the canonical inventory’s relationship fields. Do not infer associations from matching text or IDs.
+6. Keep validation strict. The evidence validator must continue rejecting IDs that are not in the final candidate group for that requirement.
+
+### Acceptance criteria
+- When a candidate group contains an employment record with associated accomplishments, those accomplishments are added to the group.
+- Accomplishments are not added when their employment record was not selected, unless they were independently selected by the existing retrieval logic.
+- Duplicate accomplishment IDs do not appear in a candidate group.
+- Expansion is deterministic: identical inventory, requirements, and retrieval configuration produce the same candidate groups.
+- Every added record retains its canonical ID, type, and content.
+- Evidence validation accepts an associated accomplishment that was added to the candidate group.
+- Evidence validation still rejects an accomplishment that exists in the inventory but is absent from that requirement’s candidate group.
+- Requirements with no selected employment records continue to use the existing retrieval behavior.
+- Tests cover an employment record with multiple accomplishments, an employment record with no accomplishments, an already-included accomplishment, and a candidate group near its limit.
+
+### Implementation notes
+- Inspect the canonical inventory schema to determine how employment records reference their accomplishments. Use the existing relationship fields rather than assuming a particular field name.
+- Keep the expansion logic in candidate retrieval, before the candidate groups are passed to evidence matching.
+- Prefer a small, deterministic helper function rather than changing the AI prompt or validation rules.
+- Do not add embeddings, vector search, new dependencies, or unrelated architectural changes.
+

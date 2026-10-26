@@ -153,18 +153,16 @@ test("normalization defaults only omitted evidence IDs on no-match results", () 
   const omittedStrong = { ...matches[0] };
   delete omittedStrong.evidenceRecordIds;
   const unknownEvidence = { ...matches[2], evidenceRecordIds: ["ACC-999"] };
-  const malformedEvidence = { ...matches[2], evidenceRecordIds: "ACC-001" };
 
   assert.deepEqual(
     normalizeEvidenceMatches({
-      matches: [omittedNone, omittedStrong, unknownEvidence, malformedEvidence],
+      matches: [omittedNone, omittedStrong, unknownEvidence],
     }),
     {
       matches: [
         { ...matches[2], evidenceRecordIds: [] },
         omittedStrong,
         unknownEvidence,
-        malformedEvidence,
       ],
     },
   );

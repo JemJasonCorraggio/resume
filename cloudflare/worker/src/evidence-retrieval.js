@@ -88,6 +88,28 @@ function validateInputs(inventory, requirements, limit) {
   }
 }
 
+function expandEmploymentCandidates(candidates, accomplishments) {
+  const accomplishmentsById = new Map(
+    accomplishments.map((record) => [record.id, record]),
+  );
+  const candidateIds = new Set(candidates.map(({ record }) => record.id));
+  const expanded = [...candidates];
+
+  for (const { type, record } of candidates) {
+    if (type !== "employment" || !Array.isArray(record.accomplishment_ids)) continue;
+
+    for (const id of record.accomplishment_ids) {
+      const accomplishment = accomplishmentsById.get(id);
+      if (!accomplishment || candidateIds.has(accomplishment.id)) continue;
+
+      expanded.push({ type: "accomplishment", record: accomplishment });
+      candidateIds.add(accomplishment.id);
+    }
+  }
+
+  return expanded;
+}
+
 export function retrieveEvidenceCandidates(
   inventory,
   requirements,
@@ -121,7 +143,11 @@ export function retrieveEvidenceCandidates(
       .sort((left, right) => right.score - left.score || left.order - right.order)
       .slice(0, limit)
       .map(({ type, record }) => ({ type, record }));
+    const expandedCandidates = expandEmploymentCandidates(
+      candidates,
+      inventory.accomplishments || [],
+    );
 
-    return { requirementId: requirement.id, candidates };
+    return { requirementId: requirement.id, candidates: expandedCandidates };
   });
 }
