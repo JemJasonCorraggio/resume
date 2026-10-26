@@ -257,7 +257,7 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
     invalidOutput(result, "Workers AI returned invalid evidence matches");
   }
 
-  normalized = normalizeEvidenceMatches(parsed)
+  const normalized = normalizeEvidenceMatches(parsed)
   console.info(normalized)
 
   return validateMatches(normalized, requirementCandidates);
