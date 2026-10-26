@@ -832,3 +832,26 @@ The UI must distinguish no supporting evidence found from analysis failed. It mu
 - Validation and server errors are visible and actionable.
 - A saved job can be reopened using its job ID.
 - The UI clearly labels missing evidence and failed analysis.
+
+## 23. Task: Limit and prioritize extracted requirements
+Bound the number of requirements passed to evidence matching to reduce AI request size and improve reliability on long job descriptions.
+
+### Requirements
+1. Introduce a configurable MAX_REQUIREMENTS_PER_JOB, defaulting to 15.
+2. After validating and normalizing extracted requirements, apply the limit before evidence retrieval and matching.
+3. When requirements exceed the limit, prioritize by importance (high, medium, low), preserving extraction order within each priority.
+4. Restore the selected requirements to their original extraction order before returning or matching them.
+5. Add a warning when requirements are omitted, including the total extracted count, retained count, and omitted count.
+6. Do not mutate the original job description or change the requirement schema.
+7. Preserve backend-generated requirement IDs and ensure evidence matching receives exactly the retained requirements.
+8. Do not silently truncate individual requirement descriptions or keyword arrays; retain existing validation behavior.
+9. Add tests for:
+   - Fewer than 15 requirements.
+   - Exactly 15 requirements.
+   - More than 15 requirements.
+   - Priority selection when high-, medium-, and low-importance requirements compete for slots.
+   - Stable ordering among equal-priority requirements.
+   - Correct warning counts.
+   - Evidence matching and persistence containing only the retained requirements.
+   
+Acceptance criterion: Every completed analysis contains at most 15 requirements, selected deterministically, with a warning whenever requirements are omitted.

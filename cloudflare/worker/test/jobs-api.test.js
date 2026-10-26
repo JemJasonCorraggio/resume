@@ -224,6 +224,67 @@ test("GET jobs returns the standard 404 response for an unknown ID", async () =>
   assert.deepEqual(environment.db.calls[0].values, ["not-found"]);
 });
 
+test("POST jobs matches and persists only priority-selected requirements", async () => {
+  const extractedRequirements = Array.from({ length: 20 }, (_, index) => ({
+    description: `Requirement ${index + 1}`,
+    category: "skill",
+    importance: index % 3 === 0 ? "low" : index % 3 === 1 ? "medium" : "high",
+    keywords: [`keyword-${index + 1}`],
+  }));
+  let matchRequest;
+  const environment = envForInventory(undefined, async (model, options) => {
+    if (options.messages[0].content.includes("Assess whether the supplied candidate")) {
+      matchRequest = JSON.parse(options.messages[1].content).requirements;
+      return {
+        response: JSON.stringify({
+          matches: matchRequest.map(({ requirement }) => ({
+            requirementId: requirement.id,
+            matchStrength: "none",
+            evidenceRecordIds: [],
+            rationale: "No supplied accomplishment supports this requirement.",
+            gap: "No supporting evidence was retrieved.",
+          })),
+        }),
+      };
+    }
+    return { response: JSON.stringify({ requirements: extractedRequirements }) };
+  });
+  const response = await handleRequest(
+    jobsRequest(JSON.stringify({
+      company: "Example Company",
+      title: "Engineer",
+      jobDescription: "Original posting text",
+    })),
+    environment.env,
+  );
+  const body = await responseBody(response);
+  const retained = body.requirements;
+  const expectedRetained = extractedRequirements
+    .map((requirement, index) => ({ ...requirement, index }))
+    .sort((left, right) => (
+      ({ high: 0, medium: 1, low: 2 })[left.importance] -
+        ({ high: 0, medium: 1, low: 2 })[right.importance] ||
+      left.index - right.index
+    ))
+    .slice(0, 15)
+    .sort((left, right) => left.index - right.index)
+    .map(({ index }) => `req_${String(index + 1).padStart(3, "0")}`);
+
+  assert.equal(response.status, 201);
+  assert.deepEqual(retained.map(({ id }) => id), expectedRetained);
+  assert.equal(retained.length, 15);
+  assert.deepEqual(matchRequest.map(({ requirement }) => requirement.id), expectedRetained);
+  assert.equal(body.evidenceMatches.length, 15);
+  assert.deepEqual(body.warnings, [
+    "Requirements limited: 20 extracted, 15 retained, 5 omitted.",
+  ]);
+  const persistedJob = environment.db.rows.get(body.jobId);
+  assert.deepEqual(JSON.parse(persistedJob.requirements_json), retained);
+  assert.deepEqual(JSON.parse(persistedJob.evidence_matches_json), body.evidenceMatches);
+  assert.deepEqual(JSON.parse(persistedJob.warnings_json), body.warnings);
+  assert.equal(body.jobDescription, "Original posting text");
+});
+
 test("POST jobs does not report success when D1 persistence fails", async () => {
   const environment = envForInventory();
   environment.env.DB = {

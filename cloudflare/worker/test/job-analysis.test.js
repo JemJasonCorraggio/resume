@@ -6,7 +6,9 @@ import {
   AIOutputInvalidError,
   AIServiceError,
   extractJobAnalysis,
+  limitRequirements,
 } from "../src/job-analysis.js";
+import { MAX_REQUIREMENTS_PER_JOB } from "../src/config.js";
 
 const examples = [
   {
@@ -55,6 +57,16 @@ const examples = [
     },
   },
 ];
+
+function requirementSet(count, importanceForIndex = () => "medium") {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `req_${String(index + 1).padStart(3, "0")}`,
+    description: `Requirement ${index + 1}`,
+    category: "skill",
+    importance: importanceForIndex(index),
+    keywords: [`keyword-${index + 1}`],
+  }));
+}
 
 function aiReturning(response, onCall = () => {}) {
   return {
@@ -120,6 +132,64 @@ test("extractJobAnalysis deduplicates identical requirements and regenerates IDs
       { id: "req_003", description: "Review code", category: "responsibility" },
     ],
   );
+});
+
+test("requirement limiter keeps fewer than the limit without a warning", () => {
+  const requirements = requirementSet(MAX_REQUIREMENTS_PER_JOB - 1);
+  const result = limitRequirements(requirements);
+
+  assert.equal(result.requirements, requirements);
+  assert.equal(result.warning, null);
+});
+
+test("requirement limiter keeps exactly the limit without a warning", () => {
+  const requirements = requirementSet(MAX_REQUIREMENTS_PER_JOB);
+  const result = limitRequirements(requirements);
+
+  assert.deepEqual(result.requirements, requirements);
+  assert.equal(result.warning, null);
+});
+
+test("requirement limiter honors an explicit configured limit", () => {
+  const requirements = requirementSet(5);
+  const result = limitRequirements(requirements, 2);
+
+  assert.deepEqual(result.requirements, requirements.slice(0, 2));
+  assert.equal(result.warning, "Requirements limited: 5 extracted, 2 retained, 3 omitted.");
+});
+
+test("requirement limiter prioritizes importance and restores extraction order", () => {
+  const requirements = requirementSet(20, (index) => {
+    if (index % 3 === 0) return "low";
+    if (index % 3 === 1) return "medium";
+    return "high";
+  });
+  const result = limitRequirements(requirements);
+
+  const retainedIds = requirements
+    .filter(({ id }) => result.requirements.some((requirement) => requirement.id === id))
+    .map(({ id }) => id);
+  assert.deepEqual(result.requirements.map(({ id }) => id), retainedIds);
+  assert.equal(result.requirements.length, MAX_REQUIREMENTS_PER_JOB);
+  assert.equal(result.requirements.filter(({ importance }) => importance === "high").length, 6);
+  assert.equal(result.requirements.filter(({ importance }) => importance === "medium").length, 7);
+  assert.equal(result.requirements.filter(({ importance }) => importance === "low").length, 2);
+  assert.deepEqual(
+    result.requirements.filter(({ importance }) => importance === "low").map(({ id }) => id),
+    ["req_001", "req_004"],
+  );
+  assert.equal(result.warning, "Requirements limited: 20 extracted, 15 retained, 5 omitted.");
+});
+
+test("requirement limiter preserves extraction order among equal-priority requirements", () => {
+  const requirements = requirementSet(18, () => "high");
+  const result = limitRequirements(requirements);
+
+  assert.deepEqual(
+    result.requirements.map(({ id }) => id),
+    requirements.slice(0, MAX_REQUIREMENTS_PER_JOB).map(({ id }) => id),
+  );
+  assert.equal(result.warning, "Requirements limited: 18 extracted, 15 retained, 3 omitted.");
 });
 
 test("extractJobAnalysis accepts values exactly at every normalization limit", async () => {

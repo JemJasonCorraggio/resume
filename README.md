@@ -169,8 +169,12 @@ The Worker validates output against its application-owned schema, trims
 normalized fields, removes duplicate requirements only when their normalized
 descriptions and categories match, and generates requirement IDs. It accepts
 at most 25 requirements, 500-character descriptions, and 10 keywords of at
-most 50 characters each. Invalid request fields return 400; unsupported or
-malformed model output returns a controlled 502 response. Completed
+most 50 characters each. After normalization, the Worker retains at most
+`MAX_REQUIREMENTS_PER_JOB` requirements (default 15), prioritizing high,
+medium, then low importance and preserving extraction order. Omitted
+requirements are reported in the response warnings; retained requirements
+keep their generated IDs and extraction order. Invalid request fields return
+400; unsupported or malformed model output returns a controlled 502 response. Completed
 analyses return HTTP 201 with UTC timestamps and preserve the original
 `jobDescription` separately from normalized analysis fields. Completed results
 are persisted in D1; `GET /api/jobs/{jobId}` returns the same response shape,

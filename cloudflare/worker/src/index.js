@@ -1,6 +1,9 @@
 import { auditInventory, validateInventory } from "./validation.js";
 import { runSmokeTest } from "./ai.js";
-import { MAX_JOB_DESCRIPTION_LENGTH } from "./config.js";
+import {
+  MAX_JOB_DESCRIPTION_LENGTH,
+  MAX_REQUIREMENTS_PER_JOB,
+} from "./config.js";
 import { matchRequirementsToEvidence } from "./evidence-matching.js";
 import { retrieveEvidenceCandidates } from "./evidence-retrieval.js";
 import { getJob, insertJob } from "./jobs.js";
@@ -8,6 +11,7 @@ import {
   AIOutputInvalidError,
   AIServiceError,
   extractJobAnalysis,
+  limitRequirements,
 } from "./job-analysis.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
@@ -86,9 +90,13 @@ async function handleCreateJob(request, env) {
 
   const normalizedCompany = company.trim();
   const normalizedRoleTitle = title.trim();
-  let requirements;
+  let extractedRequirements;
   try {
-    ({ requirements } = await extractJobAnalysis(env.AI, jobDescription, env.AI_MAX_TOKENS));
+    ({ requirements: extractedRequirements } = await extractJobAnalysis(
+      env.AI,
+      jobDescription,
+      env.AI_MAX_TOKENS,
+    ));
   } catch (error) {
     if (error instanceof AIOutputInvalidError) {
       console.error(error.message)
@@ -101,6 +109,17 @@ async function handleCreateJob(request, env) {
     console.error("Job analysis failed:", error instanceof Error ? error.name : "Unknown error");
     return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
   }
+  let selection;
+  try {
+    selection = limitRequirements(
+      extractedRequirements,
+      env.MAX_REQUIREMENTS_PER_JOB ?? MAX_REQUIREMENTS_PER_JOB,
+    );
+  } catch (error) {
+    console.error("Invalid maximum requirements configuration:", error instanceof Error ? error.message : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
+  }
+  const { requirements, warning } = selection;
 
   let inventory;
   try {
@@ -153,7 +172,7 @@ async function handleCreateJob(request, env) {
     inventoryRevision: inventory.inventory_revision_date,
     requirements,
     evidenceMatches,
-    warnings: [],
+    warnings: warning ? [warning] : [],
     createdAt: new Date().toISOString(),
   };
 
