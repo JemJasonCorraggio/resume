@@ -143,6 +143,9 @@ export function retrieveEvidenceCandidates(
       .sort((left, right) => right.score - left.score || left.order - right.order)
       .slice(0, limit)
       .map(({ type, record }) => ({ type, record }));
+
+    console.info("Available accomplishment IDs:", (inventory.accomplishments || []).map(({ id }) => id));
+
     const expandedCandidates = expandEmploymentCandidates(
       candidates,
       inventory.accomplishments || [],
