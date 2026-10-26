@@ -103,7 +103,7 @@ async function handleCreateJob(request, env) {
       return errorResponse(502, "AI_OUTPUT_INVALID", "Workers AI returned unusable analysis.");
     }
     if (error instanceof AIServiceError) {
-      console.error("Job analysis AI service failed.");
+      console.error("Job analysis AI service failed:", error);
       return errorResponse(502, "AI_SERVICE_ERROR", "The job analysis could not be completed.");
     }
     console.error("Job analysis failed:", error instanceof Error ? error.name : "Unknown error");
