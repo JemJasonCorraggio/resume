@@ -104,7 +104,7 @@ export function normalizeEvidenceMatches(value) {
         typeof match !== "object" ||
         Array.isArray(match) ||
         match.matchStrength !== "none" ||
-        Object.hasOwn(match, "evidenceRecordIds")
+        Array.isArray(match.evidenceRecordIds)
       ) {
         console.info("NORMALIZER: returning match unchanged", match.requirementId)
         return match;
