@@ -185,6 +185,8 @@ function validateMatches(value, requirementCandidates) {
 
 export async function matchRequirementsToEvidence(ai, requirements, candidateGroups, maxTokens) {
   const requirementCandidates = validateCandidateGroups(requirements, candidateGroups);
+  console.info("Requirements:", requirements)
+  console.info("Requirement Candidates:", requirementCandidates)
   if (!requirementCandidates.length) return [];
 
   if (!ai || typeof ai.run !== "function") {
