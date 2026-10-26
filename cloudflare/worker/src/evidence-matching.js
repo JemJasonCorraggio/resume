@@ -157,6 +157,7 @@ function validateMatches(value, requirementCandidates) {
       !match.rationale.trim() ||
       !(match.gap === null || (typeof match.gap === "string" && match.gap.trim()))
     ) {
+      console.info(match)
       invalidOutput(value);
     }
 
@@ -260,7 +261,7 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
   }
 
   const normalized = normalizeEvidenceMatches(parsed)
-  console.info(normalized)
+  console.info(JSON.stringify(normalized))
 
   return validateMatches(normalized, requirementCandidates);
 }
