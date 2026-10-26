@@ -157,7 +157,7 @@ function validateMatches(value, requirementCandidates) {
       !match.rationale.trim() ||
       !(match.gap === null || (typeof match.gap === "string" && match.gap.trim()))
     ) {
-      console.info(match)
+      console.info("Match failed key requirements:", match)
       invalidOutput(value);
     }
 
@@ -169,6 +169,7 @@ function validateMatches(value, requirementCandidates) {
       (match.matchStrength === "none" && selectedIds.size !== 0) ||
       (match.matchStrength !== "none" && selectedIds.size === 0)
     ) {
+      console.info("Match failed evidence record ids check:", match)
       invalidOutput(value);
     }
 
