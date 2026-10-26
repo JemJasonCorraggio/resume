@@ -167,8 +167,8 @@ function validateMatches(value, requirementCandidates) {
       (match.matchStrength !== "none" && selectedIds.size === 0)
     ) {
       console.info("Match failed evidence record ids check:", match);
-      console.info(selectedIds)
-      console.info(availableIds)
+      console.info("Selected IDs:", JSON.stringify([...selectedIds]));
+      console.info("Available IDs:", JSON.stringify([...availableIds]));
       invalidOutput(value);
     }
 
