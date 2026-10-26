@@ -9,10 +9,8 @@ const inventory = JSON.parse(readFileSync(
   new URL("../../../data/master-career-inventory.json", import.meta.url),
   "utf8",
 ));
-const extractableDescription = "Company: Example Company\nRole Title: Senior Backend Engineer";
+const extractableDescription = "Build and maintain backend APIs.";
 const analysis = {
-  company: "Example Company",
-  roleTitle: "Senior Backend Engineer",
   requirements: [
     {
       description: "Build and maintain backend APIs",
@@ -23,11 +21,30 @@ const analysis = {
   ],
 };
 
-function jobsRequest(body, headers = { "Content-Type": "application/json" }) {
+function jobsRequest(body, headers = { "Content-Type": "application/json" }, addJobDetails = true) {
+  let requestBody = body;
+  try {
+    const parsed = JSON.parse(body);
+    if (
+      addJobDetails &&
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      "jobDescription" in parsed
+    ) {
+      requestBody = JSON.stringify({
+        company: "Example Company",
+        title: "Senior Backend Engineer",
+        ...parsed,
+      });
+    }
+  } catch {
+    // Preserve malformed request bodies for validation tests.
+  }
   return new Request("https://worker.example/api/jobs", {
     method: "POST",
     headers,
-    body,
+    body: requestBody,
   });
 }
 
@@ -123,7 +140,11 @@ test("POST jobs completes AI analysis with generated requirement IDs", async () 
   const environment = envForInventory();
   const originalJobDescription = ` ${extractableDescription}\n `;
   const response = await handleRequest(
-    jobsRequest(JSON.stringify({ jobDescription: originalJobDescription })),
+    jobsRequest(JSON.stringify({
+      company: "Contoso",
+      title: "Staff Platform Engineer",
+      jobDescription: originalJobDescription,
+    })),
     environment.env,
   );
   const body = await responseBody(response);
@@ -144,8 +165,8 @@ test("POST jobs completes AI analysis with generated requirement IDs", async () 
   assert.match(body.jobId, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   assert.equal(body.status, "completed");
   assert.equal(body.jobDescription, originalJobDescription);
-  assert.equal(body.company, "Example Company");
-  assert.equal(body.roleTitle, "Senior Backend Engineer");
+  assert.equal(body.company, "Contoso");
+  assert.equal(body.roleTitle, "Staff Platform Engineer");
   assert.equal(body.inventoryRevision, inventory.inventory_revision_date);
   assert.deepEqual(body.requirements, [{
     ...analysis.requirements[0],
@@ -237,6 +258,22 @@ test("POST jobs returns controlled 400 errors for malformed requests", async () 
   const requests = [
     jobsRequest("{"),
     jobsRequest(JSON.stringify({})),
+    jobsRequest(JSON.stringify({ title: "Engineer", jobDescription: "Build services." }), undefined, false),
+    jobsRequest(JSON.stringify({ company: "Example", jobDescription: "Build services." }), undefined, false),
+    jobsRequest(JSON.stringify({ company: " ", title: "Engineer", jobDescription: "Build services." })),
+    jobsRequest(JSON.stringify({ company: "Example", title: " ", jobDescription: "Build services." })),
+    jobsRequest(JSON.stringify({
+      company: "c".repeat(201),
+      title: "Engineer",
+      jobDescription: "Build services.",
+    })),
+    jobsRequest(JSON.stringify({
+      company: "Example",
+      title: "t".repeat(201),
+      jobDescription: "Build services.",
+    })),
+    jobsRequest(JSON.stringify({ company: "Example", title: "Engineer" })),
+    jobsRequest(JSON.stringify({ company: "Example", title: "Engineer", jobDescription: "" })),
     jobsRequest(JSON.stringify({ jobDescription: "" })),
     jobsRequest(JSON.stringify({ jobDescription: "  \n " })),
     jobsRequest(JSON.stringify({ jobDescription: 42 })),
@@ -293,26 +330,6 @@ test("POST jobs counts Unicode code points and accepts the configured limit", as
   assert.equal(Array.from(description).length, MAX_JOB_DESCRIPTION_LENGTH);
   assert.equal(response.status, 201);
   assert.equal(environment.fetchCount, 1);
-});
-
-test("POST jobs returns 422 when company or role title cannot be extracted", async () => {
-  const environment = envForInventory(undefined, async () => ({
-    response: JSON.stringify({ company: "", roleTitle: "", requirements: [] }),
-  }));
-  const response = await handleRequest(
-    jobsRequest(JSON.stringify({ jobDescription: "Build great software." })),
-    environment.env,
-  );
-
-  assert.equal(response.status, 422);
-  assert.deepEqual(await responseBody(response), {
-    error: {
-      code: "JOB_DETAILS_NOT_FOUND",
-      message: "Could not identify the company and role title. Please amend the job description.",
-    },
-  });
-  assert.equal(environment.fetchCount, 0);
-  assert.equal(environment.db.rows.size, 0);
 });
 
 test("POST jobs returns controlled errors for unusable AI output and service failures", async () => {

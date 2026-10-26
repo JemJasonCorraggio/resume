@@ -22,7 +22,8 @@ The audit exits unsuccessfully for schema, duplicate-ID, or broken-reference err
 ### Read-only inventory browser and Cloudflare deployment
 
 The browser consists of static HTML, CSS, and JavaScript in [`public/`](./public/).
-The browser calls the same-origin `/api/inventory` endpoint. In Cloudflare, a
+The browser calls same-origin endpoints under `/api`, configured centrally in
+[`public/config.js`](./public/config.js). In Cloudflare, a
 Pages Function in [`functions/api/inventory.js`](./functions/api/inventory.js)
 forwards that request through a Service Binding to the JavaScript Worker in
 [`cloudflare/worker/`](./cloudflare/worker/). The Worker reads the canonical
@@ -39,7 +40,11 @@ The API response contains `loaded`, `inventory`, and `validation` (`errors`
 and `warnings`). A file retrieval or JSON parse failure returns HTTP 500 with
 `loaded: false`; validation failures return the loaded inventory with the
 canonical audit errors. The frontend only renders these results; it does not
-implement validation rules or editing/upload features.
+implement validation rules or editing/upload features. The same Pages app also
+submits job analyses and can reopen a saved result by job ID. The browser uses
+the configurable `/api` base in `public/config.js`; Pages Functions forward
+requests through the existing Worker Service Binding, so browser traffic is
+same-origin and does not require CORS.
 
 Run the local development server from the repository root:
 
@@ -49,9 +54,11 @@ python -m career_inventory_api
 
 Open <http://127.0.0.1:8000>. This local server reads
 `data/master-career-inventory.json` directly and serves the same UI and API
-without Cloudflare. It uses Python's standard-library `http.server` and the
-existing inventory service and validator, with no third-party Python
-dependencies. Use `--inventory /path/to/inventory.json` or
+for inventory browsing without Cloudflare. Job analysis requires the Pages
+preview and Worker service binding described below. The local server uses
+Python's standard-library `http.server` and the existing inventory service and
+validator, with no third-party Python dependencies. Use
+`--inventory /path/to/inventory.json` or
 `CAREER_INVENTORY_PATH` to test another local file.
 
 For an end-to-end Cloudflare local preview, install Node.js 22+ and npm, then
@@ -76,8 +83,8 @@ npm --prefix cloudflare/worker exec -- wrangler pages dev ./public --service INV
 ```
 
 Open the Pages dev URL (normally <http://127.0.0.1:8788>). The service binding
-routes `/api/inventory` to the local JavaScript Worker. The Python server above
-remains available for local backend/UI development without Cloudflare tooling.
+routes `/api` requests to the local JavaScript Worker. The Python server above
+remains available for local inventory browsing without Cloudflare tooling.
 
 Run the Worker contract tests and the cross-language compatibility tests from
 the repository root:
@@ -152,16 +159,18 @@ without making a billed model request.
 
 #### Job-analysis API
 
-`POST /api/jobs` accepts a JSON object with a non-empty `jobDescription` string.
-The Worker enforces a maximum of 50,000 Unicode code points after JSON parsing.
-Workers AI extracts the company, role title, and structured requirements.
+`POST /api/jobs` accepts a JSON object with non-empty `company`, `title`, and
+`jobDescription` strings. `title` is returned as `roleTitle`. Company and title
+are limited to 200 Unicode code
+points; the Worker enforces a maximum of 50,000 Unicode code points for the
+posting after JSON parsing. Workers AI extracts structured requirements only;
+company and role title come from the submitted fields.
 The Worker validates output against its application-owned schema, trims
 normalized fields, removes duplicate requirements only when their normalized
 descriptions and categories match, and generates requirement IDs. It accepts
 at most 25 requirements, 500-character descriptions, and 10 keywords of at
-most 50 characters each; company and role titles are limited to 200 characters.
-Unsupported or malformed model output returns a controlled 502 response, and
-postings without an identifiable company or role title return 422. Completed
+most 50 characters each. Invalid request fields return 400; unsupported or
+malformed model output returns a controlled 502 response. Completed
 analyses return HTTP 201 with UTC timestamps and preserve the original
 `jobDescription` separately from normalized analysis fields. Completed results
 are persisted in D1; `GET /api/jobs/{jobId}` returns the same response shape,
@@ -196,7 +205,7 @@ To create and migrate a local database, run these commands from
 `cloudflare/worker`:
 
 ```sh
-npx wrangler d1 migrations apply career-inventory --local
+npx wrangler d1 migrations apply career-inventory-db --local
 npm run dev
 ```
 
@@ -204,7 +213,7 @@ For a deployed database, authenticate Wrangler and create the database once:
 
 ```sh
 npx wrangler login
-npx wrangler d1 create career-inventory
+npx wrangler d1 create career-inventory-db
 ```
 
 Copy the returned `database_id` into the `DB` entry under `d1_databases` in
@@ -212,7 +221,7 @@ Copy the returned `database_id` into the `DB` entry under `d1_databases` in
 deploy the Worker:
 
 ```sh
-npx wrangler d1 migrations apply career-inventory --remote
+npx wrangler d1 migrations apply career-inventory-db --remote
 npm run deploy
 ```
 

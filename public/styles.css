@@ -36,7 +36,44 @@ h2 { margin-bottom: .9rem; font-size: 1.1rem; }
 .status-error { color: #991b1b; background: #fee2e2; }
 
 main { max-width: 1440px; margin: 1.5rem auto; padding: 0 1rem; }
-.overview, .record-list, .record-detail { border: 1px solid var(--line); border-radius: .75rem; background: #fff; }
+.overview, .analysis-panel, .analysis-results, .record-list, .record-detail { border: 1px solid var(--line); border-radius: .75rem; background: #fff; }
+.analysis-panel, .analysis-results { margin-bottom: 1rem; padding: 1.25rem; }
+.section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; margin-bottom: 1rem; }
+.section-heading h2 { margin-bottom: .35rem; }
+.section-heading p { margin-bottom: 0; }
+.open-job-form { flex: 0 1 390px; }
+.open-job-form label { margin-top: 0; }
+.inline-controls { display: flex; gap: .5rem; }
+.inline-controls input { min-width: 0; }
+.input-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+textarea { display: block; width: 100%; resize: vertical; border: 1px solid #c8d4db; border-radius: .4rem; padding: .65rem; color: inherit; font: inherit; line-height: 1.5; }
+textarea:focus { outline: 3px solid #82c6df; outline-offset: 2px; }
+.form-actions { display: flex; align-items: center; gap: 1rem; margin-top: .9rem; }
+.button-primary { border-color: #155a75; color: #fff; background: #155a75; font-weight: 700; }
+.button-primary:hover { background: #10475e; }
+.form-actions [role="status"] { color: var(--muted); }
+.analysis-error { margin: .9rem 0 0; border-left: 4px solid #b91c1c; padding: .7rem .85rem; color: #7f1d1d; background: #fef2f2; }
+.analysis-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.analysis-header h2 { margin-bottom: .3rem; font-size: 1.45rem; }
+.analysis-meta { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin: .6rem 0 1rem; color: var(--muted); font-size: .9rem; }
+.analysis-note { border-left: 4px solid #155a75; padding: .65rem .8rem; color: #254858; background: #eff7fa; }
+.requirements { display: grid; gap: .75rem; margin-top: 1rem; }
+.requirement-card { border: 1px solid var(--line); border-radius: .6rem; padding: .9rem; }
+.requirement-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.requirement-heading h3 { margin: 0; font-size: 1rem; line-height: 1.45; }
+.requirement-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
+.tag { display: inline-flex; border-radius: 999px; padding: .22rem .55rem; color: #294656; background: #eaf2f5; font-size: .78rem; font-weight: 700; }
+.match-status { flex: 0 0 auto; border-radius: 999px; padding: .3rem .6rem; font-size: .78rem; font-weight: 750; text-transform: capitalize; }
+.match-strong { color: #14532d; background: #dcfce7; }
+.match-partial { color: #854d0e; background: #fef3c7; }
+.match-none, .match-unavailable { color: #991b1b; background: #fee2e2; }
+.evidence-copy { margin: .75rem 0 0; line-height: 1.5; }
+.evidence-ids { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+.evidence-link { border: 1px solid #a9d4e1; border-radius: .35rem; padding: .3rem .5rem; color: var(--blue); background: #edf7fa; font: inherit; font-size: .82rem; cursor: pointer; }
+.evidence-link:hover { background: #dceff5; }
+.gap-copy { margin-top: .6rem; border-left: 3px solid #d97706; padding: .45rem .65rem; color: #713f12; background: #fffbeb; }
+.no-requirements { margin: 1rem 0 0; border-left: 4px solid #64748b; padding: .7rem .85rem; background: #f1f5f9; }
+.saved-job-id { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 .overview { margin-bottom: 1rem; padding: 1.1rem 1.25rem; }
 .overview-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 .overview-heading h2 { margin: 0; }
@@ -84,6 +121,10 @@ footer { padding: 1rem; color: var(--muted); text-align: center; font-size: .85r
 
 @media (max-width: 760px) {
   .page-header { align-items: flex-start; flex-direction: column; }
+  .section-heading { flex-direction: column; }
+  .open-job-form { width: 100%; flex-basis: auto; }
+  .input-grid { grid-template-columns: 1fr; gap: 0; }
+  .requirement-heading { flex-direction: column; }
   .browser { grid-template-columns: 1fr; }
   .record-list { position: static; }
   .records { max-height: 35vh; }

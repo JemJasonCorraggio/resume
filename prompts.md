@@ -798,3 +798,37 @@ Missing or inaccessible ID: 404 Not Found, using the standard error format.
 
 ### Out of scope
 Listing all jobs, deleting jobs, or searching jobs by anything other than id.
+
+## 22. Task: Connect Pages to the analysis API and display results
+Let the user submit a job posting from Pages and inspect the saved analysis. Add input fields for the company, title, and job description and adjust the API to accept company and title separate from the job description.
+
+### UI requirements
+Add a job-description submission view with:
+- Separate input fields for comapny and title
+- A multiline text field for the job posting.
+- A submit button.
+- Loading state while analysis runs.
+- A useful validation or API error message.
+- Company and role title.
+- Extracted requirements and their importance/category.
+- Evidence matches, including match strength and rationale.
+- Linked evidence record IDs or the existing inventory inspection UI where practical.
+- A clear display of gaps and unsupported requirements.
+- Inventory revision and creation timestamp.
+
+The UI must distinguish no supporting evidence found from analysis failed. It must not display unsupported requirements as established candidate experience.
+
+### Implementation requirements
+- Use the deployed Worker URL through explicit environment/configuration rather than hardcoding it throughout the UI.
+- Keep request/response types aligned with the API contract.
+- Handle network errors, non-JSON errors, and non-2xx responses.
+- Configure CORS as needed for the actual Pages origin.
+- Make the interface usable on a Chromebook-sized desktop browser and smaller screens.
+
+### Acceptance criteria
+- A user can submit a job description from Pages.
+- A successful response renders all requirements, evidence matches, and gaps.
+- The loading state prevents accidental duplicate submissions.
+- Validation and server errors are visible and actionable.
+- A saved job can be reopened using its job ID.
+- The UI clearly labels missing evidence and failed analysis.

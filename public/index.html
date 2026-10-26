@@ -13,8 +13,8 @@
     <header class="page-header">
       <div>
         <p class="eyebrow">Private workspace</p>
-        <h1>Career inventory</h1>
-        <p class="subtitle">Browse records and review inventory validation.</p>
+        <h1>Career evidence review</h1>
+        <p class="subtitle">Compare a job posting with documented career evidence.</p>
       </div>
       <div id="load-status" class="status status-loading" role="status" aria-live="polite">
         Loading inventory…
@@ -22,6 +22,45 @@
     </header>
 
     <main>
+      <section class="analysis-panel" aria-labelledby="analysis-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="analysis-heading">Analyze a job posting</h2>
+            <p class="muted">Requirements describe the employer's needs; they are not claims about your experience.</p>
+          </div>
+          <form id="open-job-form" class="open-job-form">
+            <label for="saved-job-id">Reopen saved analysis</label>
+            <div class="inline-controls">
+              <input id="saved-job-id" name="jobId" type="text" autocomplete="off"
+                placeholder="Paste a saved job ID" aria-label="Saved job ID">
+              <button id="open-job-button" class="button button-secondary" type="submit">Open</button>
+            </div>
+          </form>
+        </div>
+        <form id="analysis-form">
+          <div class="input-grid">
+            <div>
+              <label for="company-input">Company</label>
+              <input id="company-input" name="company" type="text" maxlength="400" required>
+            </div>
+            <div>
+              <label for="title-input">Role title</label>
+              <input id="title-input" name="title" type="text" maxlength="400" required>
+            </div>
+          </div>
+          <label for="job-description-input">Job posting</label>
+          <textarea id="job-description-input" name="jobDescription" rows="9" maxlength="100000"
+            required placeholder="Paste the complete job posting here."></textarea>
+          <div class="form-actions">
+            <button id="analyze-button" class="button button-primary" type="submit">Analyze posting</button>
+            <span id="analysis-status" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+        <p id="analysis-error" class="analysis-error" role="alert" hidden></p>
+      </section>
+
+      <section id="analysis-results" class="analysis-results" aria-live="polite" hidden></section>
+
       <section class="overview" aria-label="Inventory status">
         <div class="overview-heading">
           <h2>Inventory status</h2>

@@ -8,7 +8,6 @@ import {
   AIOutputInvalidError,
   AIServiceError,
   extractJobAnalysis,
-  JobDetailsMissingError,
 } from "./job-analysis.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
@@ -58,7 +57,19 @@ async function handleCreateJob(request, env) {
     return errorResponse(400, "INVALID_REQUEST", "Request body must be a JSON object.");
   }
 
-  const { jobDescription } = body;
+  const { company, title, jobDescription } = body;
+  if (typeof company !== "string" || !company.trim()) {
+    return errorResponse(400, "INVALID_REQUEST", "company is required.");
+  }
+  if (countUnicodeCharacters(company.trim()) > 200) {
+    return errorResponse(400, "INVALID_REQUEST", "company must not exceed 200 characters.");
+  }
+  if (typeof title !== "string" || !title.trim()) {
+    return errorResponse(400, "INVALID_REQUEST", "title is required.");
+  }
+  if (countUnicodeCharacters(title.trim()) > 200) {
+    return errorResponse(400, "INVALID_REQUEST", "title must not exceed 200 characters.");
+  }
   if (typeof jobDescription !== "string") {
     return errorResponse(400, "INVALID_REQUEST", "jobDescription must be a string.");
   }
@@ -73,13 +84,12 @@ async function handleCreateJob(request, env) {
     );
   }
 
-  let analysis;
+  const normalizedCompany = company.trim();
+  const normalizedRoleTitle = title.trim();
+  let requirements;
   try {
-    analysis = await extractJobAnalysis(env.AI, jobDescription, env.AI_MAX_TOKENS);
+    ({ requirements } = await extractJobAnalysis(env.AI, jobDescription, env.AI_MAX_TOKENS));
   } catch (error) {
-    if (error instanceof JobDetailsMissingError) {
-      return errorResponse(422, "JOB_DETAILS_NOT_FOUND", error.message);
-    }
     if (error instanceof AIOutputInvalidError) {
       console.error(error.message)
       return errorResponse(502, "AI_OUTPUT_INVALID", "Workers AI returned unusable analysis.");
@@ -112,12 +122,12 @@ async function handleCreateJob(request, env) {
     return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
   }
 
-  const candidateGroups = retrieveEvidenceCandidates(inventory, analysis.requirements);
+  const candidateGroups = retrieveEvidenceCandidates(inventory, requirements);
   let evidenceMatches;
   try {
     evidenceMatches = await matchRequirementsToEvidence(
       env.AI,
-      analysis.requirements,
+      requirements,
       candidateGroups,
       env.AI_MAX_TOKENS,
     );
@@ -138,10 +148,10 @@ async function handleCreateJob(request, env) {
     jobId: crypto.randomUUID(),
     status: "completed",
     jobDescription,
-    company: analysis.company,
-    roleTitle: analysis.roleTitle,
+    company: normalizedCompany,
+    roleTitle: normalizedRoleTitle,
     inventoryRevision: inventory.inventory_revision_date,
-    requirements: analysis.requirements,
+    requirements,
     evidenceMatches,
     warnings: [],
     createdAt: new Date().toISOString(),
