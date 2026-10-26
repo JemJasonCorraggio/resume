@@ -92,8 +92,8 @@ export function normalizeEvidenceMatches(value) {
     Array.isArray(value) ||
     !Array.isArray(value.matches)
   ) {
-    return value;
     console.info("NORMALIZER: returning input unchanged");
+    return value;
   }
 
   return {
@@ -106,6 +106,7 @@ export function normalizeEvidenceMatches(value) {
         match.matchStrength !== "none" ||
         Object.hasOwn(match, "evidenceRecordIds")
       ) {
+        console.info("NORMALIZER: returning match unchanged", match.requirementId)
         return match;
       }
       console.info("NORMALIZER: adding empty IDs array", match.requirementId);
