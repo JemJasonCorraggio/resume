@@ -705,3 +705,66 @@ Do not weaken evidence validation to permit IDs that were not supplied to the mo
 - Prefer a small, deterministic helper function rather than changing the AI prompt or validation rules.
 - Do not add embeddings, vector search, new dependencies, or unrelated architectural changes.
 
+## 20. Task: Retrieve accomplishment-only evidence candidates
+Change evidence candidate retrieval so that only accomplishment records can be selected as evidence for job requirements. Employment records may provide supporting context, but must not be returned as selectable evidence.
+
+This removes employment-driven candidate expansion, keeps the candidate limit predictable, and reduces unnecessary input to Workers AI. Update `retrieveEvidenceCandidates()` and its associated tests accordingly.
+
+### Requirements
+1. Accomplishments are the only selectable evidence
+   - Retrieve and rank accomplishment records directly against each requirement.
+   - Do not include employment records in the candidate list.
+   - Remove the call to `expandEmploymentCandidates()` from the retrieval path. Remove the helper and associated tests completely.
+2. Enforce the candidate limit
+   - Apply the existing deterministic relevance scoring and tie-breaking to accomplishment records.
+   - Apply `limit` to the ranked accomplishment candidates.
+   - Return no more than `limit` candidates per requirement.
+   - Preserve the existing behavior for zero matching candidates and requirements with no relevant accomplishments.
+   - Do not expand the candidate list after applying the limit.
+3. Preserve canonical records
+   - Keep original accomplishment IDs and record types.
+   - Return the original accomplishment records rather than reconstructing or modifying them.
+   - Do not modify the canonical inventory or its schema.
+   - Do not create new IDs or duplicate accomplishment records.
+4. Preserve employment relationships
+   - Accomplishments may refer to their associated employment through `employer_id`.
+   - Do not include employment records as selectable candidates merely because an accomplishment references them.
+   - Do not add employment context to the AI request.
+5. Preserve strict evidence validation
+   - The evidence-matching validator must continue to reject IDs that were not supplied as candidates for the corresponding requirement.
+   - Only accomplishment IDs may be returned as evidence.
+   - Preserve existing validation rules for match strength, empty evidence selections, duplicate IDs, and missing or duplicate requirement matches.
+   - Do not weaken validation to accommodate the new retrieval behavior.
+6. Keep retrieval deterministic
+   - Preserve the existing relevance-scoring implementation and deterministic tie-breaking.
+   - Given the same inventory, requirements, and limit, retrieval must return the same candidates in the same order.
+
+### Acceptance criteria
+- Every returned evidence candidate has type `accomplishment`.
+- No employment record appears in a requirement's selectable candidate list.
+- Each requirement returns at most `limit` candidates.
+- Candidates are ranked using the existing relevance-scoring and tie-breaking behavior.
+- Relevant accomplishments can be retrieved without first selecting their associated employment record.
+- Employment records with many linked accomplishments cannot cause the candidate limit to be exceeded.
+- Returned records retain their canonical IDs and contents.
+- An accomplishment can be selected as evidence only when its ID appears in that requirement's candidate list.
+- The existing validator continues to reject unknown IDs, employment IDs, duplicate evidence IDs, and invalid match structures.
+- Existing tests are updated to reflect accomplishment-only evidence.
+- Tests cover an employment record with multiple linked accomplishments to verify that retrieval does not expand candidates beyond the limit.
+- Tests cover an accomplishment whose associated employment record would not independently rank as a candidate.
+- Tests cover fewer matching accomplishments than the limit and no matching accomplishments.
+- Existing deterministic ordering and tie-breaking tests continue to pass.
+- Any now-unused helper is removed, provided it has no other callers.
+
+### Out of scope
+- Changing the canonical inventory schema or record IDs.
+- Changing the relevance-scoring algorithm or candidate limit.
+- Introducing embeddings, vector search, or a new retrieval system.
+- Changing the Workers AI model, output-token limit, or evidence-matching schema.
+
+### Implementation notes
+- Inspect `RECORD_TYPES` and `TYPES_BY_CATEGORY` before making changes. Ensure the retrieval path explicitly limits selectable evidence to accomplishments rather than relying on employment records being filtered out incidentally.
+- Preserve `validateInputs()` and existing error behavior.
+- Review any consumers of `retrieveEvidenceCandidates()` before removing employment candidates, especially code that assumes candidate records can have multiple types.
+- Run the focused retrieval and evidence-validation tests, followed by the relevant end-to-end tests.
+- If the existing AI prompt assumes employment records can be cited, update its instructions to specify that only supplied accomplishment IDs are valid evidence.

@@ -50,11 +50,10 @@ const candidateGroups = [
   {
     requirementId: "req_002",
     candidates: [{
-      type: "employment",
+      type: "accomplishment",
       record: {
-        id: "EMP-001",
-        job_title: "Senior Engineer",
-        scope_of_ownership: "Led a team of four engineers.",
+        id: "ACC-002",
+        title: "Led a team of four engineers.",
       },
     }],
   },
@@ -72,7 +71,7 @@ const matches = [
   {
     requirementId: "req_002",
     matchStrength: "partial",
-    evidenceRecordIds: ["EMP-001"],
+    evidenceRecordIds: ["ACC-002"],
     rationale: "The record documents team leadership but not the requested scope.",
     gap: "The record does not specify the duration of team leadership.",
   },
@@ -143,6 +142,7 @@ test("matching returns validated strong, partial, and none results", async () =>
     })),
   });
   assert.match(invocation.options.messages[0].content, /only source of candidate experience/);
+  assert.match(invocation.options.messages[0].content, /only valid evidence IDs/);
   assert.match(invocation.options.messages[0].content, /shared keyword as sufficient proof/);
   assert.match(invocation.options.messages[0].content, /Do not infer ownership/);
 });
@@ -191,6 +191,7 @@ test("matching rejects malformed or out-of-scope model output", async () => {
     "not JSON",
     { matches: matches.slice(0, 2) },
     { matches: [{ ...matches[0], evidenceRecordIds: ["ACC-999"] }, ...matches.slice(1)] },
+    { matches: [{ ...matches[0], evidenceRecordIds: ["EMP-001"] }, ...matches.slice(1)] },
     { matches: [{ ...matches[0], evidenceRecordIds: "ACC-001" }, ...matches.slice(1)] },
     { matches: [{ ...matches[0], evidenceRecordIds: ["ACC-001", 1] }, ...matches.slice(1)] },
     { matches: [{ ...matches[0], requirementId: "req_fake" }, ...matches.slice(1)] },
@@ -220,6 +221,32 @@ test("matching rejects malformed or out-of-scope model output", async () => {
     console.error = originalConsoleError;
   }
   assert.ok(loggedErrors.some((args) => args.includes("not JSON")));
+});
+
+test("matching rejects employment records as candidate evidence", async () => {
+  let called = false;
+  const invalidCandidateGroups = [
+    ...candidateGroups.slice(0, 1),
+    {
+      requirementId: "req_002",
+      candidates: [{
+        type: "employment",
+        record: { id: "EMP-001", job_title: "Senior Engineer" },
+      }],
+    },
+    ...candidateGroups.slice(2),
+  ];
+
+  await assert.rejects(
+    matchRequirementsToEvidence(
+      { run: async () => { called = true; } },
+      requirements,
+      invalidCandidateGroups,
+      2048,
+    ),
+    TypeError,
+  );
+  assert.equal(called, false);
 });
 
 test("matching surfaces AI service failures and rejects invalid configuration", async () => {

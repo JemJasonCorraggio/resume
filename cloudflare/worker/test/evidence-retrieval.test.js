@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { MAX_CANDIDATES_PER_REQUIREMENT } from "../src/config.js";
-import { matchRequirementsToEvidence } from "../src/evidence-matching.js";
 import { retrieveEvidenceCandidates } from "../src/evidence-retrieval.js";
 import { validateInventory } from "../src/validation.js";
 
@@ -40,17 +39,16 @@ test("ambiguous matches preserve evidence boundaries rather than strengthening c
     requirement("req_vue", "Implement Vue.js frontend features", "skill", ["Vue"]),
   ]);
   const kafkaCandidate = candidateById(kafkaResult, "ACC-002");
-  const vueCandidate = candidateById(vueResult, "SK-035");
   const vueAccomplishment = candidateById(vueResult, "ACC-010");
 
   assert.ok(kafkaCandidate);
   assert.match(kafkaCandidate.record.technical_details, /consumer only/);
   assert.match(kafkaCandidate.record.technical_details, /did not build the pipeline/);
-  assert.ok(vueCandidate);
-  assert.match(vueCandidate.record.limitations, /NEVER coded in Vue/);
   assert.ok(vueAccomplishment);
   assert.match(vueAccomplishment.record.my_contribution, /reviewed Vue code/);
   assert.match(vueAccomplishment.record.my_contribution, /limited hands-on Vue coding/);
+  assert.ok(vueResult.candidates.every(({ type }) => type === "accomplishment"));
+  assert.equal(candidateById(vueResult, "SK-035"), undefined);
 });
 
 test("evidence retrieval returns no candidates for unrelated requirements", () => {
@@ -61,146 +59,69 @@ test("evidence retrieval returns no candidates for unrelated requirements", () =
   assert.deepEqual(result, { requirementId: "req_001", candidates: [] });
 });
 
-test("selected employment records expand to matchable canonical accomplishments", async () => {
+test("retrieves accomplishments linked to employment without selecting employment", () => {
   const employment = {
     id: "EMP-TEST",
-    job_title: "Platform engineer",
-    accomplishment_ids: ["ACC-001", "ACC-002"],
-  };
-  const accomplishments = [
-    { id: "ACC-001", employer_id: "EMP-TEST", title: "Improved deployment safety" },
-    { id: "ACC-002", employer_id: "EMP-TEST", title: "Reduced service latency" },
-  ];
-  const testInventory = { employment_history: [employment], accomplishments };
-  const [result] = retrieveEvidenceCandidates(testInventory, [
-    requirement("req_platform", "Platform engineer", "experience", ["platform"]),
-  ]);
-
-  assert.deepEqual(result.candidates, [
-    { type: "employment", record: employment },
-    ...accomplishments.map((record) => ({ type: "accomplishment", record })),
-  ]);
-
-  const [match] = await matchRequirementsToEvidence(
-    {
-      run: async () => ({
-        response: JSON.stringify({
-          matches: [{
-            requirementId: "req_platform",
-            matchStrength: "strong",
-            evidenceRecordIds: ["ACC-001"],
-            rationale: "The supplied accomplishment supports this requirement.",
-            gap: null,
-          }],
-        }),
-      }),
-    },
-    [requirement("req_platform", "Platform engineer", "experience", ["platform"])],
-    [result],
-    2048,
-  );
-  assert.deepEqual(match.evidenceRecordIds, ["ACC-001"]);
-});
-
-test("employment with no associated accomplishments does not expand", () => {
-  const employment = {
-    id: "EMP-TEST",
-    job_title: "Platform engineer",
-    accomplishment_ids: [],
-  };
-  const [result] = retrieveEvidenceCandidates(
-    { employment_history: [employment], accomplishments: [] },
-    [requirement("req_platform", "Platform engineer", "experience", ["platform"])],
-  );
-
-  assert.deepEqual(result.candidates, [{ type: "employment", record: employment }]);
-});
-
-test("expansion does not duplicate an independently retrieved accomplishment", () => {
-  const employment = {
-    id: "EMP-TEST",
-    job_title: "Platform engineer",
-    accomplishment_ids: ["ACC-001"],
-  };
-  const accomplishment = {
-    id: "ACC-001",
-    employer_id: "EMP-TEST",
-    title: "Platform engineer improved deployment safety",
-  };
-  const [result] = retrieveEvidenceCandidates(
-    { employment_history: [employment], accomplishments: [accomplishment] },
-    [requirement("req_platform", "Platform engineer", "experience", ["platform"])],
-  );
-
-  assert.equal(
-    result.candidates.filter(({ record }) => record.id === "ACC-001").length,
-    1,
-  );
-  assert.ok(result.candidates.some(({ type, record }) => (
-    type === "accomplishment" && record === accomplishment
-  )));
-});
-
-test("unselected employment does not add accomplishments beyond independent retrieval", () => {
-  const employment = {
-    id: "EMP-TEST",
-    job_title: "Platform engineer",
+    job_title: "Customer operations manager",
     accomplishment_ids: ["ACC-RELATED"],
-  };
-  const independentlyMatching = {
-    id: "ACC-MATCH",
-    employer_id: "EMP-OTHER",
-    title: "Kafka consumers",
   };
   const related = {
     id: "ACC-RELATED",
     employer_id: "EMP-TEST",
-    title: "Improved deployment safety",
+    title: "Migrated a service to Kubernetes",
   };
   const [result] = retrieveEvidenceCandidates(
     {
       employment_history: [employment],
-      accomplishments: [independentlyMatching, related],
+      accomplishments: [related],
     },
-    [requirement("req_kafka", "Build Kafka consumers", "skill", ["Kafka"])],
+    [requirement("req_kubernetes", "Deploy services with Kubernetes", "experience", ["Kubernetes"])],
   );
 
-  assert.deepEqual(result.candidates, [
-    { type: "accomplishment", record: independentlyMatching },
-  ]);
+  assert.deepEqual(result.candidates, [{ type: "accomplishment", record: related }]);
+  assert.equal(result.candidates[0].record, related);
 });
 
-test("related accomplishments are appended even when retrieval reaches its candidate limit", () => {
+test("linked accomplishments cannot expand candidates beyond the limit", () => {
   const employment = {
     id: "EMP-TEST",
     job_title: "Platform engineer delivery",
-    accomplishment_ids: ["ACC-RELATED"],
+    accomplishment_ids: ["ACC-001", "ACC-002", "ACC-003", "ACC-004"],
   };
-  const independentlyMatching = Array.from({ length: MAX_CANDIDATES_PER_REQUIREMENT - 1 }, (_, index) => ({
-    id: `ACC-MATCH-${index}`,
-    employer_id: "EMP-OTHER",
-    title: "Platform delivery",
+  const accomplishments = employment.accomplishment_ids.map((id, index) => ({
+    id,
+    employer_id: employment.id,
+    title: `Platform delivery outcome ${index}`,
   }));
-  const related = {
-    id: "ACC-RELATED",
-    employer_id: "EMP-TEST",
-    title: "Improved deployment safety",
-  };
   const [result] = retrieveEvidenceCandidates(
     {
       employment_history: [employment],
-      accomplishments: [...independentlyMatching, related],
+      accomplishments,
     },
     [requirement("req_platform", "Platform engineer delivery", "experience", ["platform"])],
+    2,
   );
 
-  assert.equal(
-    result.candidates.filter(({ record }) => record.id !== "ACC-RELATED").length,
-    MAX_CANDIDATES_PER_REQUIREMENT,
+  assert.equal(result.candidates.length, 2);
+  assert.deepEqual(result.candidates.map(({ type, record }) => [type, record.id]), [
+    ["accomplishment", "ACC-001"],
+    ["accomplishment", "ACC-002"],
+  ]);
+});
+
+test("fewer matching accomplishments than the limit are returned unchanged", () => {
+  const accomplishment = {
+    id: "ACC-ONE",
+    employer_id: "EMP-NOT-MATCHED",
+    title: "Maintained Kafka consumers",
+  };
+  const [result] = retrieveEvidenceCandidates(
+    { accomplishments: [accomplishment] },
+    [requirement("req_kafka", "Operate Kafka consumers", "skill", ["Kafka"])],
+    5,
   );
-  assert.ok(result.candidates.some(({ type, record }) => (
-    type === "accomplishment" && record === related
-  )));
+
+  assert.deepEqual(result.candidates, [{ type: "accomplishment", record: accomplishment }]);
 });
 
 test("evidence retrieval is deterministic and enforces the configurable candidate limit", () => {
@@ -212,10 +133,12 @@ test("evidence retrieval is deterministic and enforces the configurable candidat
 
   assert.deepEqual(first, second);
   assert.equal(MAX_CANDIDATES_PER_REQUIREMENT, 5);
-  assert.ok(first[0].candidates.length >= MAX_CANDIDATES_PER_REQUIREMENT);
-  const expanded = retrieveEvidenceCandidates(inventory, requirements, 100);
-  assert.ok(expanded[0].candidates.length > MAX_CANDIDATES_PER_REQUIREMENT);
-  assert.ok(expanded[0].candidates.length > first[0].candidates.length);
+  assert.equal(first[0].candidates.length, MAX_CANDIDATES_PER_REQUIREMENT);
+  assert.ok(first[0].candidates.every(({ type }) => type === "accomplishment"));
+  const more = retrieveEvidenceCandidates(inventory, requirements, 100);
+  assert.ok(more[0].candidates.length <= 100);
+  assert.ok(more[0].candidates.length >= first[0].candidates.length);
+  assert.ok(more[0].candidates.every(({ type }) => type === "accomplishment"));
   assert.throws(
     () => retrieveEvidenceCandidates(inventory, requirements, -1),
     RangeError,

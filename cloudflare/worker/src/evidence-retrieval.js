@@ -1,14 +1,5 @@
 import { MAX_CANDIDATES_PER_REQUIREMENT } from "./config.js";
 
-const RECORD_TYPES = {
-  employment_history: "employment",
-  accomplishments: "accomplishment",
-  skills: "skill",
-  leadership_examples: "leadership",
-  projects: "project",
-  education_and_credentials: "education",
-};
-
 const TYPES_BY_CATEGORY = {
   skill: ["skill", "accomplishment", "project", "employment"],
   responsibility: ["accomplishment", "employment", "leadership", "project"],
@@ -88,28 +79,6 @@ function validateInputs(inventory, requirements, limit) {
   }
 }
 
-function expandEmploymentCandidates(candidates, accomplishments) {
-  const accomplishmentsById = new Map(
-    accomplishments.map((record) => [record.id, record]),
-  );
-  const candidateIds = new Set(candidates.map(({ record }) => record.id));
-  const expanded = [...candidates];
-
-  for (const { type, record } of candidates) {
-    if (type !== "employment" || !Array.isArray(record.accomplishment_ids)) continue;
-
-    for (const id of record.accomplishment_ids) {
-      const accomplishment = accomplishmentsById.get(id);
-      if (!accomplishment || candidateIds.has(accomplishment.id)) continue;
-
-      expanded.push({ type: "accomplishment", record: accomplishment });
-      candidateIds.add(accomplishment.id);
-    }
-  }
-
-  return expanded;
-}
-
 export function retrieveEvidenceCandidates(
   inventory,
   requirements,
@@ -117,20 +86,18 @@ export function retrieveEvidenceCandidates(
 ) {
   validateInputs(inventory, requirements, limit);
 
-  const records = Object.entries(RECORD_TYPES).flatMap(([collection, type]) => {
-    const entries = inventory[collection];
-    if (entries === undefined) return [];
-    if (!Array.isArray(entries)) {
-      throw new TypeError(`inventory.${collection} must be an array`);
-    }
-    return entries.map((record) => ({ type, record }));
-  });
+  const accomplishments = inventory.accomplishments;
+  if (accomplishments !== undefined && !Array.isArray(accomplishments)) {
+    throw new TypeError("inventory.accomplishments must be an array");
+  }
+  const records = (accomplishments || []).map((record) => ({
+    type: "accomplishment",
+    record,
+  }));
 
   return requirements.map((requirement) => {
     const weights = requirementWeights(requirement);
-    const allowedTypes = new Set(TYPES_BY_CATEGORY[requirement.category]);
     const candidates = records
-      .filter(({ type }) => allowedTypes.has(type))
       .map((candidate, order) => {
         const recordTokens = collectRecordTokens(candidate.record);
         let score = 0;
@@ -144,13 +111,6 @@ export function retrieveEvidenceCandidates(
       .slice(0, limit)
       .map(({ type, record }) => ({ type, record }));
 
-    console.info("Available accomplishment IDs:", (inventory.accomplishments || []).map(({ id }) => id));
-
-    const expandedCandidates = expandEmploymentCandidates(
-      candidates,
-      inventory.accomplishments || [],
-    );
-
-    return { requirementId: requirement.id, candidates: expandedCandidates };
+    return { requirementId: requirement.id, candidates };
   });
 }
