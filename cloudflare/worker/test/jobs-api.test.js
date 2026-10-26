@@ -31,10 +31,48 @@ function jobsRequest(body, headers = { "Content-Type": "application/json" }) {
   });
 }
 
+function createD1TestDouble() {
+  const rows = new Map();
+  const calls = [];
+  const db = {
+    rows,
+    calls,
+    prepare(sql) {
+      return {
+        bind(...values) {
+          calls.push({ sql, values });
+          return {
+            async run() {
+              rows.set(values[0], {
+                id: values[0],
+                job_description: values[1],
+                company: values[2],
+                role_title: values[3],
+                inventory_revision: values[4],
+                requirements_json: values[5],
+                evidence_matches_json: values[6],
+                warnings_json: values[7],
+                status: values[8],
+                created_at: values[9],
+              });
+            },
+            async first() {
+              return rows.get(values[0]) ?? null;
+            },
+          };
+        },
+      };
+    },
+  };
+  return db;
+}
+
 function envForInventory(fetch = async () => Response.json(inventory), aiRun) {
   let fetchCount = 0;
   let aiCount = 0;
+  const db = createD1TestDouble();
   return {
+    db,
     get fetchCount() {
       return fetchCount;
     },
@@ -72,6 +110,7 @@ function envForInventory(fetch = async () => Response.json(inventory), aiRun) {
         },
       },
       AI_MAX_TOKENS: 2048,
+      DB: db,
     },
   };
 }
@@ -125,6 +164,73 @@ test("POST jobs completes AI analysis with generated requirement IDs", async () 
   assert.match(body.createdAt, /Z$/);
   assert.equal(environment.aiCount, 2);
   assert.equal(environment.fetchCount, 1);
+  assert.equal(environment.db.rows.size, 1);
+  assert.match(environment.db.calls[0].sql, /^\s*INSERT INTO jobs/s);
+});
+
+test("GET jobs returns the persisted analysis with the POST response shape", async () => {
+  const environment = envForInventory();
+  const postResponse = await handleRequest(
+    jobsRequest(JSON.stringify({ jobDescription: extractableDescription })),
+    environment.env,
+  );
+  const postBody = await responseBody(postResponse);
+
+  const getResponse = await handleRequest(
+    new Request(`https://worker.example/api/jobs/${postBody.jobId}`),
+    environment.env,
+  );
+
+  assert.equal(getResponse.status, 200);
+  assert.deepEqual(await responseBody(getResponse), postBody);
+  assert.equal(environment.db.calls[1].values[0], postBody.jobId);
+});
+
+test("GET jobs returns the standard 404 response for an unknown ID", async () => {
+  const environment = envForInventory();
+  const response = await handleRequest(
+    new Request("https://worker.example/api/jobs/not-found"),
+    environment.env,
+  );
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await responseBody(response), {
+    error: {
+      code: "NOT_FOUND",
+      message: "The requested job was not found.",
+    },
+  });
+  assert.deepEqual(environment.db.calls[0].values, ["not-found"]);
+});
+
+test("POST jobs does not report success when D1 persistence fails", async () => {
+  const environment = envForInventory();
+  environment.env.DB = {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async run() {
+              throw new Error("private database details");
+            },
+          };
+        },
+      };
+    },
+  };
+  const response = await handleRequest(
+    jobsRequest(JSON.stringify({ jobDescription: extractableDescription })),
+    environment.env,
+  );
+
+  assert.equal(response.status, 500);
+  assert.deepEqual(await responseBody(response), {
+    error: {
+      code: "INTERNAL_ERROR",
+      message: "The job analysis could not be completed.",
+    },
+  });
+  assert.equal(environment.aiCount, 2);
 });
 
 test("POST jobs returns controlled 400 errors for malformed requests", async () => {
@@ -206,6 +312,7 @@ test("POST jobs returns 422 when company or role title cannot be extracted", asy
     },
   });
   assert.equal(environment.fetchCount, 0);
+  assert.equal(environment.db.rows.size, 0);
 });
 
 test("POST jobs returns controlled errors for unusable AI output and service failures", async () => {
@@ -222,6 +329,7 @@ test("POST jobs returns controlled errors for unusable AI output and service fai
     },
   });
   assert.equal(invalidOutput.fetchCount, 0);
+  assert.equal(invalidOutput.db.rows.size, 0);
 
   const unavailableAI = envForInventory(undefined, async () => {
     throw new Error("private provider details");
@@ -297,6 +405,7 @@ test("POST jobs returns controlled errors for failed evidence matching", async (
     },
   });
   assert.equal(malformedMatch.fetchCount, 1);
+  assert.equal(malformedMatch.db.rows.size, 0);
 
   calls = 0;
   const unavailableMatcher = envForInventory(undefined, async () => {
@@ -316,6 +425,7 @@ test("POST jobs returns controlled errors for failed evidence matching", async (
     },
   });
   assert.equal(unavailableMatcher.fetchCount, 1);
+  assert.equal(unavailableMatcher.db.rows.size, 0);
 });
 
 test("POST jobs rejects unsupported methods with a standard JSON error", async () => {

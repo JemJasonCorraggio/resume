@@ -3,6 +3,7 @@ import { runSmokeTest } from "./ai.js";
 import { MAX_JOB_DESCRIPTION_LENGTH } from "./config.js";
 import { matchRequirementsToEvidence } from "./evidence-matching.js";
 import { retrieveEvidenceCandidates } from "./evidence-retrieval.js";
+import { getJob, insertJob } from "./jobs.js";
 import {
   AIOutputInvalidError,
   AIServiceError,
@@ -133,21 +134,64 @@ async function handleCreateJob(request, env) {
     return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
   }
 
-  return jsonResponse(
-    {
-      jobId: crypto.randomUUID(),
-      status: "completed",
-      jobDescription,
-      company: analysis.company,
-      roleTitle: analysis.roleTitle,
-      inventoryRevision: inventory.inventory_revision_date,
-      requirements: analysis.requirements,
-      evidenceMatches,
-      warnings: [],
-      createdAt: new Date().toISOString(),
-    },
-    201,
-  );
+  const completedJob = {
+    jobId: crypto.randomUUID(),
+    status: "completed",
+    jobDescription,
+    company: analysis.company,
+    roleTitle: analysis.roleTitle,
+    inventoryRevision: inventory.inventory_revision_date,
+    requirements: analysis.requirements,
+    evidenceMatches,
+    warnings: [],
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await insertJob(env.DB, {
+      id: completedJob.jobId,
+      job_description: completedJob.jobDescription,
+      company: completedJob.company,
+      role_title: completedJob.roleTitle,
+      inventory_revision: completedJob.inventoryRevision,
+      requirements: completedJob.requirements,
+      evidence_matches: completedJob.evidenceMatches,
+      warnings: completedJob.warnings,
+      status: completedJob.status,
+      created_at: completedJob.createdAt,
+    });
+  } catch (error) {
+    console.error("Could not persist completed job:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
+  }
+
+  return jsonResponse(completedJob, 201);
+}
+
+async function handleGetJob(jobId, env) {
+  let job;
+  try {
+    job = await getJob(env.DB, jobId);
+  } catch (error) {
+    console.error("Could not retrieve completed job:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be retrieved.");
+  }
+  if (!job) {
+    return errorResponse(404, "NOT_FOUND", "The requested job was not found.");
+  }
+
+  return jsonResponse({
+    jobId: job.id,
+    status: job.status,
+    jobDescription: job.job_description,
+    company: job.company,
+    roleTitle: job.role_title,
+    inventoryRevision: job.inventory_revision,
+    requirements: job.requirements,
+    evidenceMatches: job.evidence_matches,
+    warnings: job.warnings,
+    createdAt: job.created_at,
+  });
 }
 
 export async function handleRequest(request, env) {
@@ -157,6 +201,19 @@ export async function handleRequest(request, env) {
       return errorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST" });
     }
     return handleCreateJob(request, env);
+  }
+  const jobPathMatch = /^\/api\/jobs\/([^/]+)$/.exec(url.pathname);
+  if (jobPathMatch) {
+    if (request.method !== "GET") {
+      return errorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET" });
+    }
+    let jobId;
+    try {
+      jobId = decodeURIComponent(jobPathMatch[1]);
+    } catch {
+      return errorResponse(404, "NOT_FOUND", "The requested job was not found.");
+    }
+    return handleGetJob(jobId, env);
   }
 
   if (url.pathname === "/api/ai/smoke-test") {

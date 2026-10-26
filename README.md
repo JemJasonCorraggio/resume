@@ -163,7 +163,9 @@ most 50 characters each; company and role titles are limited to 200 characters.
 Unsupported or malformed model output returns a controlled 502 response, and
 postings without an identifiable company or role title return 422. Completed
 analyses return HTTP 201 with UTC timestamps and preserve the original
-`jobDescription` separately from normalized analysis fields.
+`jobDescription` separately from normalized analysis fields. Completed results
+are persisted in D1; `GET /api/jobs/{jobId}` returns the same response shape,
+and unknown IDs return the standard 404 error envelope.
 Before matching, deterministic retrieval selects up to five candidates per
 requirement from the validated inventory, preserving each record's original
 ID and limitations. Workers AI assesses each requirement using only those

@@ -768,3 +768,33 @@ This removes employment-driven candidate expansion, keeps the candidate limit pr
 - Review any consumers of `retrieveEvidenceCandidates()` before removing employment candidates, especially code that assumes candidate records can have multiple types.
 - Run the focused retrieval and evidence-validation tests, followed by the relevant end-to-end tests.
 - If the existing AI prompt assumes employment records can be cited, update its instructions to specify that only supplied accomplishment IDs are valid evidence.
+
+## 21. Task: Persist analyses and implement retrieval endpoint
+Return completed analysis to the user. Save completed analyses so the user can return to them later without resubmitting the job description.
+Endpoint
+GET /api/jobs/{jobId}
+
+Success: 200 OK, returning the same response shape as the successful POST /api/jobs response.
+
+Missing or inaccessible ID: 404 Not Found, using the standard error format.
+
+### Implementation requirements
+- Persist the submitted job description and completed analysis fields in D1.
+- Store the inventory revision used for the analysis.
+- Generate the job ID on the backend.
+- Generate a UTC ISO 8601 timestamp.
+- Ensure the saved result can be reconstructed with the same response shape.
+- Use parameterized queries.
+- Avoid returning raw inventory data unrelated to the saved analysis.
+
+### Acceptance criteria
+- A successful POST returns the analysis to the user and persists its result.
+- GET returns the saved result after the original request has finished.
+- GET for an unknown or inaccessible ID returns 404.
+- Persisted arrays and nullable fields round-trip correctly.
+- Inventory revision is preserved.
+- Invalid or failed analyses are not stored as completed results.
+- Tests cover persistence, retrieval, and missing IDs.
+
+### Out of scope
+Listing all jobs, deleting jobs, or searching jobs by anything other than id.
