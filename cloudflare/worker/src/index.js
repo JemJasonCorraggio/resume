@@ -13,6 +13,10 @@ import {
   extractJobAnalysis,
   limitRequirements,
 } from "./job-analysis.js";
+import {
+  generateTailoredResumeContent,
+  StaleEvidenceError,
+} from "./resume-generation.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
 
@@ -199,6 +203,62 @@ async function handleCreateJob(request, env) {
   return jsonResponse(completedJob, 201);
 }
 
+async function handleGenerateResumeContent(jobId, env) {
+  let job;
+  try {
+    job = await getJob(env.DB, jobId);
+  } catch (error) {
+    console.error("Could not retrieve job for resume generation:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be generated.");
+  }
+  if (!job) return errorResponse(404, "NOT_FOUND", "The requested job was not found.");
+
+  let inventory;
+  try {
+    inventory = await loadInventory(env);
+    const validationErrors = validateInventory(inventory);
+    if (validationErrors.length) throw new Error("Bundled career inventory failed schema validation");
+  } catch (error) {
+    console.error("Could not load career inventory:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be generated.");
+  }
+
+  const analysis = {
+    id: job.id,
+    jobId: job.id,
+    jobDescription: job.job_description,
+    company: job.role_title ? job.company : undefined,
+    roleTitle: job.role_title,
+    requirements: job.requirements,
+    evidenceMatches: job.evidence_matches,
+  };
+  try {
+    const draft = await generateTailoredResumeContent({
+      ai: env.AI,
+      job: analysis,
+      inventory,
+      maxTokens: env.AI_MAX_TOKENS,
+      gatewayId: env.AI_GATEWAY_ID,
+    });
+    return jsonResponse(draft, 201);
+  } catch (error) {
+    if (error instanceof StaleEvidenceError) {
+      console.error("Resume generation found stale evidence:", error.message);
+      return errorResponse(409, "STALE_EVIDENCE", error.message);
+    }
+    if (error instanceof AIOutputInvalidError) {
+      console.error("Resume generation received unusable AI output");
+      return errorResponse(502, "AI_OUTPUT_INVALID", "Workers AI returned unusable resume content.");
+    }
+    if (error instanceof AIServiceError) {
+      console.error("Resume generation AI service failed");
+      return errorResponse(502, "AI_SERVICE_ERROR", "The resume content could not be generated.");
+    }
+    console.error("Resume generation failed:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be generated.");
+  }
+}
+
 async function handleGetJob(jobId, env) {
   let job;
   try {
@@ -232,6 +292,19 @@ export async function handleRequest(request, env) {
       return errorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST" });
     }
     return handleCreateJob(request, env);
+  }
+  const resumeContentPathMatch = /^\/api\/jobs\/([^/]+)\/(resume-content|generated-content|resume-draft|tailored-resume-content)$/.exec(url.pathname);
+  if (resumeContentPathMatch) {
+    if (request.method !== "POST") {
+      return errorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST" });
+    }
+    let jobId;
+    try {
+      jobId = decodeURIComponent(resumeContentPathMatch[1]);
+    } catch {
+      return errorResponse(404, "NOT_FOUND", "The requested job was not found.");
+    }
+    return handleGenerateResumeContent(jobId, env);
   }
   const jobPathMatch = /^\/api\/jobs\/([^/]+)$/.exec(url.pathname);
   if (jobPathMatch) {

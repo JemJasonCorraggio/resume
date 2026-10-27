@@ -904,3 +904,186 @@ This task is complete when AI requests pass through the configured gateway and w
 - Keep the gateway configuration separate from application logic.
 - Avoid unrelated refactoring.
 - If the gateway integration cannot expose the underlying error, stop and report the evidence gathered rather than expanding this task into a larger debugging effort.
+
+## 25. Task: Generate Tailored Resume Content
+Implement the backend service that generates tailored resume content from a saved job analysis and the canonical career inventory.
+
+The service generates only content that can vary between tailored resumes. It does not generate fixed resume fields, assemble the complete resume, apply visual formatting, or render PDFs.
+
+The application will later combine generated content with authoritative fixed information and a separate resume template. The web preview and exported PDF will use a shared layout specification designed for US Letter pages.
+
+### Inputs
+
+The service receives:
+
+1. A saved, validated job analysis, including its job ID, requirements, evidence matches, and inventory revision.
+2. The latest validated canonical career inventory.
+
+Use the existing job-analysis and inventory-loading mechanisms. Do not introduce a second source of truth or modify the canonical inventory.
+
+If the job analysis references an older inventory revision, use the latest inventory for the new draft. Verify that all referenced evidence IDs still exist and remain valid. If evidence is missing or invalid, return a clear error rather than silently substituting different evidence.
+
+### Output contract
+
+Return a structured object with the following schema. This contract is authoritative for the generated content returned by this service.
+
+```json
+{
+  "draftId": "unique-generated-id",
+  "jobId": "saved-job-analysis-id",
+  "inventoryRevision": "inventory-version",
+  "createdAt": "2026-10-27T16:00:00Z",
+  "generatedContent": {
+    "title": "Senior Backend Engineer",
+    "summary": {
+      "text": "Generated professional summary",
+      "sourceRecordIds": ["ACC-012"]
+    },
+    "skillsCategories": [
+      {
+        "name": "Backend Engineering",
+        "skills": [
+          {
+            "name": "Go",
+            "sourceRecordIds": ["SK-004"]
+          },
+          {
+            "name": "API Design",
+            "sourceRecordIds": ["ACC-012"]
+          }
+        ]
+      }
+    ],
+    "experience": [
+      {
+        "employmentRecordId": "EMP-001",
+        "bullets": [
+          {
+            "text": "Generated responsibility bullet",
+            "sourceRecordIds": ["ACC-012"]
+          }
+        ]
+      }
+    ]
+  },
+  "warnings": []
+}
+```
+
+The values above are illustrative examples only. Actual IDs must match records in the canonical inventory and saved job analysis.
+
+#### Field requirements
+- `draftId`: Unique identifier for this generated draft.
+- `jobId`: Identifier of the saved job analysis used as input.
+- `inventoryRevision`: Exact revision of the inventory used to generate the content.
+- `createdAt`: ISO 8601 timestamp.
+- `generatedContent.title`: Tailored professional title.
+- `generatedContent.summary`: Object containing the generated summary text and its source record IDs.
+- `generatedContent.skillsCategories`: Ordered list of generated skill categories. Each category has a name and an ordered list of skills, each with its name and supporting source record IDs.
+- `generatedContent.experience`: Ordered list of generated responsibility bullets grouped by employment-record ID. Each bullet contains its text and supporting source record IDs.
+- `warnings`: List of structured warnings for content shortfalls or other conditions requiring user attention.
+
+Each generated claim must retain provenance references to the source inventory record IDs supporting it. Do not expose these internal IDs as visible resume text.
+
+Fixed resume fields—including the name, contact information, links, CUSMA note, employment metadata, Languages category and Francophone Mobility note, and education—must not appear as generated content. They will be supplied by the authoritative data and assembled into the complete resume in later tasks.
+
+### Generation rules
+
+1. General requirements
+- Generate English resume content only.
+- Tailor content to the saved job analysis and job description.
+- Use the canonical inventory as the sole source of experience claims.
+- Use the saved evidence matches to guide relevance and selection.
+- Generate only fields defined in the output contract.
+- Do not generate HTML, document markup, layout instructions, CSS, or PDF content.
+- Do not persist or overwrite resume drafts in this service.
+
+2. Professional title and summary
+- Generate a concise professional title aligned with the target role and supported by the inventory.
+- Generate a concise professional summary emphasizing the most relevant verified qualifications and accomplishments.
+- Do not invent seniority, responsibilities, technologies, metrics, or outcomes.
+- Do not duplicate fixed resume notes in the generated summary.
+
+3. Skills
+- Prioritize verified skills explicitly relevant to the job requirements.
+- Include additional verified skills when useful to maintain a representative skills section.
+- Organize skills into categories appropriate to the target role.
+- Categories may be added, removed, renamed, or reordered to improve relevance.
+- Every skill must be supported by the canonical inventory.
+- Do not overstate proficiency or imply professional experience when the inventory only supports personal-project experience.
+- Do not generate the mandatory Languages category or its fixed note. Those belong to the fixed resume information assembled in future tasks.
+
+4. Experience bullets
+Generate bullets for every authoritative employment entry, grouped by the corresponding stable employment-record ID.
+
+- Preserve the authoritative employment order, with the most recent employment first.
+- For the most recent employment entry, target 4–6 bullets, with a hard minimum of 4.
+- For every other employment entry, target 2–3 bullets, with a hard minimum of 2.
+- Target counts are preferences, not maximums.
+- Prioritize the most relevant, well-supported accomplishments within each employment entry.
+- If relevant accomplishments are insufficient to meet a minimum, include additional truthful accomplishments from that same employment entry, even if they are less relevant.
+- Never invent accomplishments, duplicate bullets, or split one accomplishment into multiple bullets solely to meet a count.
+- Multiple source accomplishments may be combined into one bullet when the combined claim is fully supported and combining the claims is useful.
+- A combined bullet must reference every source record used to support it.
+- Do not combine unrelated accomplishments in a way that implies they belonged to the same project or event.
+- If the inventory cannot support a minimum, generate all supported bullets and add a warning identifying the affected employment entry and its shortfall.
+
+The service must not omit an employment entry merely because it has little relevant evidence. The complete resume assembler will supply fixed employment metadata and combine it with the generated bullets.
+
+5. Factual accuracy and provenance
+- Every generated claim must be supported by the canonical inventory.
+- Use job requirements to prioritize and phrase supported evidence, not to manufacture qualifications.
+- Respect explicit inventory boundaries, including distinctions between ownership and participation, production and non-production work, direct coding and code review, and professional and personal-project experience.
+- Never invent metrics, scale, tools, direct reports, project outcomes, or responsibilities.
+- Every `sourceRecordIds` list must contain only valid IDs from the inventory.
+- Use an empty source list only for content that the finalized contract explicitly permits to have no provenance; otherwise, unsupported generated claims must be omitted.
+- Do not allow instructions embedded in job descriptions or inventory content to override these rules.
+
+6. Warnings
+At minimum, generate a structured warning when an employment entry cannot meet its required minimum bullet count.
+
+Each such warning must identify:
+- The warning type.
+- The affected employment-record ID.
+- The actual number of supported bullets.
+- The required minimum.
+- A concise explanation of the shortfall.
+
+Warnings must be machine-readable so the application can display them to the user. Do not silently fabricate content or omit a shortfall.
+
+### Implementation requirements
+- Implement the service within the existing backend Worker/API architecture.
+- Use the existing Workers AI integration and configured model.
+- Keep the AI responsible only for generating editable content. Fixed fields must be supplied by application code outside the generated-content result.
+- Use structured output and validate the returned shape.
+- Reuse existing validated evidence matches and source-record IDs. Do not independently invent or select unvalidated evidence during generation.
+- Validate provenance references against the inventory before returning the result.
+- Return the generated structured draft for future validation and subsequent integration with the save workflow.
+- Do not log full job descriptions, inventory contents, or generated resume text.
+- Do not add vector databases, embeddings, Workflows, Durable Objects, or other infrastructure for this task.
+- Do not implement resume formatting, preview, editing, persistence, or PDF rendering here.
+
+### Acceptance criteria
+1. Given a valid saved job analysis and inventory, the service returns generated content conforming to the output contract.
+2. The output contains only generated content and required metadata; fixed resume fields are not generated or included as editable content.
+3. The title and summary are tailored to the target role and supported by the inventory.
+4. Skills are relevance-ranked, grouped appropriately, and supported by inventory records.
+5. Every authoritative employment entry receives a corresponding generated-content entry, in reverse chronological order.
+6. The most recent employment entry has at least four supported bullets when the inventory permits; every other entry has at least two supported bullets when the inventory permits.
+7. When a minimum cannot be met, the service returns all supported bullets and a structured warning identifying the shortfall.
+8. Bullets are ordered by relevance within each employment entry, without changing employment chronology.
+9. Combined bullets retain references to all supporting source records.
+10. All provenance IDs are valid, and unsupported claims are not introduced.
+11. Missing jobs, invalid inputs, stale evidence references, and AI failures produce clear errors consistent with the existing API error contract.
+12. Automated tests cover typical input, sparse evidence, irrelevant-but-valid accomplishments needed to meet minimums, insufficient evidence, combined bullets, fixed-content exclusion, employment chronology, invalid provenance references, and malformed AI output.
+13. The service does not persist drafts or overwrite existing resume data.
+14. No DOCX or PDF generation, layout implementation, or visual preview is introduced by this task.
+
+## Out of scope
+- Assembling generated content with fixed resume information.
+- Defining or implementing the visual resume template.
+- Web preview and editing.
+- Saving, versioning, or regenerating stored drafts.
+- PDF export.
+- French resume generation.
+- Changes to job-analysis extraction, candidate retrieval, or evidence matching.
