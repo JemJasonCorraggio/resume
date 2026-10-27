@@ -131,11 +131,17 @@ Functions. Authentication is not implemented by this repository.
 #### Workers AI smoke test
 
 The Worker has a Workers AI binding for
-`@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Wrangler configuration sets
-`AI_MAX_TOKENS` to `2048`; the smoke-test invocation reads this value from
-`cloudflare/worker/wrangler.jsonc` and passes it as `max_tokens`. No API key is
-needed or stored in the repository. Authenticate Wrangler with `npx wrangler
-login` and use a remote Worker session to invoke the model:
+`@cf/meta/llama-3.1-8b-instruct-fast`. Wrangler configuration sets
+`AI_MAX_TOKENS` to `2048` and `AI_GATEWAY_ID` to `default`. All Workers AI
+invocations, including the smoke test, requirement extraction, and evidence
+matching, pass that gateway ID through the supported `env.AI.run()` gateway
+options. The default gateway is created in the authenticated Cloudflare
+account on its first request; to use a named gateway, change `AI_GATEWAY_ID`
+in `cloudflare/worker/wrangler.jsonc`. These are non-secret settings; no API
+key is stored in the repository.
+
+Authenticate Wrangler with `npx wrangler login` and use a remote Worker
+session to invoke the model:
 
 ```sh
 cd cloudflare/worker
@@ -156,6 +162,38 @@ response; internal provider details are neither logged nor sent to the browser.
 Run the Worker unit tests with `npm test` from
 `cloudflare/worker` to verify the configured token limit and failure behavior
 without making a billed model request.
+
+##### Inspecting AI Gateway requests
+
+In the Cloudflare dashboard, select the account that owns the Worker, open
+**AI > AI Gateway**, select the gateway named by `AI_GATEWAY_ID` (initially
+`default`), and open **Logs**. Gateway logging is explicitly enabled for each
+invocation. Logs can show the model/provider, timestamp, status, token usage,
+cost, duration, and available provider error details. The Worker adds
+`application` and `operation` metadata (`smoke-test`, `job-analysis`, or
+`evidence-matching`) to help identify the request type.
+
+For each invocation, the Worker also emits a sanitized application log with
+the operation name and `aiGatewayLogId`. Match that ID to the Gateway log ID
+when investigating a failed request; the Worker does not log the prompt or
+model response. It also sends Cloudflare's per-request
+`cf-aig-collect-log-payload: false` header, so Gateway logs retain diagnostic
+metadata without storing request/response payloads. Gateway logging controls
+and available fields are described in
+Cloudflare's [AI Gateway logging documentation](https://developers.cloudflare.com/ai-gateway/observability/logging/)
+and [Workers AI binding reference](https://developers.cloudflare.com/ai-gateway/usage/worker-binding-methods/).
+
+To check the smoke-test request, run the remote command above and call
+`POST /api/ai/smoke-test`, then locate the matching operation and log ID in
+the dashboard. If it succeeds, submit a normal `POST /api/jobs` request to
+exercise requirement extraction; the corresponding Gateway entry is marked
+`job-analysis`. Evidence matching is separately marked
+`evidence-matching`. A Gateway entry can confirm whether the provider request
+was accepted and expose status/error metadata, but it may not expose the
+underlying cause of a Workers AI `parseError`. If the log has no more specific
+provider error, the cause remains unconfirmed; the next step is to use the
+Gateway log's request ID/status and timestamp when reporting the issue to
+Cloudflare, rather than inferring a cause from the parse error alone.
 
 #### Job-analysis API
 

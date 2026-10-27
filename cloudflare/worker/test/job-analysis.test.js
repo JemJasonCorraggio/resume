@@ -57,6 +57,7 @@ const examples = [
     },
   },
 ];
+const gatewayId = "default";
 
 function requirementSet(count, importanceForIndex = () => "medium") {
   return Array.from({ length: count }, (_, index) => ({
@@ -70,8 +71,8 @@ function requirementSet(count, importanceForIndex = () => "medium") {
 
 function aiReturning(response, onCall = () => {}) {
   return {
-    run: async (model, options) => {
-      onCall(model, options);
+    run: async (model, options, gatewayOptions) => {
+      onCall(model, options, gatewayOptions);
       return { response: JSON.stringify(response) };
     },
   };
@@ -80,10 +81,10 @@ function aiReturning(response, onCall = () => {}) {
 for (const example of examples) {
   test(`extractJobAnalysis handles ${example.name}`, async () => {
     let invocation;
-    const ai = aiReturning(example.response, (model, options) => {
-      invocation = { model, options };
+    const ai = aiReturning(example.response, (model, options, gatewayOptions) => {
+      invocation = { model, options, gatewayOptions };
     });
-    const extraction = extractJobAnalysis(ai, example.description, 2048);
+    const extraction = extractJobAnalysis(ai, example.description, 2048, gatewayId);
 
     const result = await extraction;
     assert.deepEqual(
@@ -98,6 +99,18 @@ for (const example of examples) {
     assert.equal(invocation.options.response_format.type, "json_object");
     assert.equal(invocation.options.max_tokens, 2048);
     assert.equal(invocation.options.temperature, 0);
+    assert.deepEqual(invocation.gatewayOptions.gateway, {
+      id: gatewayId,
+      collectLog: true,
+      metadata: {
+        application: "career-inventory-api",
+        operation: "job-analysis",
+      },
+    });
+    assert.equal(
+      invocation.gatewayOptions.extraHeaders["cf-aig-collect-log-payload"],
+      "false",
+    );
 
     if (example.name === "malformed posting with embedded instructions") {
       assert.match(invocation.options.messages[0].content, /untrusted data/);
@@ -122,6 +135,7 @@ test("extractJobAnalysis deduplicates identical requirements and regenerates IDs
     }),
     "Example is hiring an Engineer to build APIs and review code.",
     2048,
+    gatewayId,
   );
 
   assert.deepEqual(
@@ -204,6 +218,7 @@ test("extractJobAnalysis accepts values exactly at every normalization limit", a
     }),
     "Example posting",
     2048,
+    gatewayId,
   );
 
   assert.equal(result.requirements.length, 25);
@@ -240,7 +255,7 @@ test("extractJobAnalysis rejects values one item or character over each limit", 
 
   for (const response of invalidAnalyses) {
     await assert.rejects(
-      extractJobAnalysis(aiReturning(response), "Example posting", 2048),
+      extractJobAnalysis(aiReturning(response), "Example posting", 2048, gatewayId),
       AIOutputInvalidError,
     );
   }
@@ -270,7 +285,7 @@ test("extractJobAnalysis rejects whitespace-only values and invalid enums", asyn
 
   for (const response of invalidOutputs) {
     await assert.rejects(
-      extractJobAnalysis(aiReturning(response), "Example posting", 2048),
+      extractJobAnalysis(aiReturning(response), "Example posting", 2048, gatewayId),
       AIOutputInvalidError,
     );
   }
@@ -307,7 +322,7 @@ test("extractJobAnalysis rejects malformed or structurally invalid model output"
 
   for (const response of invalidOutputs) {
     await assert.rejects(
-      extractJobAnalysis({ run: async () => ({ response }) }, "Example hiring", 2048),
+      extractJobAnalysis({ run: async () => ({ response }) }, "Example hiring", 2048, gatewayId),
       AIOutputInvalidError,
     );
   }
@@ -315,11 +330,11 @@ test("extractJobAnalysis rejects malformed or structurally invalid model output"
 
 test("extractJobAnalysis distinguishes AI service failures", async () => {
   await assert.rejects(
-    extractJobAnalysis({ run: async () => { throw new Error("provider details"); } }, "posting", 2048),
+    extractJobAnalysis({ run: async () => { throw new Error("provider details"); } }, "posting", 2048, gatewayId),
     AIServiceError,
   );
   await assert.rejects(
-    extractJobAnalysis(undefined, "posting", 2048),
+    extractJobAnalysis(undefined, "posting", 2048, gatewayId),
     AIServiceError,
   );
 });

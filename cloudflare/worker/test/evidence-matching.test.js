@@ -34,6 +34,7 @@ const requirements = [
     keywords: ["pilot"],
   },
 ];
+const gatewayId = "default";
 
 const candidateGroups = [
   {
@@ -86,8 +87,8 @@ const matches = [
 
 function aiReturning(response, onCall = () => {}) {
   return {
-    run: async (model, options) => {
-      onCall(model, options);
+    run: async (model, options, gatewayOptions) => {
+      onCall(model, options, gatewayOptions);
       return { response: JSON.stringify(response) };
     },
   };
@@ -96,12 +97,13 @@ function aiReturning(response, onCall = () => {}) {
 test("matching returns validated strong, partial, and none results", async () => {
   let invocation;
   const result = await matchRequirementsToEvidence(
-    aiReturning({ matches }, (model, options) => {
-      invocation = { model, options };
+    aiReturning({ matches }, (model, options, gatewayOptions) => {
+      invocation = { model, options, gatewayOptions };
     }),
     requirements,
     candidateGroups,
     2048,
+    gatewayId,
   );
 
   assert.deepEqual(result, matches);
@@ -134,6 +136,18 @@ test("matching returns validated strong, partial, and none results", async () =>
   assert.equal(typeof result[2].gap, "string");
   assert.equal(invocation.options.max_tokens, 2048);
   assert.equal(invocation.options.temperature, 0);
+  assert.deepEqual(invocation.gatewayOptions.gateway, {
+    id: gatewayId,
+    collectLog: true,
+    metadata: {
+      application: "career-inventory-api",
+      operation: "evidence-matching",
+    },
+  });
+  assert.equal(
+    invocation.gatewayOptions.extraHeaders["cf-aig-collect-log-payload"],
+    "false",
+  );
   const input = JSON.parse(invocation.options.messages[1].content);
   assert.deepEqual(input, {
     requirements: requirements.map((requirement, index) => ({
@@ -177,6 +191,7 @@ test("matching accepts a no-match result with omitted evidence IDs", async () =>
     requirements,
     candidateGroups,
     2048,
+    gatewayId,
   );
 
   assert.deepEqual(result, matches);
@@ -213,7 +228,7 @@ test("matching rejects malformed or out-of-scope model output", async () => {
         ? { run: async () => ({ response }) }
         : aiReturning(response);
       await assert.rejects(
-        matchRequirementsToEvidence(ai, requirements, candidateGroups, 2048),
+        matchRequirementsToEvidence(ai, requirements, candidateGroups, 2048, gatewayId),
         AIOutputInvalidError,
       );
     }
@@ -243,6 +258,7 @@ test("matching rejects employment records as candidate evidence", async () => {
       requirements,
       invalidCandidateGroups,
       2048,
+      gatewayId,
     ),
     TypeError,
   );
@@ -256,15 +272,16 @@ test("matching surfaces AI service failures and rejects invalid configuration", 
       requirements,
       candidateGroups,
       2048,
+      gatewayId,
     ),
     AIServiceError,
   );
   await assert.rejects(
-    matchRequirementsToEvidence({ run: async () => ({}) }, requirements, candidateGroups, 0),
+    matchRequirementsToEvidence({ run: async () => ({}) }, requirements, candidateGroups, 0, gatewayId),
     AIServiceError,
   );
   await assert.rejects(
-    matchRequirementsToEvidence(undefined, requirements, candidateGroups, 2048),
+    matchRequirementsToEvidence(undefined, requirements, candidateGroups, 2048, gatewayId),
     AIServiceError,
   );
   await assert.rejects(
@@ -273,6 +290,7 @@ test("matching surfaces AI service failures and rejects invalid configuration", 
       requirements,
       candidateGroups,
       2048,
+      gatewayId,
     ),
     AIServiceError,
   );
@@ -285,6 +303,7 @@ test("matching avoids an inference call when there are no requirements", async (
     [],
     [],
     2048,
+    gatewayId,
   );
 
   assert.deepEqual(result, []);

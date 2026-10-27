@@ -855,3 +855,52 @@ Bound the number of requirements passed to evidence matching to reduce AI reques
    - Evidence matching and persistence containing only the retained requirements.
    
 Acceptance criterion: Every completed analysis contains at most 15 requirements, selected deterministically, with a warning whenever requirements are omitted.
+
+## 24. Task: Add Cloudflare AI Gateway for AI request diagnostics
+Integrate Cloudflare AI Gateway into the existing Workers AI invocation path to help diagnose why all AI calls are failing with `parseError`, including the smoke test and calls using different models.
+
+This task is complete when AI requests pass through the configured gateway and we can inspect their outcomes and relevant error information.
+
+### Scope
+- Configure an AI Gateway for the existing Cloudflare Workers AI integration.
+- Route existing AI calls through the gateway using the supported Workers AI configuration.
+- Preserve the current model configuration, prompts, request parameters, and application behavior except where gateway integration requires a change.
+- Verify that gateway logs provide useful diagnostic information for both successful and failed requests.
+- Document how to inspect gateway logs when troubleshooting AI failures.
+
+### Acceptance criteria
+1. Gateway configuration
+   - An AI Gateway is configured in the Cloudflare account.
+   - The gateway identifier and any required configuration are provided to the Worker through appropriate configuration or environment bindings.
+2. AI invocation integration
+   - Existing AI calls use the gateway through Cloudflare's supported Workers AI integration.
+   - The smoke-test endpoint continues to use the same application-level invocation path.
+   - The integration does not change prompts, model selection, output limits, or JSON parsing behavior unnecessarily.
+3. Diagnostic visibility
+   - A successful AI invocation can be identified in the gateway logs.
+   - A failed AI invocation can be identified and inspected for available status codes, error details, and request metadata.
+   - The documentation explains how to locate a failed request and correlate it with the corresponding application log.
+   - If the gateway does not expose the underlying cause of `parseError`, document that limitation rather than assuming the cause has been identified.
+4. Verification
+   - Run the smoke test through the gateway.
+   - Confirm that the request appears in the gateway logs.
+   - Capture the available diagnostic details if it fails.
+   - If the smoke test succeeds, run one requirement-extraction request and verify its result.
+   - Record the findings and any remaining uncertainty about the original failure.
+6. Documentation
+   - Document the gateway configuration and how to inspect request logs.
+   - Document any required local-development and deployment configuration.
+   - Record the findings from the investigation and recommend the next debugging step if the error remains unresolved.
+
+### Out of scope
+- Rewriting the extraction or evidence-matching prompts.
+- Changing the application’s requirement limits or token budgets.
+- Adding retries, fallback models, or general-purpose observability infrastructure.
+- Logging full AI requests or responses.
+- Proving that model overload is the cause before evidence supports that conclusion.
+
+### Implementation notes
+- Prefer the smallest integration supported by Cloudflare's current Workers AI and AI Gateway documentation.
+- Keep the gateway configuration separate from application logic.
+- Avoid unrelated refactoring.
+- If the gateway integration cannot expose the underlying error, stop and report the evidence gathered rather than expanding this task into a larger debugging effort.

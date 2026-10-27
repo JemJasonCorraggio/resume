@@ -1,4 +1,4 @@
-import { JSON_MODEL } from "./ai.js";
+import { JSON_MODEL, runThroughAIGateway } from "./ai.js";
 import { AIOutputInvalidError, AIServiceError } from "./job-analysis.js";
 
 export const MATCHING_SCHEMA = {
@@ -183,7 +183,13 @@ function validateMatches(value, requirementCandidates) {
   });
 }
 
-export async function matchRequirementsToEvidence(ai, requirements, candidateGroups, maxTokens) {
+export async function matchRequirementsToEvidence(
+  ai,
+  requirements,
+  candidateGroups,
+  maxTokens,
+  gatewayId,
+) {
   const requirementCandidates = validateCandidateGroups(requirements, candidateGroups);
   console.info("Requirements:", requirements)
   console.info("Requirement Candidates:", requirementCandidates)
@@ -198,37 +204,43 @@ export async function matchRequirementsToEvidence(ai, requirements, candidateGro
 
   let result;
   try {
-    result = await ai.run(JSON_MODEL, {
-      messages: [
-        { role: "system", content: MATCHING_INSTRUCTIONS },
-        {
-          role: "user",
-          content: JSON.stringify({
-            requirements: requirementCandidates.map(({ requirement, candidates }) => ({
-              requirement: {
-                id: requirement.id,
-                description: requirement.description,
-                category: requirement.category,
-                importance: requirement.importance,
-                keywords: requirement.keywords,
-              },
-              candidates,
-            })),
-          }),
+    result = await runThroughAIGateway(
+      ai,
+      JSON_MODEL,
+      {
+        messages: [
+          { role: "system", content: MATCHING_INSTRUCTIONS },
+          {
+            role: "user",
+            content: JSON.stringify({
+              requirements: requirementCandidates.map(({ requirement, candidates }) => ({
+                requirement: {
+                  id: requirement.id,
+                  description: requirement.description,
+                  category: requirement.category,
+                  importance: requirement.importance,
+                  keywords: requirement.keywords,
+                },
+                candidates,
+              })),
+            }),
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "match_result",
+            schema: MATCHING_SCHEMA,
+            strict: true,
+          },
         },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "match_result",
-          schema: MATCHING_SCHEMA,
-          strict: true,
-        },
+        max_tokens: maxTokens,
+        temperature: 0,
+        seed: 1,
       },
-      max_tokens: maxTokens,
-      temperature: 0,
-      seed: 1,
-    });
+      gatewayId,
+      "evidence-matching",
+    );
   } catch (error) {
     console.error("Workers AI evidence matching invocation failed:", error);
     throw new AIServiceError("Workers AI evidence matching invocation failed");

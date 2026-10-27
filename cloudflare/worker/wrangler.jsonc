@@ -14,6 +14,7 @@
   },
   "vars": {
     "AI_MAX_TOKENS": 2048,
+    "AI_GATEWAY_ID": "default",
     "MAX_REQUIREMENTS_PER_JOB": 15
   },
   "d1_databases": [

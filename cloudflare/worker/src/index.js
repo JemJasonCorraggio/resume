@@ -96,6 +96,7 @@ async function handleCreateJob(request, env) {
       env.AI,
       jobDescription,
       env.AI_MAX_TOKENS,
+      env.AI_GATEWAY_ID,
     ));
   } catch (error) {
     if (error instanceof AIOutputInvalidError) {
@@ -149,6 +150,7 @@ async function handleCreateJob(request, env) {
       requirements,
       candidateGroups,
       env.AI_MAX_TOKENS,
+      env.AI_GATEWAY_ID,
     );
   } catch (error) {
     if (error instanceof AIOutputInvalidError) {
@@ -251,7 +253,11 @@ export async function handleRequest(request, env) {
     }
 
     try {
-      const response = await runSmokeTest(env.AI, env.AI_MAX_TOKENS);
+      const response = await runSmokeTest(
+        env.AI,
+        env.AI_MAX_TOKENS,
+        env.AI_GATEWAY_ID,
+      );
       return jsonResponse({ ok: true, response });
     } catch {
       console.error("Workers AI smoke test failed.");

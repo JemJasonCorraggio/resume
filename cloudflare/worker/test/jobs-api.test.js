@@ -127,6 +127,7 @@ function envForInventory(fetch = async () => Response.json(inventory), aiRun) {
         },
       },
       AI_MAX_TOKENS: 2048,
+      AI_GATEWAY_ID: "default",
       DB: db,
     },
   };
