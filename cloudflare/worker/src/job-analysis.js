@@ -170,7 +170,8 @@ export async function extractJobAnalysis(ai, description, maxTokens) {
       temperature: 0,
       seed: 1,
     });
-  } catch {
+  } catch (error) {
+    console.error(error);
     throw new AIServiceError("Workers AI invocation failed");
   }
 
