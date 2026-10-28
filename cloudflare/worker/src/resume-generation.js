@@ -63,6 +63,7 @@ export function validateEvidenceReferences(job, inventory) {
 }
 
 function parseAIResponse(result) {
+  console.info(result)
   if (!result || typeof result !== "object") throw new AIOutputInvalidError("Workers AI returned no result");
   let parsed;
   if (typeof result.response === "string") {

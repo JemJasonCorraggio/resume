@@ -293,7 +293,7 @@ export async function handleRequest(request, env) {
     }
     return handleCreateJob(request, env);
   }
-  const resumeContentPathMatch = /^\/api\/jobs\/([^/]+)\/(resume-content|generated-content|resume-draft|tailored-resume-content)$/.exec(url.pathname);
+  const resumeContentPathMatch = /^\/api\/jobs\/([^/]+)\/generated-content$/.exec(url.pathname);
   if (resumeContentPathMatch) {
     if (request.method !== "POST") {
       return errorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST" });
