@@ -91,8 +91,18 @@ array and that every ID in that array refers to a supplied record that supports 
 - Include the IDs of the inventory records that substantiate the summary in sourceRecordIds.
 - Do not include unsupported claims merely to make the summary sound stronger.
 
-4. Experience section and bullet provenance
-- Include each supplied employment entry in the required order.
+4. Experience section and bullet provenance: mandatory completeness rules
+- Include an experience entry for every employment record supplied in the input, 
+including the least relevant and oldest positions.
+- Preserve the exact employment order provided in the input. Do not omit, merge, 
+reorder, or duplicate employment entries.
+- Relevance affects the selection and ordering of bullets within each employment 
+entry; it does not determine whether an employment entry is included.
+- If an employment record has limited relevant accomplishments, include the 
+supported accomplishments available for that role. Do not omit the employment entry 
+because its accomplishments are less relevant to the target job.
+- Before returning the result, verify that the experience array contains exactly 
+one entry for each supplied employment record, in the supplied order.
 - Every bullet must be supported by one or more accomplishment records belonging to 
 that specific employment entry.
 - Use the exact accomplishment IDs in the bullet's sourceRecordIds.
@@ -317,7 +327,6 @@ export async function generateTailoredResumeContent({ ai, job, inventory, maxTok
       matchedEvidenceIds,
     },
   };
-  console.info(input.allowedInventory)
 
   let result;
   try {
