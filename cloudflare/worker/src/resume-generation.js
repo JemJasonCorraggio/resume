@@ -67,7 +67,7 @@ inventory claims. Do not use fixed resume fields, especially candidate name,
 contact details, links, work authorization, employment dates, languages, education, 
 or resume notes. Every claim must be grounded in the supplied records, including listed skills.
 Do not include skills without a matching accomplishment id or skill id from the inventory.
- Do not invent seniority, ownership, metrics, outcomes, technologies, responsibilities, 
+SourceRecordIds should never be empty. Do not invent seniority, ownership, metrics, outcomes, technologies, responsibilities, 
 or scale. Preserve ownership and experience boundaries. Combine accomplishments 
 only when closely related and supported by every cited source ID. Source IDs must 
 come from the supplied allowed IDs, and experience bullets may cite only 
