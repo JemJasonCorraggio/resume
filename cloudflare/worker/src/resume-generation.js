@@ -212,6 +212,15 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
 
   const cleanSkills = [];
   const skillRecordIds = new Set((inventory.skills ?? []).map((record) => record.id));
+
+const skillIdsByName = new Map();
+for (const record of inventory.skills ?? []) {
+  const normalizedName = record.name.trim().toLowerCase();
+  const existing = skillIdsByName.get(normalizedName) ?? [];
+  existing.push(record.id);
+  skillIdsByName.set(normalizedName, existing);
+}
+
   for (const category of value.skillsCategories) {
     console.info(category);
     if (!category || typeof category !== "object" || Array.isArray(category) ||
@@ -224,6 +233,8 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
           Object.keys(skill).sort().join(",") !== "name,sourceRecordIds" || !validNonemptyString(skill.name) || !Array.isArray(skill.sourceRecordIds)) {
         throw new AIOutputInvalidError("Workers AI returned an invalid skill");
       }
+      if (skill.sourceRecordIds.length === 0) {
+        skill.sourceRecordIds = skillIdsByName.get(skill.name.trim().toLowerCase()) ?? [];}
       const ids = new Set(skill.sourceRecordIds);
       if (ids.size !== skill.sourceRecordIds.length || !skill.sourceRecordIds.length ||
           skill.sourceRecordIds.some((id) => typeof id !== "string" || !allIds.has(id)) ||
