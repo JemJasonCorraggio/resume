@@ -5,9 +5,46 @@ export const RESUME_GENERATION_SCHEMA = {
   type: "object",
   properties: {
     title: { type: "string" },
-    summary: { type: "object" },
-    skillsCategories: { type: "array" },
-    experience: { type: "array" },
+    summary: { 
+      type: "object",
+        properties: {
+          text: {type: "string"},
+          sourceRecordIds: { type: "array", items: { type: "string" } },
+        },
+     },
+    skillsCategories: { 
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: {type: "string"},
+          skills: { 
+            type: "array", 
+            items: { 
+              type: "object",
+              properties: {
+                name: {type: "string"},
+                sourceRecordIds: { type: "array", items: { type: "string" } },
+              },
+             }},
+            },
+          },
+        },
+    experience: { 
+      type: "array", 
+      items: { 
+        type: "object",
+        properties: {
+          employmentRecordId: {type: "string"},
+          bullets: { type: "array", items: { 
+            type: "object",
+            properties: {
+              text: {type: "string"},
+              sourceRecordIds: { type: "array", items: { type: "string" } },
+            },
+          }},
+        },
+      }},
   },
   required: ["title", "summary", "skillsCategories", "experience"],
   additionalProperties: false,
@@ -202,7 +239,14 @@ export async function generateTailoredResumeContent({ ai, job, inventory, maxTok
         { role: "system", content: GENERATION_INSTRUCTIONS },
         { role: "user", content: JSON.stringify(input) },
       ],
-      response_format: { type: "json_object" },
+      response_format: {
+                type: "json_schema",
+                json_schema: {
+                  name: "match_result",
+                  schema: RESUME_GENERATION_SCHEMA,
+                  strict: true,
+                },
+              },
       max_tokens: maxTokens,
       temperature: 0.2,
       seed: 1,
