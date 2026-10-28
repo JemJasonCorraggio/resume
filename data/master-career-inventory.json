@@ -3,8 +3,8 @@
   "inventory_generation_date": "2026-10-20",
   "subject": {
     "display_name_for_resumes": "Jason/Jem Corraggio",
-    "legal_name_for_official_forms": "Jem/Jason Mer'Whint Corraggio",
-    "note_on_names": "Name order varies by context per subject's stated practice: resume header 'Jason/Jem Corraggio', forms/legal 'Jem/Jason Corraggio'. Do not record or disclose former legal name or assigned gender at birth.",
+    "legal_name_for_official_forms": "JemJason Mer'Whint Corraggio",
+    "note_on_names": "Name order varies by context per subject's stated practice: resume header 'Jason/Jem Corraggio', forms/legal 'Jem/Jason Corraggio'. Currently announced name as of 2026-10-17 is Jason (he/him). Do not record or disclose former legal name or assigned gender at birth.",
     "location_current": "Cardinal, ON, Canada",
     "email": "corraggios@gmail.com",
     "phone_for_resumes": "+1 215-350-1661",
@@ -219,7 +219,8 @@
       ],
       "operational_responsibilities": null,
       "accomplishment_ids": [
-        "ACC-021"
+        "ACC-021",
+        "ACC-026"
       ],
       "metrics_verified": "Tutored 200+ students over the years; taught full-time for 10 years; maximum simultaneous teaching assignment recalled: 120 students.",
       "missing_or_unconfirmed": [
@@ -783,28 +784,17 @@
       "my_contribution": "Built the online Statistics course; built the scheduling program (first in C++, then in VB).",
       "ownership_level": "Implemented",
       "technical_details": "HTML/CSS (course); C++, then Visual Basic (scheduling program).",
-      "scale_and_scope": "Teaching context: 200+ students tutored over the years; up to 120 students in a simultaneous full-time assignment.",
+      "scale_and_scope": "Built during the teaching era (EMP-005). Student counts are now recorded separately in ACC-026.",
       "outcome": null,
-      "metrics": [
-        {
-          "value": "200+",
-          "unit": "students tutored over the years",
-          "confidence": "explicitly_stated_verified_2026-10-15"
-        },
-        {
-          "value": "120",
-          "unit": "max students in a simultaneous teaching assignment (recalled)",
-          "confidence": "subject_recollection_2026-10-15"
-        }
-      ],
-      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15",
+      "metrics": [],
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15; narrowed to coding only in 2026-10-28 split (student metrics moved to ACC-026)",
       "potential_relevance": [
         "teaching",
         "mentoring",
         "communication"
       ],
       "resume_bullet_candidates": [
-        "Built an online statistics course (HTML/CSS) and a scheduling program (C++, VB); tutored 200+ students"
+        "Built an online statistics course (HTML/CSS) and a scheduling program (C++, VB)"
       ],
       "verification_questions": []
     },
@@ -892,6 +882,45 @@
       ],
       "resume_bullet_candidates": [
         "Built a dedicated bulk data-delivery tool separated from the core pipeline, reconstructing outdated specs from historical files to preserve customer compatibility"
+      ],
+      "verification_questions": []
+    },
+    {
+      "id": "ACC-026",
+      "title": "Taught and tutored at scale — 200+ students, up to 120 in a simultaneous assignment",
+      "employer_id": "EMP-005",
+      "problem_or_motivation": "Full-time math and science teaching and tutoring work over a decade, including simultaneous assignments.",
+      "my_contribution": "Taught full-time for 10 years and tutored 200+ students over the years; the largest simultaneous teaching assignment recalled was 120 students.",
+      "ownership_level": "Delivered / taught",
+      "technical_details": "Subjects: mathematics and science.",
+      "scale_and_scope": "Teaching era (EMP-005, 2009-08 to 2018-05); tutoring through Wyzant and Preply.",
+      "outcome": null,
+      "metrics": [
+        {
+          "value": "200+",
+          "unit": "students tutored over the years",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        },
+        {
+          "value": "10 years",
+          "unit": "full-time teaching",
+          "confidence": "explicitly_stated_verified_2026-10-15"
+        },
+        {
+          "value": "120",
+          "unit": "max students in a simultaneous teaching assignment (recalled)",
+          "confidence": "subject_recollection_2026-10-15"
+        }
+      ],
+      "evidence_and_confidence": "explicitly_stated — base resume + verified metrics 2026-10-15; split out of ACC-021 on 2026-10-28 at subject's request",
+      "potential_relevance": [
+        "teaching",
+        "mentoring",
+        "communication"
+      ],
+      "resume_bullet_candidates": [
+        "Tutored 200+ students over the years",
+        "Taught full-time for 10 years, with up to 120 students in a simultaneous assignment"
       ],
       "verification_questions": []
     }
@@ -2083,14 +2112,24 @@
     },
     {
       "id": "SRC-009",
+      "source": "CONFLICT/uncertainty preserved: Helm chart attribution",
+      "role": "Memory 2026-10-15 says the Helm chart was for a client-specific project, employer unspecified; some tailored resumes place it inside the GreyNoise on-call bullet. Recorded as ACC-024 with employer null and a verification question."
+    },
+    {
+      "id": "SRC-010",
       "source": "Sensitive-information handling",
       "role": "No former legal name, no assigned-gender information, no family members' private details, and no confidential employer-dispute details were included. Work-authorization facts are included only because the subject explicitly provides them on applications."
     },
     {
-      "id": "SRC-010",
+      "id": "SRC-011",
       "source": "Subject's own Shopify Engineering Manager application answer (written 2026-09-14, restored into conversation 2026-09-25) + subject's verification answers 2026-10-20",
       "role": "Primary source for the enriched ES-migration record (ACC-008), the bulk-delivery tool (ACC-025), and LEAD-009, and for resolving VQ-001 to VQ-015 (except VQ-013, deferred). Added in inventory revision 1.1.0 on 2026-10-20."
+    },
+    {
+      "id": "SRC-012",
+      "source": "Subject request 2026-10-28",
+      "role": "ACC-021 split: ACC-021 narrowed to the coding piece only (online Statistics course + scheduling program); student counts moved to new ACC-026 (teaching/tutoring scale). No existing IDs were renumbered; new accomplishments start at ACC-026."
     }
   ],
-  "inventory_revision_date": "2026-10-21"
+  "inventory_revision_date": "2026-10-28"
 }
