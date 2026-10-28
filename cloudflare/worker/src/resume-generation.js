@@ -306,6 +306,7 @@ export async function generateTailoredResumeContent({ ai, job, inventory, maxTok
       matchedEvidenceIds,
     },
   };
+  console.info(input.allowedInventory)
 
   let result;
   try {
