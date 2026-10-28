@@ -247,7 +247,7 @@ async function handleGenerateResumeContent(jobId, env) {
       return errorResponse(409, "STALE_EVIDENCE", error.message);
     }
     if (error instanceof AIOutputInvalidError) {
-      console.error("Resume generation received unusable AI output");
+      console.error("Resume generation received unusable AI output", error);
       return errorResponse(502, "AI_OUTPUT_INVALID", "Workers AI returned unusable resume content.");
     }
     if (error instanceof AIServiceError) {
