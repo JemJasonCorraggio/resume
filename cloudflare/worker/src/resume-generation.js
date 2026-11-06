@@ -231,6 +231,7 @@ for (const record of inventory.skills ?? []) {
 }
 
   for (const category of value.skillsCategories) {
+    console.info(category)
     if (!category || typeof category !== "object" || Array.isArray(category) ||
         Object.keys(category).sort().join(",") !== "name,skills" || !validNonemptyString(category.name) || !Array.isArray(category.skills)) {
       throw new AIOutputInvalidError("Workers AI returned an invalid skills category");
@@ -261,6 +262,7 @@ for (const record of inventory.skills ?? []) {
   }
   const seen = new Set();
   const experience = value.experience.map((entry, index) => {
+    console.info(entry)
     if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
         Object.keys(entry).sort().join(",") !== "bullets,employmentRecordId" ||
         entry.employmentRecordId !== employmentIds[index] || seen.has(entry.employmentRecordId) || !Array.isArray(entry.bullets)) {
@@ -350,6 +352,7 @@ export async function generateTailoredResumeContent({ ai, job, inventory, maxTok
   }
 
   const parsed = parseAIResponse(result);
+  console.info(result)
   const generatedContent = validateGeneratedContent(
     parsed.generatedContent && typeof parsed.generatedContent === "object" ? parsed.generatedContent : parsed,
     inventory,
