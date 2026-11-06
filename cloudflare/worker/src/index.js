@@ -24,6 +24,7 @@ import {
   ResumeAssemblyError,
   ResumeEmploymentMatchError,
 } from "./resume-assembly.js";
+import { getResumeDraft, insertResumeDraft } from "./resume-drafts.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
 const fixedResumeAssetUrl = "https://inventory/fixed-resume-content.json";
@@ -272,6 +273,7 @@ async function handleGenerateResumeContent(jobId, env) {
       createdAt: draft.createdAt,
       warnings: draft.warnings,
     });
+    await insertResumeDraft(env.DB, assembled);
     return jsonResponse(assembled, 201);
   } catch (error) {
     if (error instanceof StaleEvidenceError) {
@@ -353,6 +355,24 @@ export async function handleRequest(request, env) {
       return errorResponse(404, "NOT_FOUND", "The requested job was not found.");
     }
     return handleGenerateResumeContent(jobId, env);
+  }
+  const resumeDraftPathMatch = /^\/api\/jobs\/([^/]+)\/resume$/.exec(url.pathname);
+  if (resumeDraftPathMatch) {
+    if (request.method !== "GET") return errorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET" });
+    let jobId;
+    try {
+      jobId = decodeURIComponent(resumeDraftPathMatch[1]);
+    } catch {
+      return errorResponse(404, "NOT_FOUND", "The requested job was not found.");
+    }
+    try {
+      const draft = await getResumeDraft(env.DB, jobId);
+      if (!draft) return errorResponse(404, "NOT_FOUND", "The requested resume draft was not found.");
+      return jsonResponse(draft);
+    } catch {
+      console.error("Could not retrieve assembled resume draft");
+      return errorResponse(500, "INTERNAL_ERROR", "The assembled resume could not be retrieved.");
+    }
   }
   const jobPathMatch = /^\/api\/jobs\/([^/]+)$/.exec(url.pathname);
   if (jobPathMatch) {

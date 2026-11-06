@@ -27,6 +27,7 @@
   let recordById = new Map();
   let selectedKey = null;
   let currentAnalysis = null;
+  let resumeReviewJobId = null;
 
   function make(tag, className, text) {
     const element = document.createElement(tag);
@@ -78,6 +79,230 @@
     window.history.replaceState(null, "", nextUrl);
   }
 
+  function recordEvidenceContent(record) {
+    if (!record || typeof record !== "object") return "";
+    const preferred = ["description", "summary", "text", "statement", "title", "name", "details", "outcome"];
+    for (const field of preferred) {
+      if (typeof record[field] === "string" && record[field].trim()) return record[field].trim();
+    }
+    return Object.entries(record)
+      .filter(([key]) => key !== "id")
+      .map(([key, value]) => `${formatLabel(key)}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`)
+      .join(" · ");
+  }
+
+  function evidenceControl(ids, label) {
+    const wrapper = make("details", "resume-evidence");
+    const unresolved = [];
+    wrapper.append(make("summary", "evidence-summary", "Supporting evidence"));
+    for (const id of ids) {
+      const item = recordById.get(id);
+      if (!item) unresolved.push(id);
+      else {
+        const record = make("div", "evidence-record");
+        record.append(
+          make("strong", "", recordEvidenceContent(item.record)),
+          make("span", "evidence-record-meta", `${formatLabel(item.collection)} · ${item.id}`)
+        );
+        wrapper.append(record);
+      }
+    }
+    for (const id of unresolved) {
+      const missing = make("p", "evidence-missing", `Missing evidence record: ${id}`);
+      missing.dataset.label = label;
+      wrapper.append(missing);
+    }
+    wrapper.setAttribute("aria-label", `Supporting evidence for ${label}`);
+    return wrapper;
+  }
+
+  function addGeneratedInlineEvidence(parent, text, ids, label) {
+    const line = make("div", "generated-line");
+    line.append(make("span", "", text));
+    line.append(evidenceControl(ids, label));
+    parent.append(line);
+  }
+
+  function warningText(warning) {
+    if (typeof warning === "string") return warning;
+    if (warning && typeof warning === "object") {
+      return Object.entries(warning)
+        .filter(([, value]) => typeof value === "string" || typeof value === "number")
+        .map(([key, value]) => key === "type" ? String(value).replaceAll("_", " ") : `${formatLabel(key)}: ${value}`)
+        .join(" · ");
+    }
+    return "";
+  }
+
+  function renderResumeWarnings(warningsElement, warnings, missingEvidence) {
+    const items = [
+      ...(Array.isArray(warnings) ? warnings.map(warningText).filter(Boolean) : []),
+      ...missingEvidence,
+    ];
+    if (!items.length) {
+      warningsElement.hidden = true;
+      warningsElement.replaceChildren();
+      return;
+    }
+    warningsElement.hidden = false;
+    warningsElement.replaceChildren(make("h3", "", "Review warnings"));
+    const list = make("ul");
+    for (const item of items) list.append(make("li", "", item));
+    warningsElement.append(list);
+  }
+
+  function renderAssembledResume(draft) {
+    const review = document.querySelector("#resume-review");
+    const container = document.querySelector("#assembled-resume");
+    const warningsElement = document.querySelector("#resume-warnings");
+    const status = document.querySelector("#resume-review-status");
+    const resume = draft?.resume;
+    if (!resume) throw new Error("The resume service returned an incomplete draft.");
+
+    container.replaceChildren();
+    const missingEvidence = [];
+    const header = make("header", "resume-header");
+    header.append(make("h1", "", resume.header.name));
+    if (resume.header.title) header.append(make("p", "resume-target-title", resume.header.title));
+    const contact = make("p", "resume-contact", (resume.header.contact || []).join(" · "));
+    header.append(contact);
+    const links = make("div", "resume-links");
+    for (const link of resume.header.links || []) {
+      const anchor = make("a", "", link.text);
+      anchor.href = link.href;
+      anchor.target = "_blank";
+      anchor.rel = "noreferrer";
+      links.append(anchor);
+    }
+    header.append(links);
+    header.append(make("p", "resume-language-note", resume.languageNote));
+    container.append(header);
+
+    const summary = make("section", "resume-section");
+    summary.append(make("h2", "", "Summary"));
+    const summaryText = make("p", "resume-summary-text");
+    summaryText.append(document.createTextNode(resume.summary.text));
+    summary.append(summaryText);
+    if (resume.summary.sourceRecordIds?.length) {
+      summary.append(evidenceControl(resume.summary.sourceRecordIds, "summary"));
+    } else {
+      missingEvidence.push("Summary is missing supporting evidence.");
+    }
+    summary.append(make("p", "resume-fixed-note", resume.summary.CUSMANote));
+    container.append(summary);
+
+    const skills = make("section", "resume-section");
+    skills.append(make("h2", "", "Skills and Languages"));
+    for (const category of resume.skillsAndLanguages.skillsCategories || []) {
+      const group = make("div", "resume-skills-category");
+      group.append(make("h3", "", category.name));
+      const fixedCategory = category.name === "Languages";
+      for (const skill of category.skills || []) {
+        const line = make("div", "resume-skill");
+        line.append(make("span", "", skill.name));
+        if (!fixedCategory && Array.isArray(skill.sourceRecordIds)) {
+          line.append(evidenceControl(skill.sourceRecordIds, `skill ${skill.name}`));
+        }
+        group.append(line);
+      }
+      skills.append(group);
+    }
+    skills.append(make("p", "resume-fixed-note", resume.skillsAndLanguages.FMPNote));
+    container.append(skills);
+
+    const experience = make("section", "resume-section");
+    experience.append(make("h2", "", "Experience"));
+    for (const entry of resume.experience || []) {
+      const job = make("article", "resume-experience-entry");
+      job.append(
+        make("h3", "", entry.company),
+        make("p", "resume-job-meta", `${entry.title} · ${entry.location} · ${entry.dates}`)
+      );
+      const bullets = make("ul", "resume-bullets");
+      for (const bullet of entry.bullets || []) {
+        const item = make("li");
+        item.append(document.createTextNode(bullet.text));
+        if (Array.isArray(bullet.sourceRecordIds) && bullet.sourceRecordIds.length) {
+          item.append(evidenceControl(bullet.sourceRecordIds, bullet.text));
+        } else {
+          missingEvidence.push(`Experience bullet is missing supporting evidence: ${bullet.text}`);
+        }
+        bullets.append(item);
+      }
+      job.append(bullets);
+      experience.append(job);
+    }
+    container.append(experience);
+
+    const education = make("section", "resume-section");
+    education.append(make("h2", "", "Education"));
+    education.append(
+      make("h3", "", resume.education.school),
+      make("p", "", resume.education.degree),
+      make("p", "", resume.education.details)
+    );
+    container.append(education);
+
+    const unresolvedNodes = container.querySelectorAll(".evidence-missing");
+    for (const node of unresolvedNodes) {
+      missingEvidence.push(`Missing evidence for ${node.dataset.label}: ${node.textContent.replace("Missing evidence record: ", "")}`);
+    }
+    renderResumeWarnings(warningsElement, draft.warnings, [...new Set(missingEvidence)]);
+    status.textContent = "Loaded";
+    status.className = "status status-ok";
+    review.hidden = false;
+  }
+
+  async function loadResumeReview(jobId) {
+    resumeReviewJobId = jobId;
+    const review = document.querySelector("#resume-review");
+    const container = document.querySelector("#assembled-resume");
+    const error = document.querySelector("#resume-review-error");
+    const status = document.querySelector("#resume-review-status");
+    review.hidden = false;
+    container.replaceChildren();
+    error.hidden = true;
+    status.textContent = "Loading resume…";
+    status.className = "status status-loading";
+    document.querySelector("#resume-back-link").href = "#analysis-results";
+    try {
+      const draft = await requestJson(`${apiBaseUrl}/jobs/${encodeURIComponent(jobId)}/resume`);
+      if (currentAnalysis) {
+        document.querySelector("#resume-review-context").textContent =
+          `${currentAnalysis.company} · ${currentAnalysis.roleTitle} · Draft ${draft.draftId}`;
+      }
+      renderAssembledResume(draft);
+      const url = new URL(window.location.href);
+      url.searchParams.set("resumeJobId", jobId);
+      window.history.replaceState(null, "", url);
+      review.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (loadError) {
+      status.textContent = "Unavailable";
+      status.className = "status status-error";
+      error.textContent = loadError instanceof Error ? loadError.message : "The assembled resume could not be loaded.";
+      error.hidden = false;
+    }
+  }
+
+  async function generateAndReviewResume(jobId) {
+    const button = document.querySelector("#generate-resume-button");
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    const previous = button.textContent;
+    button.textContent = "Generating resume…";
+    try {
+      await requestJson(`${apiBaseUrl}/jobs/${encodeURIComponent(jobId)}/generated-content`, { method: "POST" });
+      await loadResumeReview(jobId);
+    } catch (generationError) {
+      document.querySelector("#analysis-error").textContent =
+        generationError instanceof Error ? generationError.message : "The resume could not be generated.";
+      document.querySelector("#analysis-error").hidden = false;
+    } finally {
+      button.disabled = false;
+      button.textContent = previous;
+    }
+  }
+
   function showAnalysisError(message) {
     currentAnalysis = null;
     analysisResults.hidden = true;
@@ -127,6 +352,10 @@
     );
     heading.append(title);
     analysisResults.append(heading);
+    const reviewButton = make("button", "button button-primary", "Generate and review resume");
+    reviewButton.type = "button";
+    reviewButton.id = "generate-resume-button";
+    heading.append(reviewButton);
 
     const metadata = make("div", "analysis-meta");
     metadata.append(
@@ -530,6 +759,11 @@
     selectRecord(record.key);
     document.querySelector(".browser").scrollIntoView({ behavior: "smooth", block: "start" });
   });
+  analysisResults.addEventListener("click", (event) => {
+  if (event.target.closest("#generate-resume-button") && currentAnalysis) {
+    generateAndReviewResume(currentAnalysis.jobId);
+  }
+  });
   searchInput.addEventListener("input", () => {
     renderRecordList();
     const visible = filteredRecords();
@@ -558,5 +792,10 @@
   if (savedJobIdFromUrl) {
     savedJobId.value = savedJobIdFromUrl;
     openSavedAnalysis(null, savedJobIdFromUrl);
+  }
+  const resumeJobIdFromUrl = new URLSearchParams(window.location.search).get("resumeJobId");
+  if (resumeJobIdFromUrl) {
+    savedJobId.value = resumeJobIdFromUrl;
+    openSavedAnalysis(null, resumeJobIdFromUrl).finally(() => loadResumeReview(resumeJobIdFromUrl));
   }
 })();

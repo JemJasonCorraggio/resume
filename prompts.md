@@ -1476,3 +1476,220 @@ Add automated tests covering at least the following.
 - PDF generation or export.
 - Interactive resume editing.
 - Saving or updating assembled drafts in D1.
+
+## 27. Task: Build resume review interface
+Build the Pages UI for reviewing a complete assembled resume produced by RES-03.
+
+The user should be able to:
+- Read the assembled resume in its intended section order and layout.
+- Inspect the supporting career-inventory evidence for generated content.
+- Identify warnings or gaps that may need attention.
+- Distinguish generated content from fixed content.
+
+This is a **read-only review interface**. Editing, saving changes, regeneration, and PDF export are out of scope.
+
+The interface must consume the complete assembled resume.
+
+### 1. Review page and navigation
+After a resume has been successfully generated and assembled, display a review page for that resume.
+
+The page must:
+- Identify the company and role associated with the job, using the existing job/draft metadata.
+- Display the assembled resume.
+- Provide access to warnings associated with the draft.
+- Allow the user to inspect supporting evidence for generated content.
+- Provide a clear way to return to the job or draft list using the application's existing navigation conventions.
+
+Do not introduce a new workflow for creating or analyzing jobs as part of this ticket.
+
+### 2. Resume presentation
+Render the assembled resume using the existing resume structure and preserve this section order:
+
+1. Header
+2. Summary
+3. Skills and Languages
+4. Experience
+5. Education
+
+The section headings are presentation labels. They should be rendered by the UI and must not be expected as fields in the assembled resume JSON.
+
+#### Header
+Display:
+- Name
+- Contact information
+- Links
+- Generated target role title
+- Fixed language note
+
+Links must be clickable and open their destinations.
+
+#### Summary
+Display:
+- Generated summary text
+- Fixed CUSMA note
+
+The CUSMA note is fixed content and must not be presented as generated content or as an item requiring supporting evidence.
+
+#### Skills and Languages
+Display:
+- Generated skill categories and their skills, in the order returned by RES-03.
+- Fixed Languages category after all generated skill categories.
+- Fixed FMP note immediately after the Languages category.
+
+The fixed Languages category and FMP note must not be presented as generated content or as items requiring supporting evidence.
+
+#### Experience
+Display every employment entry in the order returned by the assembled resume.
+
+For each entry, display:
+- Company
+- Location
+- Title
+- Dates
+- Bullets
+
+Preserve the supplied text and ordering. Do not omit employment entries or reorder bullets.
+
+#### Education
+Display:
+- School
+- Degree
+- Details
+
+Education is fixed content and does not require supporting evidence.
+
+### 3. Generated content and supporting evidence
+Generated content includes:
+- Summary text
+- Generated skills
+- Experience bullets
+
+Each generated item has one or more `sourceRecordIds`. The interface must let the user inspect the career-inventory records associated with that item.
+
+#### Interaction
+Provide an unobtrusive clickable evidence icon alongside each generated item.
+
+When selected, display the supporting record information in an expandable area.
+
+The evidence view should:
+- Identify the type of source record where available.
+- Display the relevant source record's content.
+- Make it clear which generated item the evidence supports.
+- Support multiple source records for one generated item.
+
+Resolve IDs against the canonical career inventory. Do not display raw IDs as a substitute for evidence.
+
+Fixed content must not show evidence controls.
+
+#### Missing or invalid evidence
+If a generated item references a source record that cannot be resolved:
+- Do not crash or prevent the rest of the resume from rendering.
+- Make the missing evidence visible to the user.
+- Show a warning identifying the affected item.
+- Do not invent replacement evidence.
+
+This UI behavior is a defensive fallback, not a replacement for backend validation.
+
+### 4. Warnings
+Display the draft's warnings prominently enough that the user will notice them before proceeding.
+
+Warnings may include situations such as:
+- An employment entry has fewer bullets than the target count because the inventory did not support more.
+- A generated section has limited supporting evidence.
+- Other generation or assembly warnings returned by the backend.
+
+Requirements:
+- Display the warning text returned by the backend.
+- Do not silently discard warnings.
+- Do not invent warnings based on assumptions about the user's career.
+- If there are no warnings, do not display an empty warning area.
+- Warnings should remain associated with the draft and should not be confused with resume content.
+
+If the UI detects a missing evidence record, it should also surface that as a review warning.
+
+### 5. Data handling
+Use the assembled resume as the sole source for displayed resume content.
+
+Use the draft metadata for:
+- Draft ID
+- Job ID
+- Inventory revision
+- Creation timestamp
+- Warnings
+
+Use the canonical inventory to resolve `sourceRecordIds` for the evidence view.
+
+Do not:
+- Re-run AI generation when opening the review page.
+- Reassemble the resume in the frontend.
+- Modify the assembled resume.
+- Persist edits or review state.
+- Change the canonical inventory or fixed resume configuration.
+- Treat the current inventory as a reason to change an already assembled resume snapshot.
+
+The review page must display the assembled snapshot associated with the draft, even if the underlying inventory or fixed configuration has changed since it was generated.
+
+### 6. Loading and error states
+Implement appropriate states for:
+- Loading the assembled resume.
+- Successfully loaded resume.
+- Resume or draft not found.
+- Unauthorized or inaccessible draft, if access control applies.
+- Failure to retrieve the assembled resume.
+- Failure to retrieve supporting evidence.
+
+A failure to load supporting evidence must not prevent the main resume from being displayed.
+
+Use the application's existing error-handling and notification conventions. Do not expose stack traces, internal implementation details, or sensitive inventory data in error messages.
+
+### 9. Automated tests
+Add tests covering at least:
+
+#### Resume rendering
+- All five sections render in the correct order.
+- Header fields and links render correctly.
+- Summary text and CUSMA note both render.
+- Generated skill categories render before the fixed Languages category.
+- The FMP note appears immediately after Languages.
+- All employment entries and their bullets render in the supplied order.
+- Education fields render correctly.
+
+#### Evidence
+- Evidence controls appear for generated summary text, skills, and experience bullets.
+- Fixed content does not display evidence controls.
+- Selecting an evidence control displays the corresponding source record.
+- Multiple source records can be displayed for one generated item.
+- Missing evidence is handled without crashing the page.
+
+#### Warnings
+- Draft warnings are displayed.
+- No empty warning area is shown when there are no warnings.
+- Missing evidence is surfaced as a review warning.
+
+#### Data integrity
+- The UI displays the assembled resume rather than independently rebuilding it.
+- The UI does not modify resume content.
+- The UI does not trigger another generation request when reopening a draft.
+- The UI preserves the assembled snapshot even if the current inventory differs.
+
+### Acceptance criteria
+- A successfully assembled resume can be opened in the Pages UI.
+- The complete resume renders with all five sections in the correct order.
+- Fixed and generated content appear in their intended positions.
+- The user can inspect supporting career-inventory records for generated content.
+- Fixed content does not incorrectly appear to require provenance.
+- Draft warnings are visible and readable.
+- Missing evidence is handled gracefully and surfaced to the user.
+- Loading and error states are implemented.
+- The interface does not modify the assembled resume or trigger regeneration.
+- The review interface works with the existing draft and job data.
+- Automated tests cover the requirements above.
+
+### Out of scope
+- Editing resume content.
+- Saving edits or maintaining edit history.
+- Regenerating the resume or individual sections.
+- PDF generation or download.
+- Final print styling and pagination.
+- Changing the canonical career inventory or fixed resume configuration.
+- Adding authentication or changing the existing access-control model.

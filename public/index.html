@@ -61,6 +61,20 @@
 
       <section id="analysis-results" class="analysis-results" aria-live="polite" hidden></section>
 
+      <section id="resume-review" class="resume-review" aria-labelledby="resume-review-heading" hidden>
+        <div class="resume-review-heading">
+          <div>
+            <a id="resume-back-link" class="back-link" href="#analysis-results">Back to job analysis</a>
+            <h2 id="resume-review-heading">Resume review</h2>
+            <p id="resume-review-context" class="muted"></p>
+          </div>
+          <span id="resume-review-status" class="status status-loading">Loading resume…</span>
+        </div>
+        <p id="resume-review-error" class="analysis-error" role="alert" hidden></p>
+        <aside id="resume-warnings" class="review-warnings" aria-label="Resume warnings" hidden></aside>
+        <article id="assembled-resume" class="assembled-resume" aria-live="polite"></article>
+      </section>
+
       <section class="overview" aria-label="Inventory status">
         <div class="overview-heading">
           <h2>Inventory status</h2>
