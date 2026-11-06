@@ -229,6 +229,7 @@ for (const record of inventory.skills ?? []) {
   existing.push(record.id);
   skillIdsByName.set(normalizedName, existing);
 }
+console.info(skillIdsByName)
 
   for (const category of value.skillsCategories) {
     console.info(category)
