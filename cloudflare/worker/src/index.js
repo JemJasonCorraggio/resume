@@ -276,7 +276,7 @@ async function handleGenerateResumeContent(jobId, env) {
     await insertResumeDraft(env.DB, assembled);
     return jsonResponse(assembled, 201);
   } catch (error) {
-    console.info(JSON.stringify(error))
+    console.info("error:", JSON.stringify(error, null, 2));
     if (error instanceof StaleEvidenceError) {
       console.error("Resume generation found stale evidence:", error.message);
       return errorResponse(409, "STALE_EVIDENCE", error.message);
