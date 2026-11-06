@@ -229,16 +229,17 @@ for (const record of inventory.skills ?? []) {
   existing.push(record.id);
   skillIdsByName.set(normalizedName, existing);
 }
-console.info(skillIdsByName)
+console.info(JSON.stringify(skillIdsByName));
 
   for (const category of value.skillsCategories) {
-    console.info(category)
+    console.info(category);
     if (!category || typeof category !== "object" || Array.isArray(category) ||
         Object.keys(category).sort().join(",") !== "name,skills" || !validNonemptyString(category.name) || !Array.isArray(category.skills)) {
       throw new AIOutputInvalidError("Workers AI returned an invalid skills category");
     }
     const skills = [];
     for (const skill of category.skills) {
+      skill.sourceRecordIds ??= [];
       if (!skill || typeof skill !== "object" || Array.isArray(skill) ||
           Object.keys(skill).sort().join(",") !== "name,sourceRecordIds" || !validNonemptyString(skill.name) || !Array.isArray(skill.sourceRecordIds)) {
         throw new AIOutputInvalidError("Workers AI returned an invalid skill");
