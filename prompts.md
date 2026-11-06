@@ -1087,3 +1087,392 @@ Warnings must be machine-readable so the application can display them to the use
 - PDF export.
 - French resume generation.
 - Changes to job-analysis extraction, candidate retrieval, or evidence matching.
+
+## 26. Task: Assemble complete resume from fixed and generated content
+Load the fixed resume content from `fixed-resume-content.json`, combine it with the generated content produced by resume generation, and return one complete, validated resume object.
+
+The assembled resume must preserve all fixed information, incorporate all generated content, and use a consistent structure that can later be consumed directly by the resume preview and PDF renderer.
+
+The application, not the AI model, is responsible for assembling the final object.
+
+### 1. Fixed resume content configuration
+A file named `fixed-resume-content.json` will exist in the same directory as the canonical career inventory.
+
+Load this file using the same general approach used to load the canonical inventory.
+
+The file has the following authoritative structure:
+
+```json
+{
+  "resume": {
+    "header": {
+      "name": "Jason/Jem Corraggio",
+      "contact": [
+        "corraggios@gmail.com",
+        "+1 215-250-1661",
+        "Cardinal, ON"
+      ],
+      "links": [
+        {
+          "text": "Github",
+          "href": "https://github.com/jemjasoncorraggio"
+        },
+        {
+          "text": "LinkedIn",
+          "href": "https://www.linkedin.com/in/jem-jason-corraggio-22595272/"
+        },
+        {
+          "text": "Portfolio",
+          "href": "https://jemjasoncorraggio.github.io/Portfolio/"
+        }
+      ]
+    },
+    "languageNote": "ENGLISH VERSION (CV bilingue - version française disponible en demande)",
+    "summary": {
+      "CUSMANote": "As a U.S. citizen, eligible for a CUSMA Professional (TN) work permit - no LMIA required."
+    },
+    "skillsAndLanguages": {
+      "FMPNote": "Actively preparing for certification to be eligible for the Francophone Mobility program - no LMIA required.",
+      "fixedSkillsCategories": [
+        {
+          "name": "Languages",
+          "skills": [
+            {
+              "name": "English - Fluent"
+            },
+            {
+              "name": "French - B1"
+            }
+          ]
+        }
+      ]
+    },
+    "experience": [
+      {
+        "employmentRecordId": "employment-record-id",
+        "company": "Capital One",
+        "location": "Remote from Philadelphia, PA",
+        "title": "Senior Software Engineer",
+        "dates": "01/22-04/23"
+      },
+      {
+        "employmentRecordId": "employment-record-id",
+        "company": "TrueAccord",
+        "location": "Remote from Philadelphia, PA",
+        "title": "Tech Lead of the Multiple Account Project / Oncall Admin of the Recover Team",
+        "dates": "03/21-12/21"
+      },
+      {
+        "employmentRecordId": "employment-record-id",
+        "company": "Wingspan Technology, an IQVIA Company",
+        "location": "Blue Bell, PA",
+        "title": "Engineering Lead of the Technical Services Team",
+        "dates": "05/18-03/21"
+      },
+      {
+        "employmentRecordId": "employment-record-id",
+        "company": "Wyzant Tutoring, 21st Century Cyber Charter School",
+        "location": "Greater Philadelphia Area, PA",
+        "title": "Math and Science Tutor/Math Teacher",
+        "dates": "08/09-05/18"
+      }
+    ],
+    "education": {
+      "school": "Rensselaer Polytechnic Institute",
+      "degree": "BS, Mathematics",
+      "details": "12 Comp Sci credits including 8 in C++, Emily Roebling Scholarship for Mathematics"
+    }
+  }
+}
+```
+
+The employment record IDs above are placeholders. The actual configuration must use the exact IDs from the canonical career inventory.
+
+The configuration is the source of truth for fixed resume information. Do not hardcode its values elsewhere in the application.
+
+### 2. Fixed configuration validation
+Validate the configuration when it is loaded.
+
+Requirements:
+
+- Require the top-level `resume` object.
+- Validate every required property and its expected type.
+- Reject missing required fields, unexpected fields, malformed nested objects, and invalid values.
+- Require nonempty strings for text fields.
+- Require `contact` to be an array of nonempty strings.
+- Require `links` to be an array of objects containing nonempty `text` and `href` strings.
+- Require `fixedSkillsCategories` to be an array of valid skill-category objects.
+- Require the Languages category to exist exactly once and contain the fixed language entries.
+- Require every experience entry to contain an `employmentRecordId`, `company`, `location`, `title`, and `dates`.
+- Require every employment record ID to exist in the canonical career inventory.
+- Reject duplicate employment record IDs.
+- Require the education object and all its defined fields.
+
+Do not silently repair or discard malformed configuration values.
+
+The fixed configuration must not contain generated properties such as `header.title`, `summary.text`, `summary.sourceRecordIds`, `skillsAndLanguages.skillsCategories`, or `experience[].bullets`.
+
+If configuration validation fails, return an internal configuration error. Do not attempt assembly with invalid fixed content.
+
+### 3. Generated content input
+Use the existing generated resume content produced by the generation process.
+
+The generated content has this structure:
+
+```json
+{
+  "title": "Senior Backend Engineer",
+  "summary": {
+    "text": "Generated professional summary",
+    "sourceRecordIds": ["accomplishment-12"]
+  },
+  "skillsCategories": [
+    {
+      "name": "Engineering",
+      "skills": [
+        {
+          "name": "Go",
+          "sourceRecordIds": ["skill-4"]
+        }
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "employmentRecordId": "employment-record-id",
+      "bullets": [
+        {
+          "text": "Generated experience bullet",
+          "sourceRecordIds": ["accomplishment-12"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Use the validated output from the existing generation process. Do not call Workers AI again as part of assembly.
+
+The generated content must already have passed the existing generation-content and provenance validation.
+
+### 4. Complete assembled resume schema
+The assembled resume must use the following structure. Fixed and generated properties are combined into the same objects. Do not create separate `fixedContent` and `generatedContent` objects in the assembled resume.
+
+```json
+{
+  "resume": {
+    "header": {
+      "name": "Jason/Jem Corraggio",
+      "contact": [],
+      "links": [],
+      "title": "Senior Backend Engineer"
+    },
+    "languageNote": "ENGLISH VERSION (CV bilingue - version française disponible en demande)",
+    "summary": {
+      "text": "Generated professional summary",
+      "sourceRecordIds": ["accomplishment-12"],
+      "CUSMANote": "As a U.S. citizen, eligible for a CUSMA Professional (TN) work permit - no LMIA required."
+    },
+    "skillsAndLanguages": {
+      "skillsCategories": [
+        {
+          "name": "Engineering",
+          "skills": [
+            {
+              "name": "Go",
+              "sourceRecordIds": ["skill-4"]
+            }
+          ]
+        },
+        {
+          "name": "Languages",
+          "skills": [
+            {
+              "name": "English - Fluent"
+            },
+            {
+              "name": "French - B1"
+            }
+          ]
+        }
+      ],
+      "FMPNote": "Actively preparing for certification to be eligible for the Francophone Mobility program - no LMIA required."
+    },
+    "experience": [
+      {
+        "employmentRecordId": "employment-record-id",
+        "company": "Capital One",
+        "location": "Remote from Philadelphia, PA",
+        "title": "Senior Software Engineer",
+        "dates": "01/22-04/23",
+        "bullets": [
+          {
+            "text": "Generated experience bullet",
+            "sourceRecordIds": ["accomplishment-12"]
+          }
+        ]
+      }
+    ],
+    "education": {
+      "school": "Rensselaer Polytechnic Institute",
+      "degree": "BS, Mathematics",
+      "details": "12 Comp Sci credits including 8 in C++, Emily Roebling Scholarship for Mathematics"
+    }
+  }
+}
+```
+
+The example is abbreviated. The actual assembled object must contain every configured employment entry and every generated skill category and bullet.
+
+The complete response should also retain the existing draft metadata:
+
+- `draftId`
+- `jobId`
+- `inventoryRevision`
+- `createdAt`
+- `warnings`
+
+These metadata fields belong outside the `resume` object. Do not put metadata inside the resume content itself.
+
+### 5. Assembly rules
+Implement a deterministic assembly function that takes the validated fixed configuration and validated generated content and returns the complete resume object.
+
+Apply these rules:
+
+#### Header
+- Copy `name`, `contact`, and `links` from the fixed configuration.
+- Add `title` from the generated content.
+- Do not use the historical employment titles as the resume header title.
+
+#### Language note
+- Copy `languageNote` unchanged from the fixed configuration.
+
+#### Summary
+- Copy `text` and `sourceRecordIds` from generated content.
+- Copy `CUSMANote` unchanged from the fixed configuration.
+
+#### Skills and Languages
+- Copy the generated `skillsCategories` into the assembled `skillsCategories` array.
+- Append the fixed `Languages` category after all generated categories.
+- Copy `FMPNote` unchanged from the fixed configuration.
+- Do not allow the model-generated content to replace, modify, or duplicate the Languages category.
+- Do not add `sourceRecordIds` to the fixed language entries.
+
+The final order must always be:
+1. Generated skill categories, in their generated order.
+2. Fixed Languages category, last.
+3. FMP note immediately after the skills categories in the assembled structure.
+
+#### Experience
+- Use the fixed configuration's experience array as the authoritative source for employment order and fixed employment information.
+- Match generated experience entries to fixed employment entries using `employmentRecordId`.
+- Copy `employmentRecordId`, `company`, `location`, `title`, and `dates` from the fixed configuration.
+- Copy `bullets` from the corresponding generated experience entry.
+- Never replace fixed historical job titles with the generated resume title or any AI-generated employment information.
+- Every configured employment entry must have exactly one corresponding generated experience entry.
+- Reject missing, duplicate, or unexpected generated employment entries.
+- Do not silently omit an employment entry or create one with an empty bullet array to conceal missing generated content.
+
+#### Education
+- Copy the complete education object from the fixed configuration.
+- Do not generate, modify, or infer education information.
+
+#### General rules
+- Preserve generated provenance IDs.
+- Do not change or rewrite generated text during assembly.
+- Do not modify either input object during assembly.
+- Do not add section-heading labels such as `Summary`, `Skills and Languages`, `Experience`, or `Education` to the JSON. These are presentation labels and will be handled by the future renderer.
+- Do not generate HTML, CSS, or layout information.
+
+### 6. Validate the assembled resume
+Validate the completed object before returning it.
+
+At minimum, verify:
+- The assembled object matches the complete schema.
+- All required fixed fields are present.
+- All generated fields are present and valid.
+- All fixed values match the loaded configuration exactly.
+- The generated resume title is present in `header.title`.
+- The summary contains both generated text/provenance and the fixed CUSMA note.
+- The Skills and Languages section contains all generated categories followed by exactly one fixed Languages category.
+- The FMP note is present and unchanged.
+- Every configured employment entry appears exactly once, in the configured order.
+- Every employment entry contains its fixed information and corresponding generated bullets.
+- Education matches the fixed configuration exactly.
+- No unexpected fields have been introduced.
+
+The assembled object must not be accepted if any of these checks fail.
+
+### 7. Error handling
+Use the existing API error-handling conventions.
+
+Distinguish between:
+- Fixed configuration loading or validation failures.
+- Invalid or incomplete generated content.
+- Employment matching failures.
+- Unexpected internal assembly errors.
+
+Return an appropriate error response without exposing internal configuration or career inventory contents.
+
+Do not log the full fixed configuration, generated resume, or canonical inventory.
+
+### 8. Automated tests
+Add automated tests covering at least the following.
+
+#### Successful assembly
+- A valid fixed configuration and valid generated content produce a complete resume.
+- All fixed fields are preserved exactly.
+- All generated fields appear in the correct locations.
+- The generated header title is distinct from historical employment titles.
+- All generated skill categories appear before the fixed Languages category.
+- The Languages category appears exactly once.
+- The FMP note is present and unchanged.
+- Employment bullets are matched to the correct fixed employment entries.
+- Employment order follows the fixed configuration.
+- Education is copied unchanged.
+- Provenance IDs are preserved.
+- Neither input object is mutated.
+
+#### Invalid configuration or generated content
+- Missing or malformed fixed configuration fields.
+- Unexpected fixed configuration properties.
+- Missing or duplicate Languages categories.
+- Missing or duplicate employment record IDs.
+- Employment IDs that do not exist in the canonical inventory.
+- Missing generated employment entries.
+- Duplicate or unexpected generated employment entries.
+- Generated content attempting to supply fixed fields.
+- Invalid generated content.
+- Missing required generated fields.
+- Invalid assembled output.
+
+#### Snapshot behavior
+- An assembled resume contains the fixed values used at assembly time.
+- Subsequent changes to the loaded fixed configuration do not mutate an already assembled resume object.
+
+### Acceptance criteria
+- `fixed-resume-content.json` is loaded from the same directory as the canonical career inventory.
+- The fixed configuration is validated against the specified schema.
+- Employment entries in the fixed configuration use valid canonical employment record IDs.
+- The assembler combines fixed and generated content into the specified complete resume structure.
+- Fixed and generated properties share the same resume objects; no separate fixed/generated subobjects are introduced.
+- The generated resume title is placed in `header.title`.
+- The fixed Languages category is appended after generated skill categories.
+- The FMP note and all other fixed notes are preserved unchanged.
+- Employment entries are matched by ID, not by company name or array position alone.
+- Every fixed employment entry appears exactly once and in the configured order.
+- Education and all other fixed information are preserved.
+- The assembled resume is validated before being returned.
+- Draft metadata remains outside the `resume` object.
+- Automated tests cover successful assembly, invalid inputs, employment matching, and snapshot behavior.
+- Existing resume generation behavior continues to work.
+- All relevant automated tests pass.
+
+### Out of scope
+- Changes to AI generation or generation prompts.
+- Changes to the canonical career inventory schema.
+- Resume preview UI.
+- Visual formatting, typography, or page layout.
+- PDF generation or export.
+- Interactive resume editing.
+- Saving or updating assembled drafts in D1.

@@ -17,8 +17,16 @@ import {
   generateTailoredResumeContent,
   StaleEvidenceError,
 } from "./resume-generation.js";
+import {
+  assembleResume,
+  FixedResumeConfigError,
+  GeneratedResumeContentError,
+  ResumeAssemblyError,
+  ResumeEmploymentMatchError,
+} from "./resume-assembly.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
+const fixedResumeAssetUrl = "https://inventory/fixed-resume-content.json";
 
 function jsonResponse(payload, status = 200, headers = {}) {
   return Response.json(payload, {
@@ -46,6 +54,12 @@ async function loadInventory(env) {
 
   const inventory = await asset.json();
   return inventory;
+}
+
+async function loadFixedResumeConfig(env) {
+  const asset = await env.INVENTORY_ASSETS.fetch(fixedResumeAssetUrl);
+  if (!asset.ok) throw new Error(`Fixed resume asset request returned HTTP ${asset.status}`);
+  return asset.json();
 }
 
 async function handleCreateJob(request, env) {
@@ -223,6 +237,14 @@ async function handleGenerateResumeContent(jobId, env) {
     return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be generated.");
   }
 
+  let fixedConfig;
+  try {
+    fixedConfig = await loadFixedResumeConfig(env);
+  } catch (error) {
+    console.error("Could not load fixed resume configuration:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_CONFIGURATION_ERROR", "The resume configuration is invalid.");
+  }
+
   const analysis = {
     id: job.id,
     jobId: job.id,
@@ -240,7 +262,17 @@ async function handleGenerateResumeContent(jobId, env) {
       maxTokens: env.AI_MAX_TOKENS,
       gatewayId: env.AI_GATEWAY_ID,
     });
-    return jsonResponse(draft, 201);
+    const assembled = assembleResume({
+      fixedConfig,
+      generatedContent: draft.generatedContent,
+      inventory,
+      draftId: draft.draftId,
+      jobId: draft.jobId,
+      inventoryRevision: draft.inventoryRevision,
+      createdAt: draft.createdAt,
+      warnings: draft.warnings,
+    });
+    return jsonResponse(assembled, 201);
   } catch (error) {
     if (error instanceof StaleEvidenceError) {
       console.error("Resume generation found stale evidence:", error.message);
@@ -253,6 +285,22 @@ async function handleGenerateResumeContent(jobId, env) {
     if (error instanceof AIServiceError) {
       console.error("Resume generation AI service failed");
       return errorResponse(502, "AI_SERVICE_ERROR", "The resume content could not be generated.");
+    }
+    if (error instanceof FixedResumeConfigError) {
+      console.error("Bundled fixed resume configuration failed validation");
+      return errorResponse(500, "INTERNAL_CONFIGURATION_ERROR", "The resume configuration is invalid.");
+    }
+    if (error instanceof ResumeEmploymentMatchError) {
+      console.error("Resume experience did not match fixed configuration");
+      return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be assembled.");
+    }
+    if (error instanceof GeneratedResumeContentError) {
+      console.error("Generated resume content failed assembly validation");
+      return errorResponse(500, "INVALID_GENERATED_CONTENT", "The generated resume content is invalid.");
+    }
+    if (error instanceof ResumeAssemblyError) {
+      console.error("Resume assembly validation failed");
+      return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be assembled.");
     }
     console.error("Resume generation failed:", error instanceof Error ? error.name : "Unknown error");
     return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be generated.");

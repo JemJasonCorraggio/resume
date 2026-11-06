@@ -1,0 +1,39 @@
+{
+  "resume": {
+    "header": {
+      "name": "Jason/Jem Corraggio",
+      "contact": ["corraggios@gmail.com", "+1 215-250-1661", "Cardinal, ON"],
+      "links": [{"text": "Github", "href": "https://github.com/jemjasoncorraggio"}, 
+      {"text": "LinkedIn", "href": "https://www.linkedin.com/in/jem-jason-corraggio-22595272/"},
+    {"text": "Portfolio", "href": "https://jemjasoncorraggio.github.io/Portfolio/"}]
+    },
+    "languageNote": "ENGLISH VERSION (CV bilingue - version française disponible en demande)",
+    "summary": {
+      "CUSMANote": "As a U.S. citizen, eligible for a CUSMA Professional (TN) work permit - no LMIA required."
+    },
+    "skillsAndLanguages": {
+      "fixedSkillsCategories": [
+      {
+        "name": "Languages",
+        "skills": [
+          {
+            "name": "English - Fluent"
+          },
+          {
+            "name": "French - B1"
+          }
+        ]
+      }],
+      "FMPNote": "Actively preparing for certification to be eligible for the Francophone Mobility program - no LMIA required."
+    },
+    "experience": [
+        {"employmentRecordId": "EMP-001", "company": "GreyNoise Intelligence", "location": "Remote from Philadelphia, PA", "title": "Lead Software Engineer / Oncall Lead", "dates": "05/23-05/25"},
+        {"employmentRecordId": "EMP-002", "company": "Capital One", "location": "Remote from Philadelphia, PA", "title": "Senior Software Engineer", "dates": "01/22-04/23"},
+        {"employmentRecordId": "EMP-003", "company": "TrueAccord", "location": "Remote from Philadelphia, PA", "title": "Tech Lead of the Multiple Account Project / Oncall Admin of the Recover Team", "dates": "03/21-12/21"},
+        {"employmentRecordId": "EMP-004", "company": "Wingspan Technology, an IQVIA Company", "location": "Blue Bell, PA", "title": "Engineering Lead of the Technical Services Team", "dates": "05/18-03/21"},
+        {"employmentRecordId": "EMP-005", "company": "Wyzant Tutoring, 21st Century Cyber Charter School", "location": "Greater Philadelphia Area, PA", "title": "Math and Science Tutor/Math Teacher", "dates": "08/09-05/18"}
+],
+    "education": {"school": "Rensselaer Polytechnic Institute", "degree": "BS, Mathematics", "details": "12 Comp Sci credits including 8 in  C++, Emily Roebling Scholarship for Mathematics"}
+  }
+}
+

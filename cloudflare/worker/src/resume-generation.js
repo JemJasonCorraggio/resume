@@ -183,7 +183,6 @@ export function validateEvidenceReferences(job, inventory) {
 }
 
 function parseAIResponse(result) {
-  console.info(result)
   if (!result || typeof result !== "object") throw new AIOutputInvalidError("Workers AI returned no result");
   let parsed;
   if (typeof result.response === "string") {
@@ -232,7 +231,6 @@ for (const record of inventory.skills ?? []) {
 }
 
   for (const category of value.skillsCategories) {
-    console.info(category);
     if (!category || typeof category !== "object" || Array.isArray(category) ||
         Object.keys(category).sort().join(",") !== "name,skills" || !validNonemptyString(category.name) || !Array.isArray(category.skills)) {
       throw new AIOutputInvalidError("Workers AI returned an invalid skills category");
@@ -263,7 +261,6 @@ for (const record of inventory.skills ?? []) {
   }
   const seen = new Set();
   const experience = value.experience.map((entry, index) => {
-    console.log(entry);
     if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
         Object.keys(entry).sort().join(",") !== "bullets,employmentRecordId" ||
         entry.employmentRecordId !== employmentIds[index] || seen.has(entry.employmentRecordId) || !Array.isArray(entry.bullets)) {

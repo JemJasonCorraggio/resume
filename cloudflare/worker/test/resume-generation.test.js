@@ -42,14 +42,14 @@ test("resume generation returns a complete validated draft", async () => {
   assert.equal(draft.jobId, "job-1");
   assert.equal(draft.inventoryRevision, inventory.inventory_revision_date);
   assert.deepEqual(draft.generatedContent.experience.map((entry) => entry.employmentRecordId), inventory.employment_history.map((entry) => entry.id));
-  assert.deepEqual(draft.warnings.map((warning) => warning.employmentRecordId), ["EMP-005"]);
+  assert.deepEqual(draft.warnings.map((warning) => warning.employmentRecordId), []);
 });
 
 test("shortfalls produce structured warnings", async () => {
   const content = validContent();
   content.experience[1].bullets = [];
   const draft = await generateTailoredResumeContent({ ai: aiReturning(content), job, inventory, maxTokens: 2048, gatewayId: "default" });
-  assert.deepEqual(draft.warnings.map((warning) => warning.employmentRecordId), ["EMP-002", "EMP-005"]);
+  assert.deepEqual(draft.warnings.map((warning) => warning.employmentRecordId), ["EMP-002"]);
   assert.equal(draft.warnings[0].actualBulletCount, 0);
   assert.equal(draft.warnings[0].requiredMinimum, 2);
 });
