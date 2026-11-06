@@ -222,6 +222,7 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
   const cleanSkills = [];
   const skillRecordIds = new Set((inventory.skills ?? []).map((record) => record.id));
 
+console.info(inventory.skills)
 const skillIdsByName = new Map();
 for (const record of inventory.skills ?? []) {
   const normalizedName = record.name.trim().toLowerCase();
