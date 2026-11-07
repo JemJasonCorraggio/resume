@@ -222,15 +222,24 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
   const cleanSkills = [];
   const skillRecordIds = new Set((inventory.skills ?? []).map((record) => record.id));
 
-  console.info(inventory.skills)
+  console.info("skills type:", typeof inventory.skills);
+  console.info("skills isArray:", Array.isArray(inventory.skills));
+  console.info("skills keys:", Object.keys(inventory.skills ?? {}).length);
+  console.info("skills values:", Object.values(inventory.skills ?? {}).length);
+
   const skillIdsByName = new Map();
+
   for (const record of Object.values(inventory.skills ?? {})) {
+    console.info("Processing skill:", record.id, record.name);
+
     const normalizedName = record.name.trim().toLowerCase();
     const existing = skillIdsByName.get(normalizedName) ?? [];
     existing.push(record.id);
     skillIdsByName.set(normalizedName, existing);
   }
-  console.info("skillIdsByName:", JSON.stringify([...skillIdsByName], null, 2));
+
+  console.info("Map size:", skillIdsByName.size);
+  console.info("Map entries:", [...skillIdsByName.entries()]);
 
   for (const category of value.skillsCategories) {
     console.info(category);
