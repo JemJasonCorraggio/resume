@@ -230,7 +230,7 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
     existing.push(record.id);
     skillIdsByName.set(normalizedName, existing);
   }
-  console.info("skillIdsByName:", JSON.stringify(skillIdsByName, null, 2));
+  console.info("skillIdsByName:", JSON.stringify([...skillIdsByName], null, 2));
 
   for (const category of value.skillsCategories) {
     console.info(category);
