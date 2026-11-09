@@ -1347,9 +1347,10 @@
     },
     {
       "id": "SK-025",
-      "name": "Git / GitHub",
+      "name": "Git",
       "aliases": [
-        "Git"
+        "Git",
+        "GitHub"
       ],
       "category": "developer_tooling",
       "contexts": [
@@ -1462,9 +1463,9 @@
     },
     {
       "id": "SK-032",
-      "name": "testify (Go testing)",
+      "name": "testify",
       "aliases": [
-        "testify mock.Mock"
+        "testify (Go testing)"
       ],
       "category": "testing",
       "contexts": [

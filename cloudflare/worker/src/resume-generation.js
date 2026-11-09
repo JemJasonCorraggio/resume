@@ -222,27 +222,16 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
   const cleanSkills = [];
   const skillRecordIds = new Set((inventory.skills ?? []).map((record) => record.id));
 
-  console.info("skills type:", typeof inventory.skills);
-  console.info("skills isArray:", Array.isArray(inventory.skills));
-  console.info("skills keys:", Object.keys(inventory.skills ?? {}).length);
-  console.info("skills values:", Object.values(inventory.skills ?? {}).length);
-
   const skillIdsByName = new Map();
 
   for (const record of Object.values(inventory.skills ?? {})) {
-    console.info("Processing skill:", record.id, record.name);
-
     const normalizedName = record.name.trim().toLowerCase();
     const existing = skillIdsByName.get(normalizedName) ?? [];
     existing.push(record.id);
     skillIdsByName.set(normalizedName, existing);
   }
 
-  console.info("Map size:", skillIdsByName.size);
-  console.info("Map entries:", [...skillIdsByName.entries()]);
-
   for (const category of value.skillsCategories) {
-    console.info(category);
     if (!category || typeof category !== "object" || Array.isArray(category) ||
         Object.keys(category).sort().join(",") !== "name,skills" || !validNonemptyString(category.name) || !Array.isArray(category.skills)) {
       throw new AIOutputInvalidError("Workers AI returned an invalid skills category");
@@ -274,7 +263,6 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
   }
   const seen = new Set();
   const experience = value.experience.map((entry, index) => {
-    console.info(entry)
     if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
         Object.keys(entry).sort().join(",") !== "bullets,employmentRecordId" ||
         entry.employmentRecordId !== employmentIds[index] || seen.has(entry.employmentRecordId) || !Array.isArray(entry.bullets)) {
