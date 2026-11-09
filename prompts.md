@@ -1693,3 +1693,246 @@ Add tests covering at least:
 - Final print styling and pagination.
 - Changing the canonical career inventory or fixed resume configuration.
 - Adding authentication or changing the existing access-control model.
+
+## 28. Task: Apply reference resume styling to review interface
+Update the resume review interface to match the visual styling and layout of the attached reference resume PDF (CorraggioResume.pdf).
+
+The PDF is provided as a visual reference. The requirements below are the implementation specification and should be followed even if some details in the PDF are difficult to interpret.
+
+The result should be a compact, professional, text-focused resume layout with clear typography, deliberate alignment, and efficient use of page width.
+
+This is a presentation-only change. Do not modify resume content, generation logic, provenance, or data structures.
+
+### 1. Page layout
+- Use a US Letter page proportion (8.5 × 11 inches).
+- Use approximately 0.6-inch left and right margins (about 43 points).
+- Keep the resume content within a single consistent content width.
+- Use a white background and black or near-black text.
+- Do not use cards, colored section backgrounds, decorative borders, badges, or other dashboard-style UI treatments in the resume itself.
+- Keep the layout compact and information-dense, matching the reference rather than introducing excessive whitespace.
+- Use consistent vertical spacing between sections and entries.
+- The resume should remain readable when displayed in the browser at different viewport sizes. Scale the page proportionally rather than changing its internal layout arbitrarily.
+
+The browser review interface does not need to implement PDF pagination or guarantee that the content fits on one physical page. Those concerns belong to the eventual PDF renderer.
+
+### 2. Typography
+Use Arial or a metrically compatible sans-serif font. The reference uses Liberation Sans, which is metrically compatible with Arial.
+
+Use these font sizes and styles:
+
+| Element | Font size | Weight/style |
+|---|---:|---|
+| Name | 18 pt | Bold |
+| Target role title | 10 pt | Bold, uppercase |
+| Contact information | 9 pt | Regular |
+| Links | 9 pt | Regular |
+| Language note beneath header | 9 pt | Regular |
+| Section headings | 10.5 pt | Bold, uppercase |
+| Summary body | 9 pt | Regular |
+| CUSMA note | 9 pt | Bold |
+| Skill category names | 9 pt | Bold |
+| Skill names | 9 pt | Regular |
+| FMP note | 9 pt | Bold |
+| Company names | 9 pt | Bold |
+| Locations | 9 pt | Regular |
+| Job titles | 9 pt | Italic |
+| Employment dates | 9 pt | Regular |
+| Experience bullets | 9 pt | Regular |
+| Education text | 9 pt | Regular, with institution bold |
+
+Use consistent line height appropriate for compact 9 pt text. Avoid oversized headings, large body text, or excessive line spacing.
+
+The sizes above are reference values. If the browser's rendering environment requires unit conversion, preserve their relative proportions and visual appearance.
+
+### 3. Header
+The header must use two opposing columns:
+
+#### Left side
+- Name at the top, bold and 18 pt.
+- Contact information beneath the name, with each item on its own line:
+  - Email
+  - Phone number
+  - Location
+
+#### Right side
+- Generated target role title at the top, bold, 10 pt, uppercase, and right-aligned.
+- Links beneath the title, each on its own line and right-aligned.
+
+The right column must align with the right edge of the resume content area. The left column must align with the left edge.
+
+All links must remain clickable.
+
+Below both columns, display the fixed language note centered across the page.
+
+Do not stack the links underneath the contact information or put the target role title on a separate full-width row.
+
+### 4. Section headings
+Render the following section headings in this exact order:
+1. SUMMARY
+2. SKILLS AND LANGUAGES
+3. EXPERIENCE
+4. EDUCATION
+
+Styling:
+- 10.5 pt
+- Bold
+- Uppercase
+- Centered across the resume content width
+
+Use consistent whitespace above and below each section heading. Do not place section headings inside cards, colored backgrounds, or bordered containers.
+
+The headings are presentation labels and must not be added to the assembled resume data.
+
+### 5. Summary
+- Display the generated summary as regular 9 pt text.
+- Allow text to use the full available content width.
+- Preserve natural text wrapping.
+- Display the fixed CUSMA note immediately after the summary.
+- Render the CUSMA note in bold 9 pt text.
+
+Do not add additional labels or decorative elements around the summary.
+
+### 6. Skills and Languages
+This section must use inline, comma-separated skills rather than listing each skill on a separate line.
+
+For every skill category:
+- Display the category name in bold 9 pt text.
+- Follow it with a colon and a space.
+- Display the skills in regular 9 pt text, separated by commas and spaces.
+- Allow the category and its skills to wrap naturally across multiple lines.
+- Wrapped lines should align with the beginning of the category text, not be formatted as separate bullets.
+
+Example:
+**Engineering:** Go, Python, Scala, Java, SQL, AWS, Terraform, Docker, GCP
+
+**Data & Pipelines:** Kafka (consumer), protobuf, webhooks, ETL/batch processing, PostgreSQL, REST APIs
+
+Each generated category should occupy its own paragraph. Do not put every category on one continuous line.
+
+The fixed Languages category must appear after all generated skill categories and use the same formatting:
+
+**Languages:** English - Fluent, French - B1
+
+Display the fixed FMP note immediately after the Languages category, in bold 9 pt text.
+
+Do not:
+- Render individual skills as separate rows.
+- Use bullets for skills.
+- Use cards, chips, tags, or badges for skills.
+- Change skill names or category names to achieve the layout.
+- Omit skills to make a line fit.
+
+### 7. Experience
+Display every employment entry in the supplied order.
+
+Each entry should have the following structure:
+
+#### First row
+- Company name on the left, bold 9 pt.
+- Location on the right, regular 9 pt.
+- Both should share the same horizontal row.
+- The location should be right-aligned to the right edge of the content area.
+
+#### Second row
+- Job title on the left, italic 9 pt.
+- Employment dates on the right, regular 9 pt.
+- Both should share the same horizontal row.
+- Dates should be right-aligned to the right edge of the content area.
+
+#### Accomplishment bullets
+- Display each bullet beneath its employment heading.
+- Use a conventional round bullet.
+- Indent the bullet list slightly from the left edge of the employment heading.
+- Continuation lines should align with the start of the bullet text rather than the bullet symbol.
+- Use compact, consistent vertical spacing between bullets.
+- Preserve the exact bullet wording and order.
+
+Use consistent spacing between employment entries. Avoid excessive separation between the title/date row and the first bullet.
+
+If a company name or location is long, allow the text to wrap without overlapping the opposite column. Do not reduce font size arbitrarily to force both fields onto one line.
+
+### 8. Education
+Display the education information as a compact line:
+- School name in bold.
+- Followed by a hyphen and the degree and details in regular 9 pt text.
+- Allow natural wrapping if necessary.
+
+Do not turn education into a card or separate list of fields.
+
+### 9. Generated-content indicators and evidence controls
+The existing review functionality must remain available.
+- Preserve the ability to distinguish generated content from fixed content.
+- Preserve the ability to inspect supporting evidence for generated summary text, skills, and experience bullets.
+- Preserve all existing evidence interactions and missing-evidence warnings.
+- Keep evidence controls visually unobtrusive and separate from the actual resume text.
+- Do not allow evidence icons or controls to disrupt text wrapping, alignment, or the resume's visual hierarchy.
+
+These controls are part of the review interface, not part of the resume itself. They should not appear in any eventual exported resume.
+
+### 10. Warnings and other review functionality
+Preserve the existing warning display and review functionality.
+
+Warnings must remain visible and must not be incorporated into the resume content.
+
+Do not remove or weaken existing loading, error, or missing-evidence handling.
+
+### 11. Implementation requirements
+- Apply styling through reusable layout and typography rules rather than duplicating arbitrary values across individual components.
+- Keep presentation separate from resume content and data structures.
+- Do not hardcode any resume text, skill names, company names, or employment information from the reference PDF.
+- Use the assembled resume returned by the backend as the source of displayed resume content.
+- Preserve all existing resume data, provenance, and ordering.
+- Do not change backend schemas, AI prompts, inventory records, or fixed resume configuration.
+- Do not introduce a new CSS framework or major UI dependency solely for this change.
+- Do not implement PDF generation or export as part of this work.
+
+### 12. Testing and visual verification
+Add or update tests to verify:
+- Header contact information is left-aligned and links are right-aligned.
+- Target role title is right-aligned, uppercase, and bold.
+- The language note is centered below the header.
+- Section headings are centered, uppercase, and bold.
+- Summary and fixed notes use the specified typography.
+- Skill categories display skills inline, separated by commas.
+- Skills wrap naturally rather than becoming individual rows.
+- The Languages category follows generated categories.
+- The FMP note follows Languages.
+- Company/location and job-title/date pairs align on opposing sides.
+- Experience bullets and wrapped continuation lines have the correct indentation.
+- Education uses the compact inline format.
+- Existing evidence controls, warnings, and review functionality continue working.
+- No resume content is modified by the presentation layer.
+
+Perform a visual comparison against the attached reference PDF using representative data with:
+- A long summary.
+- Several skill categories with enough skills to wrap onto multiple lines.
+- Long company names and locations.
+- Multiple experience bullets with wrapped continuation lines.
+- Education details that wrap.
+
+Check both a desktop-sized browser viewport and a narrower viewport.
+
+### Acceptance criteria
+- The review interface visually follows the attached reference resume.
+- The page uses US Letter proportions and approximately 0.6-inch horizontal margins.
+- Typography, font sizes, bolding, and italics follow the specified hierarchy.
+- Header contact information and links appear on opposite sides.
+- The language note is centered beneath the header.
+- Section headings are centered and consistently styled.
+- Skills are comma-separated inline text, not individual rows or chips.
+- Skill categories wrap naturally and remain distinct paragraphs.
+- Experience company/location and title/date rows are aligned correctly.
+- Experience bullets have the specified indentation and wrapping.
+- Education is displayed in the compact inline format.
+- Existing evidence inspection and warnings continue to work.
+- The assembled resume data and generated content are unchanged.
+- The layout remains readable at different browser widths.
+- No PDF generation, export, or pagination work has been added.
+
+### Out of scope
+- Resume editing or saving edits.
+- Resume generation or regeneration.
+- Changes to canonical inventory or fixed resume configuration.
+- Backend or API schema changes.
+- PDF generation, export, or physical page-break handling.
+- Guaranteeing an exact pixel-for-pixel match across different browsers.

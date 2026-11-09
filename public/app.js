@@ -162,10 +162,16 @@
     container.replaceChildren();
     const missingEvidence = [];
     const header = make("header", "resume-header");
-    header.append(make("h1", "", resume.header.name));
-    if (resume.header.title) header.append(make("p", "resume-target-title", resume.header.title));
-    const contact = make("p", "resume-contact", (resume.header.contact || []).join(" · "));
-    header.append(contact);
+    const headerColumns = make("div", "resume-header-columns");
+    const headerLeft = make("div", "resume-header-left");
+    headerLeft.append(make("h1", "", resume.header.name));
+    const contact = make("div", "resume-contact");
+    for (const item of resume.header.contact || []) {
+      contact.append(make("div", "resume-contact-item", item));
+    }
+    headerLeft.append(contact);
+    const headerRight = make("div", "resume-header-right");
+    if (resume.header.title) headerRight.append(make("p", "resume-target-title", resume.header.title));
     const links = make("div", "resume-links");
     for (const link of resume.header.links || []) {
       const anchor = make("a", "", link.text);
@@ -174,36 +180,38 @@
       anchor.rel = "noreferrer";
       links.append(anchor);
     }
-    header.append(links);
-    header.append(make("p", "resume-language-note", resume.languageNote));
+    headerRight.append(links);
+    headerColumns.append(headerLeft, headerRight);
+    header.append(headerColumns, make("p", "resume-language-note", resume.languageNote));
     container.append(header);
 
     const summary = make("section", "resume-section");
     summary.append(make("h2", "", "Summary"));
     const summaryText = make("p", "resume-summary-text");
     summaryText.append(document.createTextNode(resume.summary.text));
-    summary.append(summaryText);
     if (resume.summary.sourceRecordIds?.length) {
-      summary.append(evidenceControl(resume.summary.sourceRecordIds, "summary"));
+      summaryText.append(evidenceControl(resume.summary.sourceRecordIds, "summary"));
     } else {
       missingEvidence.push("Summary is missing supporting evidence.");
     }
-    summary.append(make("p", "resume-fixed-note", resume.summary.CUSMANote));
+    summary.append(summaryText, make("p", "resume-fixed-note", resume.summary.CUSMANote));
     container.append(summary);
 
     const skills = make("section", "resume-section");
     skills.append(make("h2", "", "Skills and Languages"));
     for (const category of resume.skillsAndLanguages.skillsCategories || []) {
-      const group = make("div", "resume-skills-category");
-      group.append(make("h3", "", category.name));
+      const group = make("p", "resume-skills-category");
+      group.append(make("strong", "resume-skill-category-name", `${category.name}:`), document.createTextNode(" "));
       const fixedCategory = category.name === "Languages";
-      for (const skill of category.skills || []) {
-        const line = make("div", "resume-skill");
-        line.append(make("span", "", skill.name));
+      const skillList = category.skills || [];
+      for (const [index, skill] of skillList.entries()) {
+        const skillItem = make("span", "resume-skill-item");
+        skillItem.append(make("span", "", skill.name));
         if (!fixedCategory && Array.isArray(skill.sourceRecordIds)) {
-          line.append(evidenceControl(skill.sourceRecordIds, `skill ${skill.name}`));
+          skillItem.append(evidenceControl(skill.sourceRecordIds, `skill ${skill.name}`));
         }
-        group.append(line);
+        group.append(skillItem);
+        if (index < skillList.length - 1) group.append(document.createTextNode(", "));
       }
       skills.append(group);
     }
@@ -214,10 +222,10 @@
     experience.append(make("h2", "", "Experience"));
     for (const entry of resume.experience || []) {
       const job = make("article", "resume-experience-entry");
-      job.append(
-        make("h3", "", entry.company),
-        make("p", "resume-job-meta", `${entry.title} · ${entry.location} · ${entry.dates}`)
-      );
+      const companyRow = make("div", "resume-entry-row");
+      companyRow.append(make("h3", "resume-company", entry.company), make("span", "resume-location", entry.location));
+      const titleRow = make("div", "resume-entry-row resume-title-row");
+      titleRow.append(make("p", "resume-job-title", entry.title), make("span", "resume-job-dates", entry.dates));
       const bullets = make("ul", "resume-bullets");
       for (const bullet of entry.bullets || []) {
         const item = make("li");
@@ -229,18 +237,19 @@
         }
         bullets.append(item);
       }
-      job.append(bullets);
+      job.append(companyRow, titleRow, bullets);
       experience.append(job);
     }
     container.append(experience);
 
     const education = make("section", "resume-section");
     education.append(make("h2", "", "Education"));
-    education.append(
-      make("h3", "", resume.education.school),
-      make("p", "", resume.education.degree),
-      make("p", "", resume.education.details)
+    const educationLine = make("p", "resume-education-line");
+    educationLine.append(
+      make("strong", "", resume.education.school),
+      document.createTextNode(` - ${resume.education.degree} ${resume.education.details}`)
     );
+    education.append(educationLine);
     container.append(education);
 
     const unresolvedNodes = container.querySelectorAll(".evidence-missing");
