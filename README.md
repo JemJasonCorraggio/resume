@@ -40,8 +40,8 @@ The API response contains `loaded`, `inventory`, and `validation` (`errors`
 and `warnings`). A file retrieval or JSON parse failure returns HTTP 500 with
 `loaded: false`; validation failures return the loaded inventory with the
 canonical audit errors. The frontend only renders these results; it does not
-implement validation rules or editing/upload features. The same Pages app also
-submits job analyses and can reopen a saved result by job ID. The browser uses
+implement inventory validation or upload rules. The same Pages app also
+submits job analyses and can reopen saved analyses and resume drafts. The browser uses
 the configurable `/api` base in `public/config.js`; Pages Functions forward
 requests through the existing Worker Service Binding, so browser traffic is
 same-origin and does not require CORS.
@@ -234,11 +234,24 @@ an
 `{ "error": { "code": "...", "message": "..." } }` response envelope. The
 Worker tests mock AI responses and do not make billed model requests.
 
+`POST /api/jobs/{jobId}/generated-content` creates a new, independent resume
+draft for each generation. `GET /api/resume-drafts/{draftId}` retrieves that
+saved snapshot without regeneration. The review page can reopen a draft by its
+displayed draft ID, edit its text, and save it with
+`PUT /api/resume-drafts/{draftId}` using `{ "resume": ..., "version": n }`.
+Updates validate the resume structure and preserve the original draft and job
+IDs, inventory revision, creation time, warnings, and employment order.
+Version-checked writes return HTTP 409 rather than replacing a newer edit.
+Manual additions carry a `manualAdded` marker and no generated evidence IDs;
+edited generated content keeps its original evidence IDs and is marked as
+manually edited.
+
 #### D1 jobs database
 
-The Worker binds the `career-inventory` D1 database as `env.DB`. The initial
-migration in `cloudflare/worker/migrations/0001_create_jobs.sql` creates a
-`jobs` table for completed analyses. The repository helpers in
+The Worker binds the `career-inventory` D1 database as `env.DB`. The migrations
+in `cloudflare/worker/migrations/` create a `jobs` table for completed analyses
+and a `resume_drafts` table for complete assembled resume snapshots. Resume
+drafts carry a version counter used for optimistic concurrency. The repository helpers in
 `cloudflare/worker/src/jobs.js` write JSON fields as serialized JSON using
 bound parameters, and parse them back when retrieving a record. Job rows store
 the inventory revision used, not a redundant inventory snapshot or AI prompt.

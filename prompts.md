@@ -1936,3 +1936,295 @@ Check both a desktop-sized browser viewport and a narrower viewport.
 - Backend or API schema changes.
 - PDF generation, export, or physical page-break handling.
 - Guaranteeing an exact pixel-for-pixel match across different browsers.
+
+## 29. Task: Edit and save resume drafts
+Implement the ability to edit and save assembled resume drafts.
+
+The user should be able to open a saved resume, make manual changes to its content, save those changes, and return later to find the edited version intact.
+
+Each resume draft must remain an independent snapshot. Editing one draft must not modify other drafts, the canonical career inventory, or the fixed resume configuration.
+
+The existing resume review interface and styling should be retained. Editing should feel like an extension of the review experience, not a completely different application.
+
+### 1. Draft persistence
+Every assembled resume must be stored as a persistent draft that can be retrieved later.
+
+A draft must retain:
+- `draftId`
+- `jobId`
+- `inventoryRevision`
+- `createdAt`
+- `warnings`
+- The complete assembled `resume` object
+
+The assembled resume must be stored as a snapshot. It must not be reconstructed from the current inventory, fixed resume configuration, or generated content when retrieved.
+
+#### Draft behavior
+- Generating a resume creates a new draft.
+- Generating another resume for the same company and role creates a separate draft with its own ID.
+- Existing drafts must never be overwritten by a newly generated resume.
+- Editing a draft updates that draft rather than creating a new draft.
+- Saving an edit must not change the draft's original `draftId`, `jobId`, `inventoryRevision`, or `createdAt`.
+- Previous drafts and their saved edits must remain unchanged.
+- Changes to the canonical inventory or fixed resume configuration must not modify existing drafts.
+- New drafts must use the latest validated inventory and fixed resume configuration.
+
+Do not automatically replace an existing draft just because another draft has the same company and role.
+
+### 2. Draft retrieval
+Provide a way to retrieve and reopen saved drafts.
+
+The application should use the existing job and draft navigation conventions.
+
+When opening a saved draft:
+- Retrieve its complete saved assembled resume.
+- Display the saved version, including any previous manual edits.
+- Display the associated metadata and warnings.
+- Do not trigger AI generation or reassembly.
+- Do not substitute current inventory or configuration values for saved resume content.
+
+If the draft cannot be found, display an appropriate not-found state.
+
+### 3. Editing interface
+Add editing functionality to the existing resume review interface.
+
+The default view should remain the styled resume presentation. The user should be able to enter an editing mode and make changes without losing the ability to review the overall document.
+
+Use the existing typography, alignment, section order, and layout rules. Editing controls should be unobtrusive and should not permanently alter the resume's visual appearance.
+
+#### Editable content
+All displayed textual resume content should be editable on a per-draft basis.
+
+This includes:
+**Header**
+- Name
+- Contact information
+- Link text and destinations
+- Target role title
+- Language note
+
+**Summary**
+- Summary text
+- CUSMA note
+
+**Skills and Languages**
+- Skill category names
+- Individual skill names
+- Languages category and entries
+- FMP note
+
+**Experience**
+- Company names
+- Locations
+- Historical job titles
+- Employment dates
+- Individual accomplishment bullets
+
+**Education**
+- School
+- Degree
+- Details
+
+Editing any of this content changes only the current draft. It must not modify the canonical inventory or fixed resume configuration.
+
+#### Structural editing constraints
+For this initial implementation:
+- Allow editing the text of existing resume fields.
+- Allow adding and removing individual skills.
+- Allow adding and removing individual experience bullets.
+- Allow editing skill category names.
+- Do not allow adding, deleting, or reordering employment entries.
+- Preserve the original employment entry order.
+- Do not allow deleting the required Languages category.
+- Preserve the distinction between generated and fixed content in the underlying data.
+
+Do not add general-purpose resume section creation or arbitrary section reordering.
+
+#### Editing behavior
+- Provide an obvious way to enter and leave editing mode.
+- Provide an appropriate editing control for each field.
+- Use multiline controls for summary text and experience bullets.
+- Make it possible to edit long text without an excessively small input area.
+- Preserve existing line breaks where appropriate.
+- Provide a way to cancel unsaved changes and return to the last saved version.
+- Do not silently discard unsaved changes when navigating away. Warn the user and allow them to stay and save or discard their changes.
+
+The user should be able to review the complete resume after editing, without being required to leave the page.
+
+### 4. Saving changes
+Provide an explicit Save action.
+
+When the user saves:
+- Validate the edited resume structure.
+- Persist the complete updated assembled resume to the existing draft.
+- Preserve the draft's original identity and metadata.
+- Display a clear indication that saving succeeded.
+- Return to the normal review presentation, or otherwise make the saved result immediately visible.
+
+Do not require the user to regenerate the resume to preserve manual changes.
+
+#### Save failure
+If saving fails:
+- Keep the user's unsaved edits available in the interface.
+- Display a clear error.
+- Do not indicate that the draft was saved.
+- Allow the user to retry.
+
+Do not silently revert the interface to the previous saved version after a failed save.
+
+### 5. Provenance and generated-content metadata
+The assembled resume contains provenance information for generated content.
+
+Preserve `sourceRecordIds` for:
+- Summary text
+- Generated skills
+- Experience bullets
+
+Manual text edits must not remove or corrupt the existing provenance metadata.
+
+However, manually edited text must not automatically be represented as newly verified against its original evidence. The existing evidence relationships should remain available for reference, but the interface must not claim that a manual edit has been validated by the underlying career inventory.
+
+For newly added skills or bullets:
+- Do not invent source record IDs.
+- Do not automatically associate unrelated inventory records.
+- Mark the new item as manually added, without generated provenance.
+- Ensure the interface distinguishes manually added content from AI-generated content.
+
+For modified generated items, retain their original evidence associations for inspection, while making it clear that the text has been manually edited.
+
+Fixed content must continue to be distinguishable from generated content.
+
+### 6. Draft data model and persistence API
+Extend the existing draft persistence implementation rather than introducing a separate storage system.
+
+The persistence layer must store the complete assembled resume object, including manual changes.
+
+The API must support:
+
+#### Retrieve a draft
+Return the complete saved draft, including:
+- Draft metadata
+- Assembled resume
+- Warnings
+
+#### Update a draft
+Accept an updated assembled resume for an existing draft.
+
+Requirements:
+- Identify the draft by its existing `draftId`.
+- Validate the submitted resume structure.
+- Update only the specified draft.
+- Preserve immutable draft metadata.
+- Return the successfully persisted draft.
+- Return an appropriate error if the draft does not exist or cannot be accessed.
+
+Do not accept changes to `draftId`, `jobId`, `inventoryRevision`, or `createdAt` as part of an edit.
+
+Use the existing API conventions for HTTP methods, error responses, validation, and access control.
+
+#### Validation
+Validate the overall assembled resume structure before persistence.
+
+Validation should ensure:
+- Required sections and fields are present.
+- Field types are correct.
+- `experience` retains the required employment entries and their original order.
+- The required Languages category remains present.
+- Provenance metadata is structurally valid.
+- Manually added items are distinguishable from generated items.
+- No unexpected properties or malformed structures are persisted.
+
+Do not require manually edited text to match canonical inventory names or wording.
+
+The user is explicitly allowed to change the presentation of their own resume content.
+
+### 7. Concurrency and unsaved changes
+Avoid silently overwriting newer saved changes.
+
+If the draft has been modified since the user loaded it, detect the conflict and prevent an older copy from overwriting the newer saved version.
+
+Use a simple version number or equivalent update token if the existing persistence model does not already provide a reliable mechanism.
+
+When a conflict occurs:
+- Inform the user that the saved draft has changed.
+- Preserve the user's current unsaved edits.
+- Do not automatically overwrite the newer saved version.
+
+A sophisticated merge interface is out of scope.
+
+### 8. Warnings and review functionality
+Preserve the existing warning display, evidence inspection, and review functionality.
+- Saving manual edits must not silently discard existing draft warnings.
+- Evidence controls must continue to work for generated content.
+- Manually added content must not display fabricated evidence.
+- Missing-evidence warnings must remain visible.
+- The editing interface must not interfere with the existing styled review presentation.
+
+### 9. Automated tests
+Add tests covering at least:
+
+#### Persistence
+- A newly generated draft is saved and can be retrieved.
+- Multiple drafts for the same company and role remain separate.
+- Editing one draft does not modify another.
+- Saved edits remain available after reopening the draft.
+- Changes to the inventory or fixed configuration do not alter existing drafts.
+
+#### Editing
+- All specified textual fields can be edited.
+- Skills can be added and removed.
+- Experience bullets can be added and removed.
+- Employment entries cannot be added, removed, or reordered.
+- The Languages category cannot be deleted.
+- Editing does not change the underlying canonical inventory or fixed configuration.
+
+#### Provenance
+- Existing provenance IDs survive manual edits.
+- Manually added skills and bullets do not receive fabricated provenance.
+- Manually edited content is distinguishable from untouched generated content.
+- Existing evidence inspection remains functional.
+
+#### Saving
+- A valid edited resume can be saved.
+- Saving updates the existing draft rather than creating a new one.
+- Immutable metadata is preserved.
+- Invalid structures are rejected.
+- Failed saves preserve unsaved changes.
+- Canceling edits restores the last saved version.
+- Unsaved changes trigger a warning when navigating away.
+
+#### Concurrency
+- An older draft version cannot silently overwrite a newer saved version.
+- A conflict preserves the user's unsaved edits.
+
+### Acceptance criteria
+- A saved resume draft can be reopened.
+- The complete assembled resume is persisted as a snapshot.
+- Multiple drafts for the same company and role remain independent.
+- The user can enter editing mode from the existing review interface.
+- All specified textual fields are editable.
+- Skills and experience bullets can be added and removed.
+- Employment entry structure and ordering are preserved.
+- The Languages category cannot be deleted.
+- Manual edits do not modify the canonical inventory or fixed configuration.
+- The user can save changes to the existing draft.
+- Saved edits persist when the draft is reopened.
+- The user can cancel unsaved changes.
+- Unsaved changes are not silently discarded.
+- Provenance metadata is preserved without falsely validating manual edits.
+- Manually added content is distinguishable from generated content.
+- Existing warnings and evidence inspection continue working.
+- Concurrent edits cannot silently overwrite newer saved changes.
+- Automated tests cover the requirements above.
+
+### Out of scope
+- Generating or regenerating resume content.
+- Creating a new draft from an existing edited draft.
+- Changing the canonical career inventory.
+- Changing the fixed resume configuration.
+- Adding or removing employment entries.
+- Arbitrary resume section creation or reordering.
+- PDF generation or export.
+- DOCX export.
+- Collaborative editing or sophisticated conflict merging.
+- AI-assisted editing suggestions.

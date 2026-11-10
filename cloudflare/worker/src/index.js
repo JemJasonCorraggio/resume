@@ -24,7 +24,13 @@ import {
   ResumeAssemblyError,
   ResumeEmploymentMatchError,
 } from "./resume-assembly.js";
-import { getResumeDraft, insertResumeDraft } from "./resume-drafts.js";
+import {
+  getResumeDraft,
+  getResumeDraftById,
+  insertResumeDraft,
+  updateResumeDraft,
+  validateEditedResume,
+} from "./resume-drafts.js";
 
 const inventoryAssetUrl = "https://inventory/master-career-inventory.json";
 const fixedResumeAssetUrl = "https://inventory/fixed-resume-content.json";
@@ -274,7 +280,7 @@ async function handleGenerateResumeContent(jobId, env) {
       warnings: draft.warnings,
     });
     await insertResumeDraft(env.DB, assembled);
-    return jsonResponse(assembled, 201);
+    return jsonResponse({ ...assembled, version: 1 }, 201);
   } catch (error) {
     console.info("error:", error);
     console.info(error.message)
@@ -309,6 +315,66 @@ async function handleGenerateResumeContent(jobId, env) {
     console.error("Resume generation failed:", error instanceof Error ? error.name : "Unknown error");
     return errorResponse(500, "INTERNAL_ERROR", "The resume content could not be generated.");
   }
+}
+
+async function handleUpdateResumeDraft(request, draftId, env) {
+  const contentType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+  if (contentType !== "application/json") {
+    return errorResponse(400, "INVALID_REQUEST", "Content-Type must be application/json.");
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse(400, "INVALID_REQUEST", "Request body must contain valid JSON.");
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+      Object.keys(body).sort().join(",") !== "resume,version") {
+    return errorResponse(400, "INVALID_REQUEST", "Request body must contain only resume and version.");
+  }
+  if (!Number.isSafeInteger(body.version) || body.version < 1) {
+    return errorResponse(400, "INVALID_REQUEST", "version must be a positive integer.");
+  }
+
+  let savedDraft;
+  try {
+    savedDraft = await getResumeDraftById(env.DB, draftId);
+  } catch (error) {
+    console.error("Could not retrieve resume draft for update:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The resume draft could not be updated.");
+  }
+  if (!savedDraft) return errorResponse(404, "NOT_FOUND", "The requested resume draft was not found.");
+  if (savedDraft.version !== body.version) {
+    return errorResponse(409, "DRAFT_CONFLICT", "This draft has changed since it was loaded. Your edits have not been saved.");
+  }
+
+  try {
+    validateEditedResume(body.resume, savedDraft.resume);
+  } catch (error) {
+    return errorResponse(
+      400,
+      "INVALID_RESUME",
+      error instanceof Error ? error.message : "The submitted resume structure is invalid.",
+    );
+  }
+
+  const { version, ...draftSnapshot } = savedDraft;
+  const updatedDraft = { ...draftSnapshot, resume: body.resume };
+  let result;
+  try {
+    result = await updateResumeDraft(env.DB, updatedDraft, version);
+  } catch (error) {
+    console.error("Could not persist resume draft update:", error instanceof Error ? error.name : "Unknown error");
+    return errorResponse(500, "INTERNAL_ERROR", "The resume draft could not be saved.");
+  }
+  if (result.status === "not_found") {
+    return errorResponse(404, "NOT_FOUND", "The requested resume draft was not found.");
+  }
+  if (result.status === "conflict") {
+    return errorResponse(409, "DRAFT_CONFLICT", "This draft has changed since it was loaded. Your edits have not been saved.");
+  }
+  return jsonResponse({ ...updatedDraft, version: result.version });
 }
 
 async function handleGetJob(jobId, env) {
@@ -375,6 +441,27 @@ export async function handleRequest(request, env) {
       console.error("Could not retrieve assembled resume draft");
       return errorResponse(500, "INTERNAL_ERROR", "The assembled resume could not be retrieved.");
     }
+  }
+  const savedResumeDraftPathMatch = /^\/api\/resume-drafts\/([^/]+)$/.exec(url.pathname);
+  if (savedResumeDraftPathMatch) {
+    let draftId;
+    try {
+      draftId = decodeURIComponent(savedResumeDraftPathMatch[1]);
+    } catch {
+      return errorResponse(404, "NOT_FOUND", "The requested resume draft was not found.");
+    }
+    if (request.method === "GET") {
+      try {
+        const draft = await getResumeDraftById(env.DB, draftId);
+        if (!draft) return errorResponse(404, "NOT_FOUND", "The requested resume draft was not found.");
+        return jsonResponse(draft);
+      } catch (error) {
+        console.error("Could not retrieve saved resume draft:", error instanceof Error ? error.name : "Unknown error");
+        return errorResponse(500, "INTERNAL_ERROR", "The resume draft could not be retrieved.");
+      }
+    }
+    if (request.method === "PUT") return handleUpdateResumeDraft(request, draftId, env);
+    return errorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, PUT" });
   }
   const jobPathMatch = /^\/api\/jobs\/([^/]+)$/.exec(url.pathname);
   if (jobPathMatch) {

@@ -68,3 +68,44 @@ test("evidence controls and review warnings remain connected to generated conten
   assert.match(app, /renderResumeWarnings\(warningsElement,\s*draft\.warnings/);
   assert.match(app, /Missing evidence record:/);
 });
+
+test("saved drafts can be reopened and edited without replacing the styled review", () => {
+  assert.match(app, /\/resume-drafts\/\$\{encodeURIComponent\(draftId\)\}/);
+  assert.match(app, /method:\s*"PUT"/);
+  assert.match(app, /JSON\.stringify\(\{ resume: editingResume, version: currentResumeDraft\.version \}\)/);
+  assert.match(app, /resumeDraftId/);
+  assert.match(app, /beforeunload/);
+  assert.match(app, /confirmDiscardResumeChanges/);
+  assert.match(app, /manuallyEdited/);
+  assert.match(app, /manualAdded/);
+  assert.match(app, /classList\.toggle\("resume-editing"/);
+});
+
+test("editing covers fixed and generated text fields and keeps add/remove controls draft-local", () => {
+  for (const field of [
+    "editingResume.header.name",
+    "editingResume.header.contact[index]",
+    "editingResume.header.links[index].text",
+    "editingResume.header.links[index].href",
+    "editingResume.header.title",
+    "editingResume.languageNote",
+    "editingResume.summary.text",
+    "editingResume.summary.CUSMANote",
+    "editingResume.skillsAndLanguages.skillsCategories",
+    "editingResume.skillsAndLanguages.FMPNote",
+    "editingResume.experience[currentEntryIndex].company",
+    "editingResume.experience[currentEntryIndex].location",
+    "editingResume.experience[currentEntryIndex].title",
+    "editingResume.experience[currentEntryIndex].dates",
+    "editingResume.experience[currentEntryIndex].bullets",
+    "editingResume.education.school",
+    "editingResume.education.degree",
+    "editingResume.education.details",
+  ]) {
+    assert.ok(app.includes(field), `expected an editing control for ${field}`);
+  }
+  assert.match(app, /editingResume\.skillsAndLanguages\.skillsCategories\[currentCategoryIndex\]\.skills\.push/);
+  assert.match(app, /editingResume\.experience\[currentEntryIndex\]\.bullets\.push/);
+  assert.match(app, /function cancelResumeEditing/);
+  assert.match(app, /function saveResumeDraft/);
+});

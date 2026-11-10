@@ -28,14 +28,24 @@
             <h2 id="analysis-heading">Analyze a job posting</h2>
             <p class="muted">Requirements describe the employer's needs; they are not claims about your experience.</p>
           </div>
-          <form id="open-job-form" class="open-job-form">
-            <label for="saved-job-id">Reopen saved analysis</label>
-            <div class="inline-controls">
-              <input id="saved-job-id" name="jobId" type="text" autocomplete="off"
-                placeholder="Paste a saved job ID" aria-label="Saved job ID">
-              <button id="open-job-button" class="button button-secondary" type="submit">Open</button>
-            </div>
-          </form>
+          <div class="saved-openers">
+            <form id="open-job-form" class="open-job-form">
+              <label for="saved-job-id">Reopen saved analysis</label>
+              <div class="inline-controls">
+                <input id="saved-job-id" name="jobId" type="text" autocomplete="off"
+                  placeholder="Paste a saved job ID" aria-label="Saved job ID">
+                <button id="open-job-button" class="button button-secondary" type="submit">Open</button>
+              </div>
+            </form>
+            <form id="open-draft-form" class="open-job-form">
+              <label for="saved-draft-id">Reopen saved resume draft</label>
+              <div class="inline-controls">
+                <input id="saved-draft-id" name="draftId" type="text" autocomplete="off"
+                  placeholder="Paste a saved draft ID" aria-label="Saved resume draft ID">
+                <button id="open-draft-button" class="button button-secondary" type="submit">Open draft</button>
+              </div>
+            </form>
+          </div>
         </div>
         <form id="analysis-form">
           <div class="input-grid">
@@ -71,6 +81,14 @@
           <span id="resume-review-status" class="status status-loading">Loading resume…</span>
         </div>
         <p id="resume-review-error" class="analysis-error" role="alert" hidden></p>
+        <div class="resume-edit-toolbar" aria-label="Resume editing controls">
+          <div class="resume-edit-actions">
+            <button id="resume-edit-button" class="button button-secondary" type="button" hidden>Edit draft</button>
+            <button id="resume-save-button" class="button button-primary" type="button" hidden>Save changes</button>
+            <button id="resume-cancel-button" class="button button-secondary" type="button" hidden>Cancel edits</button>
+          </div>
+          <span id="resume-save-status" role="status" aria-live="polite"></span>
+        </div>
         <aside id="resume-warnings" class="review-warnings" aria-label="Resume warnings" hidden></aside>
         <article id="assembled-resume" class="assembled-resume" aria-live="polite"></article>
       </section>

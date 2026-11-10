@@ -43,7 +43,8 @@ main { max-width: 1440px; margin: 1.5rem auto; padding: 0 1rem; }
 .section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; margin-bottom: 1rem; }
 .section-heading h2 { margin-bottom: .35rem; }
 .section-heading p { margin-bottom: 0; }
-.open-job-form { flex: 0 1 390px; }
+.saved-openers { display: grid; flex: 0 1 470px; gap: .55rem; }
+.open-job-form { min-width: 0; }
 .open-job-form label { margin-top: 0; }
 .inline-controls { display: flex; gap: .5rem; }
 .inline-controls input { min-width: 0; }
@@ -60,6 +61,9 @@ textarea:focus { outline: 3px solid #82c6df; outline-offset: 2px; }
 .resume-review-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 .resume-review-heading h2 { margin: .35rem 0 .25rem; }
 .back-link { color: var(--blue); font-size: .88rem; }
+.resume-edit-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .75rem; }
+.resume-edit-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.resume-edit-toolbar [role="status"] { color: var(--muted); font-size: .88rem; }
 .review-warnings { margin: 1rem 0; border-left: 4px solid #d97706; padding: .75rem 1rem; background: #fffbeb; }
 .review-warnings h3 { margin: 0 0 .35rem; font-size: 1rem; }
 .review-warnings ul { margin: .35rem 0 0; padding-left: 1.25rem; }
@@ -75,6 +79,27 @@ textarea:focus { outline: 3px solid #82c6df; outline-offset: 2px; }
   line-height: var(--resume-line-height);
   overflow-wrap: anywhere;
 }
+.assembled-resume.resume-editing { aspect-ratio: auto; min-height: 11in; }
+.resume-edit-control {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #b8cbd3;
+  border-radius: .2rem;
+  padding: .12em .25em;
+  color: inherit;
+  background: #fbfdfe;
+  font: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+.resume-edit-control:focus { outline: 2px solid #82c6df; outline-offset: 1px; }
+textarea.resume-edit-control { display: block; min-height: 3.5em; resize: vertical; white-space: pre-wrap; }
+.resume-name.resume-edit-control { font: 700 18pt/1.05 Arial, "Liberation Sans", sans-serif; }
+.resume-skill-category-name.resume-edit-control { display: inline-block; width: auto; max-width: 15em; font-weight: 700; }
+.resume-education-field.resume-edit-control { display: inline-block; width: auto; max-width: 32%; }
+.resume-link-editor { display: grid; gap: .2rem; margin-bottom: .2rem; }
+.resume-manual-note { display: inline-block; margin-left: .35em; color: #854d0e; font: 700 7pt/1.2 Arial, "Liberation Sans", sans-serif; }
+.button-inline { margin: .1rem .25rem; padding: .18rem .35rem; font-size: .75rem; }
 .resume-header { margin-bottom: 10pt; }
 .resume-header-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
 .resume-header h1 { margin: 0 0 3pt; color: #111; font: 700 18pt/1.05 Arial, "Liberation Sans", sans-serif; }
@@ -96,7 +121,7 @@ textarea:focus { outline: 3px solid #82c6df; outline-offset: 2px; }
   text-transform: uppercase;
 }
 .resume-section h3 { margin: 0; font-size: var(--resume-font-size); }
-.resume-summary-text { margin: 0; font-size: var(--resume-font-size); }
+.resume-summary-text { margin: 0; font-size: var(--resume-font-size); white-space: pre-wrap; }
 .resume-fixed-note { margin: 4pt 0 0; font-size: var(--resume-font-size); font-weight: 700; }
 .resume-skills-category { margin: 0 0 3pt; font-size: var(--resume-font-size); }
 .resume-skill-category-name { font-weight: 700; }
@@ -108,7 +133,7 @@ textarea:focus { outline: 3px solid #82c6df; outline-offset: 2px; }
 .resume-job-title { margin: 0; font-style: italic; }
 .resume-title-row { margin-top: 1pt; }
 .resume-bullets { margin: 3pt 0 0; padding-left: 1.25em; }
-.resume-bullets li { margin-bottom: 2pt; padding-left: .1em; }
+.resume-bullets li { margin-bottom: 2pt; padding-left: .1em; white-space: pre-wrap; }
 .resume-education-line { margin: 0; }
 .resume-evidence { display: inline-block; margin-left: .35em; vertical-align: baseline; font-size: 7pt; }
 .resume-evidence summary { display: inline; color: var(--blue); cursor: pointer; text-decoration: underline; }
@@ -187,7 +212,8 @@ footer { padding: 1rem; color: var(--muted); text-align: center; font-size: .85r
 @media (max-width: 760px) {
   .page-header { align-items: flex-start; flex-direction: column; }
   .section-heading { flex-direction: column; }
-  .open-job-form { width: 100%; flex-basis: auto; }
+  .saved-openers { width: 100%; flex-basis: auto; }
+  .resume-edit-toolbar { align-items: flex-start; flex-direction: column; }
   .input-grid { grid-template-columns: 1fr; gap: 0; }
   .requirement-heading { flex-direction: column; }
   .browser { grid-template-columns: 1fr; }
