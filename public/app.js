@@ -477,6 +477,7 @@
   }
 
   function displayResumeDraft(draft, queryName, queryValue) {
+    console.info(draft)
     if (!draft || typeof draft.draftId !== "string" || !draft.resume || !Number.isSafeInteger(draft.version)) {
       throw new Error("The resume service returned an incomplete draft.");
     }
