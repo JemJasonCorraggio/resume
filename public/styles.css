@@ -69,17 +69,40 @@ textarea:focus { outline: 3px solid #82c6df; outline-offset: 2px; }
 .review-warnings ul { margin: .35rem 0 0; padding-left: 1.25rem; }
 .assembled-resume {
   width: min(100%, 8.5in);
-  aspect-ratio: 8.5 / 11;
   margin: 1.5rem auto 0;
-  padding: .6in 7%;
-  background: #fff;
+  padding: 1rem 0;
+  background: #e8eef1;
   color: #111;
   font-family: Arial, "Liberation Sans", sans-serif;
   font-size: var(--resume-font-size);
   line-height: var(--resume-line-height);
   overflow-wrap: anywhere;
 }
-.assembled-resume.resume-editing { aspect-ratio: auto; min-height: 11in; }
+.resume-page {
+  position: relative;
+  width: 8.5in;
+  height: 11in;
+  margin: 1.5rem auto 2rem;
+  padding: .6in;
+  background: #fff;
+  box-shadow: 0 2px 12px rgb(23 36 47 / 18%);
+}
+.resume-page-content {
+  width: 100%;
+  height: 9.8in;
+  overflow: visible;
+}
+.resume-page-number {
+  position: absolute;
+  top: -1.35rem;
+  right: 0;
+  margin: 0;
+  color: var(--muted);
+  font: 600 .8rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
+  white-space: nowrap;
+}
+.resume-bullet-fragment { margin-top: 3pt; }
+.resume-bullet-fragment + .resume-bullet-fragment { margin-top: 0; }
 .resume-edit-control {
   min-width: 0;
   width: 100%;
@@ -208,6 +231,50 @@ input:focus, select:focus, button:focus-visible { outline: 3px solid #82c6df; ou
 .reference-link { border: 0; padding: 0; color: var(--blue); background: none; font: inherit; text-decoration: underline; cursor: pointer; }
 .reference-missing { display: inline-block; border-radius: .25rem; padding: 0 .25rem; color: #991b1b; background: #fee2e2; font-weight: 700; }
 footer { padding: 1rem; color: var(--muted); text-align: center; font-size: .85rem; }
+
+@page { size: letter portrait; margin: 0; }
+@media print {
+  html, body { width: 8.5in; margin: 0; padding: 0; background: #fff; }
+  body > * { display: none !important; }
+  body > main { display: block !important; max-width: none; margin: 0; padding: 0; }
+  main > *:not(#resume-review) { display: none !important; }
+  #resume-review {
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+  }
+  .resume-review-heading, .resume-edit-toolbar, #resume-export-guidance, #resume-warnings, #resume-review-error {
+    display: none !important;
+  }
+  #assembled-resume {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    overflow: visible;
+    font-family: Arial, "Liberation Sans", sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .resume-page {
+    width: 8.5in;
+    height: 11in;
+    margin: 0;
+    padding: .6in;
+    box-shadow: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .resume-page:last-child { break-after: auto; page-break-after: auto; }
+  .resume-page-content { width: 7.3in; height: 9.8in; }
+  .resume-page-number, .resume-evidence, .resume-manual-note, .button-inline, .resume-edit-control {
+    display: none !important;
+  }
+  .resume-page-content a { color: #111; text-decoration: none; }
+}
 
 @media (max-width: 760px) {
   .page-header { align-items: flex-start; flex-direction: column; }

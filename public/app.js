@@ -35,6 +35,7 @@
   let editingResume = null;
   let hasUnsavedResumeEdits = false;
   let isSavingResume = false;
+  let resumeLayoutBlocks = [];
 
   function make(tag, className, text) {
     const element = document.createElement(tag);
@@ -52,6 +53,7 @@
     const status = document.querySelector("#resume-save-status");
     status.textContent = "Unsaved changes";
     status.className = "status status-warning";
+    paginateResume(document.querySelector("#assembled-resume"));
     renderResumeEditControls();
   }
 
@@ -77,9 +79,15 @@
     control.setAttribute("aria-label", label);
     if (multiline) {
       control.rows = Math.max(3, Math.min(8, String(value).split("\n").length + 1));
+      control.style.height = "auto";
+      control.style.height = `${control.scrollHeight}px`;
     }
     control.addEventListener("input", () => {
       onChange(control.value);
+      if (multiline) {
+        control.style.height = "auto";
+        control.style.height = `${control.scrollHeight}px`;
+      }
       markResumeChanged();
     });
     return control;
@@ -90,6 +98,18 @@
     button.type = "button";
     button.addEventListener("click", action);
     return button;
+  }
+
+  function appendContactText(parent, text) {
+    const email = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.exec(text);
+    if (!email) {
+      parent.textContent = text;
+      return;
+    }
+    parent.append(document.createTextNode(text.slice(0, email.index)));
+    const link = make("a", "", email[0]);
+    link.href = `mailto:${email[0]}`;
+    parent.append(link, document.createTextNode(text.slice(email.index + email[0].length)));
   }
 
   function manualContentNote(kind) {
@@ -106,12 +126,184 @@
     const editButton = document.querySelector("#resume-edit-button");
     const saveButton = document.querySelector("#resume-save-button");
     const cancelButton = document.querySelector("#resume-cancel-button");
+    const exportButton = document.querySelector("#resume-export-button");
+    const exportGuidance = document.querySelector("#resume-export-guidance");
     const hasDraft = Boolean(currentResumeDraft);
     editButton.hidden = !hasDraft || Boolean(editingResume);
     saveButton.hidden = !editingResume;
     cancelButton.hidden = !editingResume;
     saveButton.disabled = !hasUnsavedResumeEdits;
     document.querySelector("#resume-cancel-button").disabled = isSavingResume;
+    exportButton.hidden = !hasDraft;
+    exportButton.disabled = Boolean(editingResume) || hasUnsavedResumeEdits || isSavingResume;
+    exportGuidance.hidden = !editingResume;
+  }
+
+  function collectResumeLayoutBlocks(container) {
+    const blocks = [];
+    for (const child of [...container.children]) {
+      if (child.classList.contains("resume-header")) {
+        blocks.push({ type: "header", nodes: [child] });
+        continue;
+      }
+
+      const section = child;
+      const heading = section.firstElementChild;
+      const content = [...section.children].slice(1);
+      if (section.querySelector(".resume-experience-entry")) {
+        const entries = content.filter((node) => node.classList.contains("resume-experience-entry"));
+        let headingIncluded = false;
+        if (!entries.length) blocks.push({ type: "section", section, nodes: [heading] });
+        for (const [entryIndex, entry] of entries.entries()) {
+          const entryChildren = [...entry.children];
+          const companyRow = entryChildren[0];
+          const titleRow = entryChildren[1];
+          const bullets = entryChildren.find((node) => node.classList.contains("resume-bullets"));
+          const addButton = entryChildren.find((node) => node.matches("button"));
+          const rowNodes = [companyRow, titleRow].filter(Boolean);
+          if (!headingIncluded) {
+            blocks.push({ type: "section", section, nodes: [heading, ...rowNodes] });
+            headingIncluded = true;
+          } else {
+            blocks.push({ type: "section", section, nodes: rowNodes });
+          }
+          for (const bullet of [...(bullets?.children || [])]) {
+            blocks.push({ type: "bullet", section, entryIndex, node: bullet });
+          }
+          if (addButton) blocks.push({ type: "section", section, nodes: [addButton] });
+        }
+        continue;
+      }
+
+      if (!content.length) {
+        blocks.push({ type: "section", section, nodes: [heading] });
+        continue;
+      }
+
+      const groupedContent = [];
+      for (let index = 0; index < content.length; index += 1) {
+        const node = content[index];
+        groupedContent.push(node);
+        if (
+          node.classList.contains("resume-skills-category") &&
+          content[index + 1]?.matches("button")
+        ) {
+          groupedContent.push(content[index + 1]);
+          index += 1;
+        }
+      }
+      blocks.push({ type: "section", section, nodes: [heading, groupedContent.shift()] });
+      for (const node of groupedContent) blocks.push({ type: "section", section, nodes: [node] });
+    }
+    return blocks;
+  }
+
+  function paginateResume(container) {
+    if (!container || !resumeLayoutBlocks.length) return;
+    const pageNodes = [];
+    let activeSection = null;
+
+    function newPage() {
+      const page = make("div", "resume-page");
+      const content = make("div", "resume-page-content");
+      page.append(content);
+      container.append(page);
+      pageNodes.push(page);
+      activeSection = null;
+      return content;
+    }
+
+    function sectionFor(pageContent, sourceSection) {
+      if (
+        activeSection?.parentElement === pageContent &&
+        activeSection.dataset.sourceSection === String(sourceSection._resumeLayoutId)
+      ) return activeSection;
+      const section = make("section", "resume-section");
+      section.dataset.sourceSection = String(sourceSection._resumeLayoutId);
+      pageContent.append(section);
+      activeSection = section;
+      return section;
+    }
+
+    container.replaceChildren();
+    for (const [sectionIndex, section] of [...new Set(
+      resumeLayoutBlocks.filter((block) => block.section).map((block) => block.section),
+    )].entries()) {
+      section._resumeLayoutId = sectionIndex;
+    }
+
+    let pageContent = newPage();
+    for (const block of resumeLayoutBlocks) {
+      let destination;
+      let bulletList = null;
+      if (block.type === "header") {
+        destination = pageContent;
+      } else {
+        const sameSection = activeSection?.dataset.sourceSection === String(block.section._resumeLayoutId);
+        destination = sameSection ? activeSection : sectionFor(pageContent, block.section);
+        if (block.type === "bullet") {
+          const lastList = destination.lastElementChild;
+          if (
+            lastList?.classList.contains("resume-bullet-fragment") &&
+            lastList.dataset.entryIndex === String(block.entryIndex)
+          ) {
+            bulletList = lastList;
+          } else {
+            bulletList = make("ul", "resume-bullets resume-bullet-fragment");
+            bulletList.dataset.entryIndex = String(block.entryIndex);
+            destination.append(bulletList);
+          }
+          destination = bulletList;
+        }
+      }
+
+      const sectionDestination = block.type === "header" ? null : (
+        block.type === "bullet" ? destination.parentElement : destination
+      );
+      const nodes = block.type === "bullet" ? [block.node] : block.nodes;
+      nodes.forEach((node) => destination.append(node));
+      if (pageContent.scrollHeight > pageContent.clientHeight + 1) {
+        nodes.forEach((node) => node.remove());
+        if (bulletList?.childElementCount === 0) bulletList.remove();
+        if (sectionDestination?.childElementCount === 0) {
+          sectionDestination.remove();
+          if (activeSection === sectionDestination) activeSection = null;
+        }
+        pageContent = newPage();
+        if (block.type === "header") {
+          nodes.forEach((node) => pageContent.append(node));
+        } else {
+          const section = sectionFor(pageContent, block.section);
+          if (block.type === "bullet") {
+            const list = make("ul", "resume-bullets resume-bullet-fragment");
+            list.dataset.entryIndex = String(block.entryIndex);
+            list.append(block.node);
+            section.append(list);
+          } else {
+            nodes.forEach((node) => section.append(node));
+          }
+        }
+      }
+    }
+
+    for (const [index, page] of pageNodes.entries()) {
+      page.prepend(make("p", "resume-page-number", `Page ${index + 1} of ${pageNodes.length}`));
+    }
+  }
+
+  let resumeResizeFrameScheduled = false;
+  function scheduleResumeEditorResize() {
+    if (resumeResizeFrameScheduled) return;
+    resumeResizeFrameScheduled = true;
+    requestAnimationFrame(() => {
+      resumeResizeFrameScheduled = false;
+      const container = document.querySelector("#assembled-resume");
+      for (const control of container.querySelectorAll("textarea.resume-edit-control")) {
+        control.style.height = "auto";
+        control.style.height = `${control.scrollHeight}px`;
+      }
+      paginateResume(container);
+    });
   }
 
   function setStatus(text, kind) {
@@ -238,6 +430,7 @@
     if (!resume) throw new Error("The resume service returned an incomplete draft.");
 
     container.replaceChildren();
+    resumeLayoutBlocks = [];
     container.classList.toggle("resume-editing", Boolean(editingResume));
     const missingEvidence = [];
     const header = make("header", "resume-header");
@@ -255,7 +448,9 @@
         contact.append(editableField("div", "resume-contact-item", item, `Contact information ${index + 1}`,
           (value) => { editingResume.header.contact[index] = value; }));
       } else {
-        contact.append(make("div", "resume-contact-item", item));
+        const contactItem = make("div", "resume-contact-item");
+        appendContactText(contactItem, item);
+        contact.append(contactItem);
       }
       contactIndex += 1;
     }
@@ -465,6 +660,10 @@
     education.append(educationLine);
     container.append(education);
 
+    resumeLayoutBlocks = collectResumeLayoutBlocks(container);
+    paginateResume(container);
+    if (editingResume) scheduleResumeEditorResize();
+
     const unresolvedNodes = container.querySelectorAll(".evidence-missing");
     for (const node of unresolvedNodes) {
       missingEvidence.push(`Missing evidence for ${node.dataset.label}: ${node.textContent.replace("Missing evidence record: ", "")}`);
@@ -625,6 +824,31 @@
         .forEach((control) => { control.disabled = false; });
       saveButton.disabled = false;
       document.querySelector("#resume-cancel-button").disabled = false;
+    }
+  }
+
+  function exportSavedResume() {
+    if (!currentResumeDraft || editingResume || hasUnsavedResumeEdits || isSavingResume) return;
+    const safeDraftId = currentResumeDraft.draftId.replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!safeDraftId) {
+      const saveStatus = document.querySelector("#resume-save-status");
+      saveStatus.textContent = "This draft does not have a usable export identifier.";
+      saveStatus.className = "status status-error";
+      return;
+    }
+    const originalTitle = document.title;
+    document.title = `resume-draft-${safeDraftId}`;
+    document.querySelector("#resume-save-status").textContent =
+      "The saved draft is ready. Choose Save as PDF in the browser print dialog.";
+    document.querySelector("#resume-save-status").className = "status status-loading";
+    window.addEventListener("afterprint", () => { document.title = originalTitle; }, { once: true });
+    try {
+      window.print();
+    } catch {
+      document.title = originalTitle;
+      const saveStatus = document.querySelector("#resume-save-status");
+      saveStatus.textContent = "PDF export could not be started. Your saved draft is unchanged; try again.";
+      saveStatus.className = "status status-error";
     }
   }
 
@@ -1119,6 +1343,7 @@
   document.querySelector("#resume-edit-button").addEventListener("click", startResumeEditing);
   document.querySelector("#resume-save-button").addEventListener("click", saveResumeDraft);
   document.querySelector("#resume-cancel-button").addEventListener("click", cancelResumeEditing);
+  document.querySelector("#resume-export-button").addEventListener("click", exportSavedResume);
   document.querySelector("#resume-back-link").addEventListener("click", (event) => {
     if (!confirmDiscardResumeChanges()) event.preventDefault();
   });

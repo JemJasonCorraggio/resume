@@ -5,20 +5,24 @@ import test from "node:test";
 const app = readFileSync(new URL("../../../public/app.js", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../../../public/styles.css", import.meta.url), "utf8");
 
-test("resume page uses Letter proportions and compact Arial-compatible typography", () => {
-  assert.match(styles, /width:\s*min\(100%,\s*8\.5in\)/);
-  assert.match(styles, /aspect-ratio:\s*8\.5\s*\/\s*11/);
-  assert.match(styles, /padding:\s*\.6in\s+7%/);
+test("resume preview and print use Letter pages, matching margins, and compact Arial-compatible typography", () => {
+  assert.match(styles, /width:\s*8\.5in/);
+  assert.match(styles, /height:\s*11in/);
+  assert.match(styles, /padding:\s*\.6in/);
+  assert.match(styles, /height:\s*9\.8in/);
+  assert.match(styles, /@page\s*\{\s*size:\s*letter portrait;\s*margin:\s*0;/);
   assert.match(styles, /font-family:\s*Arial,\s*"Liberation Sans",\s*sans-serif/);
   assert.match(styles, /--resume-font-size:\s*9pt/);
   assert.match(styles, /font:\s*700\s+18pt\/1\.05\s+Arial/);
   assert.match(styles, /font-size:\s*10\.5pt/);
+  assert.match(styles, /break-after:\s*page/);
 });
 
 test("header keeps contact and clickable links in opposing columns", () => {
   assert.match(app, /make\("div",\s*"resume-header-columns"\)/);
   assert.match(app, /for \(const item of resume\.header\.contact \|\| \[\]\)/);
-  assert.match(app, /make\("div",\s*"resume-contact-item",\s*item\)/);
+  assert.match(app, /make\("div",\s*"resume-contact-item"\)/);
+  assert.match(app, /link\.href = `mailto:\$\{email\[0\]\}`/);
   assert.match(app, /make\("p",\s*"resume-target-title",\s*resume\.header\.title\)/);
   assert.match(app, /anchor\.href = link\.href/);
   assert.match(styles, /\.resume-header-right\s*\{\s*text-align:\s*right/);
@@ -79,6 +83,17 @@ test("saved drafts can be reopened and edited without replacing the styled revie
   assert.match(app, /manuallyEdited/);
   assert.match(app, /manualAdded/);
   assert.match(app, /classList\.toggle\("resume-editing"/);
+  assert.match(app, /paginateResume\(document\.querySelector\("#assembled-resume"\)\)/);
+  assert.match(app, /Page \$\{index \+ 1\} of \$\{pageNodes\.length\}/);
+});
+
+test("saved-only PDF export excludes review UI and preserves the draft filename privacy", () => {
+  assert.match(app, /if \(!currentResumeDraft \|\| editingResume \|\| hasUnsavedResumeEdits \|\| isSavingResume\) return/);
+  assert.match(app, /document\.title = `resume-draft-\$\{safeDraftId\}`/);
+  assert.match(app, /window\.print\(\)/);
+  assert.match(app, /Choose Save as PDF in the browser print dialog/);
+  assert.match(styles, /\.resume-review-heading,[^}]*#resume-review-error\s*\{\s*display:\s*none !important/s);
+  assert.match(styles, /\.resume-evidence,\s*\.resume-manual-note,\s*\.button-inline/);
 });
 
 test("editing covers fixed and generated text fields and keeps add/remove controls draft-local", () => {

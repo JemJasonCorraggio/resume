@@ -2228,3 +2228,276 @@ Add tests covering at least:
 - DOCX export.
 - Collaborative editing or sophisticated conflict merging.
 - AI-assisted editing suggestions.
+
+## 30. Task: Paginated resume preview and PDF export
+Implement accurate page layout, pagination, and PDF export for saved resume drafts.
+
+The user should be able to:
+- Preview their resume as individual US Letter pages.
+- See exactly where each page ends and the next begins.
+- Identify content that flows onto an additional page.
+- Edit the resume while seeing its page boundaries.
+- Make content changes to improve page fit.
+- Export the saved resume as a PDF that matches the preview.
+
+The PDF renderer must be the authoritative source of pagination. The browser preview and editing interface must reflect the same layout decisions as the exported PDF.
+
+### 1. Page dimensions and layout
+Use the following page specifications:
+- Paper size: US Letter, 8.5 × 11 inches.
+- Orientation: Portrait.
+- Left and right margins: approximately 0.6 inches (43 points).
+- Top and bottom margins: approximately 0.6 inches (43 points).
+- Content width: approximately 7.3 inches.
+- Content height: approximately 9.8 inches.
+
+Use the established resume typography and styling:
+- Arial or a metrically compatible sans-serif font.
+- 18 pt bold name.
+- 10 pt bold uppercase target role.
+- 10.5 pt bold uppercase section headings.
+- 9 pt body text.
+- 9 pt bold company names and skill category names.
+- 9 pt italic job titles.
+- 9 pt bold fixed CUSMA and FMP notes.
+
+Preserve the established:
+- Two-sided header alignment.
+- Centered language note.
+- Centered section headings.
+- Comma-separated inline skills.
+- Company/location and job-title/date alignment.
+- Indented experience bullets.
+- Compact education layout.
+
+Do not introduce a new visual design for the PDF.
+
+### 2. Pagination
+Implement pagination based on the actual rendered content and available page space.
+
+Requirements:
+- Content must flow across pages when it does not fit.
+- Do not shrink font sizes automatically to force content onto fewer pages.
+- Do not clip, overlap, or silently omit content.
+- Preserve the order of all resume sections and entries.
+- Preserve all resume text and formatting when content flows to another page.
+- Do not add unnecessary blank pages.
+- Do not create a new page solely because a section heading does not fit at the bottom of the preceding page.
+
+#### Page-break behavior
+Avoid splitting related content across pages where practical.
+
+Use these rules:
+- Keep a section heading with at least the first line of its section content.
+- Keep a company name/location row together.
+- Keep a job-title/date row together.
+- Keep a bullet with its first line of text.
+- Allow long bullets to continue onto another page if necessary.
+- Keep the education heading with its education content.
+- Avoid leaving a section heading or employment heading stranded at the bottom of a page.
+
+Do not force an entire employment entry onto one page if doing so would create excessive whitespace or make pagination worse. Individual bullets may flow across pages.
+
+### 3. Paginated preview
+Add a paginated preview mode to the existing resume interface.
+
+The preview must display the resume as distinct US Letter pages rather than as one continuous document.
+
+Each page should:
+- Have visible page dimensions and boundaries.
+- Preserve the specified margins and typography.
+- Display the content that will appear on that PDF page.
+- Be separated visually from adjacent pages.
+- Have a neutral background around the page so the page boundaries are easy to identify.
+
+Show page numbers outside the resume content area, for example, "Page 1 of 2". Page numbers are review-interface controls and must not be added to the actual resume unless explicitly requested in a future change.
+
+The user must be able to scroll through the complete document and identify exactly where each page ends.
+
+Do not use decorative cards or dashboard styling inside the page itself.
+
+### 4. Editing with page boundaries visible
+The existing resume editing functionality must remain available in the paginated preview.
+
+When the user enters editing mode:
+- Preserve the page boundaries and page dimensions.
+- Allow the user to edit the same resume fields available in the existing editor.
+- Make it clear which content belongs to each page.
+- Recalculate pagination as content changes.
+- Move subsequent content between pages automatically when necessary.
+- Keep the preview synchronized with the current unsaved edits.
+
+The user should be able to identify when a change causes content to flow onto another page.
+
+For example:
+- Removing or shortening a bullet may allow subsequent content to move back onto the previous page.
+- Adding text may push content onto a new page.
+- Editing a summary or skill category may change the position of later sections.
+
+Do not require the user to save before seeing the updated pagination.
+
+#### Editing and page breaks
+Page boundaries must be visible while editing, not only after saving or exporting.
+
+Do not add manual page-break insertion, arbitrary drag-and-drop positioning, or freeform layout editing in this initial implementation.
+
+Pagination should be determined automatically from the content and layout rules. The user controls page fit by editing resume content through the existing editing interface.
+
+### 5. PDF generation
+Provide an explicit PDF export action for the current saved resume.
+
+The PDF must:
+- Use US Letter portrait pages.
+- Use the specified margins and typography.
+- Match the paginated preview.
+- Include every section, employment entry, bullet, skill, note, and education detail.
+- Preserve text, formatting, alignment, indentation, and ordering.
+- Use selectable text rather than rendering each page as a screenshot.
+- Embed or otherwise reliably provide the required font.
+- Include clickable links for email, GitHub, LinkedIn, Portfolio, and other supplied link destinations where supported.
+- Contain no review-only controls, evidence icons, warnings, editing controls, or page-navigation UI.
+
+Do not add a footer, page number, or other content to the exported resume unless it is part of the assembled resume data.
+
+The exported PDF must be generated from the same saved resume content and layout decisions used by the paginated preview.
+
+### 6. Unsaved edits and export
+Integrate PDF export with the existing draft editing and saving behavior.
+
+If the user has unsaved changes:
+- Do not silently export an older saved version while displaying newer edits.
+- Require the user to save or discard the unsaved changes before exporting.
+- Clearly indicate which version will be exported.
+
+After saving, export the updated saved resume.
+
+If the user cancels editing and discards changes, export the last saved version.
+
+PDF export must not modify the saved draft or create a new draft.
+
+### 7. PDF filename
+Use a standardized, non-obvious filename that does not expose the user's personal information or unnecessarily disclose the company or role.
+
+Use the existing draft identifier or another stable, non-personal identifier to construct the filename.
+
+Requirements:
+- Use a `.pdf` extension.
+- Avoid using the user's name, email address, or other contact information in the filename.
+- Ensure that different drafts do not accidentally produce the same filename.
+- Do not use a generic filename that causes unrelated exports to overwrite one another.
+
+### 8. Export and rendering errors
+Handle failures gracefully.
+
+Examples include:
+- PDF renderer unavailable.
+- Invalid or unsupported resume content.
+- Font or rendering failure.
+- PDF generation timeout.
+- Download failure.
+
+Requirements:
+- Display a clear error message.
+- Do not claim that an export succeeded if it failed.
+- Preserve the saved draft.
+- Preserve unsaved edits if an export-related failure occurs.
+- Allow the user to retry.
+
+Do not expose stack traces, internal implementation details, or sensitive inventory data.
+
+### 9. Implementation requirements
+- Use a single authoritative layout specification for page dimensions, typography, margins, spacing, and alignment.
+- Use the same layout rules for pagination, preview, and PDF generation.
+- Avoid maintaining separate sets of arbitrary CSS and PDF styling values.
+- The PDF renderer must determine actual page breaks.
+- The browser preview must reflect the renderer's pagination rather than independently guessing where pages end.
+- Do not modify the assembled resume schema solely to support pagination.
+- Do not modify the canonical inventory or fixed resume configuration.
+- Do not regenerate resume content during pagination or export.
+- Do not create a new draft when exporting.
+- Preserve all existing review, evidence, warning, editing, and saving functionality.
+
+Choose an implementation approach that supports accurate text measurement and pagination. Do not assume that ordinary browser CSS pagination alone is sufficient if it cannot guarantee that the preview matches the exported PDF.
+
+## 10. Automated tests and visual verification
+Add tests covering at least:
+
+#### Page layout
+- US Letter dimensions and margins are correct.
+- Typography and established resume styling are preserved.
+- Content does not exceed page boundaries.
+- No content is clipped or omitted.
+- No unnecessary blank pages are generated.
+
+#### Pagination
+- Short resumes fit on one page when their content permits.
+- Long resumes flow onto additional pages.
+- Section headings remain with the beginning of their section.
+- Employment heading rows remain together.
+- Bullets can flow across page boundaries without losing text.
+- Content order is preserved across pages.
+
+#### Preview and editing
+- Page boundaries and page numbers are visible.
+- Editing controls remain functional.
+- Page boundaries remain visible in editing mode.
+- Pagination updates as unsaved content changes.
+- Removing content can cause subsequent content to move back to an earlier page.
+- The preview reflects the current unsaved edits.
+
+#### PDF export
+- Exported PDF uses US Letter portrait pages.
+- Exported content matches the saved resume.
+- Exported pagination matches the preview.
+- Text is selectable.
+- Links are clickable where supported.
+- Review-only controls and warnings are excluded.
+- Export does not modify the draft or create a new one.
+- The filename follows the required convention.
+
+#### Regression tests
+- Existing draft retrieval and saving continue to work.
+- Existing evidence inspection and warnings continue to work.
+- Existing resume styling is preserved.
+- Existing editing and unsaved-change handling continue to work.
+
+Perform visual verification with at least:
+- A resume that fits on one page.
+- A resume that flows onto two pages.
+- A resume that flows onto three or more pages.
+- Long skill categories and wrapped bullets.
+- An employment entry that falls near a page boundary.
+- Unsaved edits that change the number of pages.
+
+Compare the browser preview and exported PDF page by page.
+
+### Acceptance criteria
+- The resume is displayed as distinct US Letter pages.
+- Page boundaries are visible while reviewing and editing.
+- Page numbers are visible in the review interface.
+- Pagination updates immediately when the user edits content.
+- The user can identify which content falls on each page.
+- Content flows naturally across pages without clipping or omission.
+- Section and employment headings are not stranded at page bottoms.
+- Existing resume styling is preserved.
+- The user can export the saved resume as a PDF.
+- The exported PDF matches the paginated preview.
+- PDF text is selectable and links are clickable where supported.
+- Review-only controls and warnings do not appear in the PDF.
+- Unsaved changes cannot be silently excluded from an export.
+- Export does not modify the saved draft or create a new draft.
+- Export errors are handled without losing user work.
+- Existing editing, saving, evidence, and warning functionality continues working.
+- Automated tests cover the requirements above.
+
+## Out of scope
+- DOCX export.
+- Manual page-break insertion.
+- Drag-and-drop content positioning.
+- Arbitrary layout customization.
+- Changing font sizes or margins automatically to force a one-page resume.
+- Adding or removing resume content through AI.
+- Regenerating resume content.
+- Changing the canonical inventory or fixed resume configuration.
+- Creating a new draft as part of PDF export.
+- Adding page numbers or footers to the actual resume.

@@ -46,6 +46,20 @@ the configurable `/api` base in `public/config.js`; Pages Functions forward
 requests through the existing Worker Service Binding, so browser traffic is
 same-origin and does not require CORS.
 
+#### Resume preview and PDF export
+
+Saved drafts are shown as US Letter pages with 0.6-inch margins. The browser
+lays out the preview blocks and page breaks using the same DOM and dimensions
+that are printed, and recalculates those breaks as fields are edited. Review
+evidence, warnings, editing controls, and page labels are excluded from print.
+
+To export, save the draft or cancel editing, then choose **Export saved PDF**.
+The browser's print dialog opens; select **Save as PDF**. The suggested
+filename uses the draft ID (`resume-draft-<draft-id>.pdf`), not contact or
+role information. Export is disabled while editing so unsaved content cannot
+be mistaken for the saved version. The browser print engine provides selectable
+text and preserves supported links.
+
 Run the local development server from the repository root:
 
 ```sh
