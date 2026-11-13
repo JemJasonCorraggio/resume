@@ -2534,3 +2534,68 @@ Also verify that changing a field does not unexpectedly remount its input compon
 - Changes to resume layout or styling.
 - Changes to the resume data model or persistence API.
 - New editing capabilities.
+
+## 32. Task: # Fix resume editor losing focus during typing part 2
+In resume editing mode, clicking an editable field and typing causes the editor to unexpectedly lose focus or exit the field.
+
+The issue appears related to resume pagination rebuilding the DOM while editable controls are active.
+
+The current implementation attempts to defer pagination when an editable control has focus, but other rendering paths can still replace the resume DOM. In particular, inventory loading can trigger a complete resume render while a draft is open.
+
+### Requirements
+
+#### 1. Preserve active editable controls
+- Typing into an editable field must not cause the field to lose focus or be replaced.
+- Updating resume data must not rebuild the active input or textarea.
+- Preserve cursor position, text selection, and normal keyboard editing behavior.
+- Do not use repeated programmatic refocusing as a workaround.
+
+#### 2. Make pagination safe during editing
+- Do not call `container.replaceChildren()` or move live editable nodes while an editable control has focus.
+- Defer pagination while the user is actively editing a field.
+- Recalculate pagination when the user leaves the field.
+- Ensure deferred pagination runs after the final field loses focus, including when focus moves directly from one editable field to another.
+- Pagination must reflect the latest edited content, not an earlier snapshot.
+- Use a measurement approach that does not disturb the live editable DOM when pagination needs to be evaluated during editing.
+
+#### 3. Prevent unrelated rendering from interrupting editing
+- Inventory loading or refreshing must not trigger a full resume render while editing is active.
+- Other background updates must not replace the editable resume DOM.
+- If supporting evidence needs refreshing, update the relevant evidence display without rebuilding the active editor.
+- Full resume rendering remains appropriate when initially displaying a draft, entering editing mode, cancelling edits, or completing a successful save.
+
+#### 4. Preserve existing behavior
+- Continue updating the in-memory resume data on input.
+- Preserve unsaved-change tracking and save-button behavior.
+- Preserve save, cancel, validation, and export restrictions.
+- Preserve automatic pagination and visible page boundaries.
+- Ensure edits that change content height eventually produce the correct page count and page breaks.
+
+### Acceptance Criteria
+- Typing multiple consecutive characters into any editable field never causes focus loss.
+- The user can move the cursor, select text, replace selected text, and paste normally.
+- Moving directly between editable fields works without unexpected focus loss.
+- Editing a field that changes the resume's height eventually updates pagination correctly.
+- Pagination does not interrupt typing or move the active control.
+- An inventory refresh completing during editing does not replace the editor or discard unsaved changes.
+- All changes remain available to save and are correctly persisted.
+- Existing save, cancel, and export behavior continues to work.
+
+### Testing
+Test the following scenarios:
+1. Type continuously into a single-line field.
+2. Type continuously into a multiline field.
+3. Select and replace text in the middle of a field.
+4. Move directly between two editable fields.
+5. Edit content enough to increase the resume's page count.
+6. Edit content enough to decrease the resume's page count.
+7. Trigger or simulate an inventory refresh while a field is being edited.
+8. Leave an edited field and verify that pagination updates correctly.
+
+Verify that no active editable control is removed or replaced during typing.
+
+### Out of Scope
+- Changes to resume styling or layout.
+- Changes to the resume data model or persistence API.
+- New editing capabilities.
+- Manual page-break controls.

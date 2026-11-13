@@ -37,6 +37,7 @@
   let isSavingResume = false;
   let resumeLayoutBlocks = [];
   let resumePaginationPending = false;
+  let resumePaginationMeasurementTimer = null;
 
   function make(tag, className, text) {
     const element = document.createElement(tag);
@@ -199,13 +200,7 @@
     return blocks;
   }
 
-  function paginateResume(container) {
-    if (!container || !resumeLayoutBlocks.length) return;
-    if (container.contains(document.activeElement) && document.activeElement.matches(".resume-edit-control")) {
-      resumePaginationPending = true;
-      return;
-    }
-    resumePaginationPending = false;
+  function layoutResumePages(container, layoutBlocks) {
     const pageNodes = [];
     let activeSection = null;
 
@@ -233,13 +228,13 @@
 
     container.replaceChildren();
     for (const [sectionIndex, section] of [...new Set(
-      resumeLayoutBlocks.filter((block) => block.section).map((block) => block.section),
+      layoutBlocks.filter((block) => block.section).map((block) => block.section),
     )].entries()) {
       section._resumeLayoutId = sectionIndex;
     }
 
     let pageContent = newPage();
-    for (const block of resumeLayoutBlocks) {
+    for (const block of layoutBlocks) {
       let destination;
       let bulletList = null;
       if (block.type === "header") {
@@ -295,6 +290,70 @@
     for (const [index, page] of pageNodes.entries()) {
       page.prepend(make("p", "resume-page-number", `Page ${index + 1} of ${pageNodes.length}`));
     }
+  }
+
+  function measureResumePagination(container) {
+    const measurementContainer = container.cloneNode(true);
+    const sourceNodes = [...container.querySelectorAll("*")];
+    const clonedNodes = [...measurementContainer.querySelectorAll("*")];
+    const nodeCopies = new Map(sourceNodes.map((node, index) => [node, clonedNodes[index]]));
+
+    for (const [index, control] of [...container.querySelectorAll(".resume-edit-control")].entries()) {
+      const copy = measurementContainer.querySelectorAll(".resume-edit-control")[index];
+      if (copy) copy.value = control.value;
+    }
+
+    const width = container.getBoundingClientRect().width;
+    Object.assign(measurementContainer.style, {
+      position: "absolute",
+      left: "-10000px",
+      top: "0",
+      width: `${width}px`,
+      margin: "0",
+      visibility: "hidden",
+      pointerEvents: "none",
+    });
+    document.body.append(measurementContainer);
+
+    const copiedBlocks = resumeLayoutBlocks.map((block) => ({
+      ...block,
+      section: block.section ? nodeCopies.get(block.section) : undefined,
+      nodes: block.nodes?.map((node) => nodeCopies.get(node)),
+      node: block.node ? nodeCopies.get(block.node) : undefined,
+    }));
+    try {
+      layoutResumePages(measurementContainer, copiedBlocks);
+    } finally {
+      measurementContainer.remove();
+    }
+  }
+
+  function hasFocusedResumeEditor(container) {
+    return container.contains(document.activeElement) &&
+      document.activeElement.matches(".resume-edit-control");
+  }
+
+  function scheduleResumePaginationMeasurement(container) {
+    clearTimeout(resumePaginationMeasurementTimer);
+    resumePaginationMeasurementTimer = setTimeout(() => {
+      resumePaginationMeasurementTimer = null;
+      if (resumePaginationPending && hasFocusedResumeEditor(container)) {
+        measureResumePagination(container);
+      }
+    }, 120);
+  }
+
+  function paginateResume(container) {
+    if (!container || !resumeLayoutBlocks.length) return;
+    if (hasFocusedResumeEditor(container)) {
+      resumePaginationPending = true;
+      scheduleResumePaginationMeasurement(container);
+      return;
+    }
+    clearTimeout(resumePaginationMeasurementTimer);
+    resumePaginationMeasurementTimer = null;
+    resumePaginationPending = false;
+    layoutResumePages(container, resumeLayoutBlocks);
   }
 
   let resumeResizeFrameScheduled = false;
@@ -367,9 +426,9 @@
       .join(" · ");
   }
 
-  function evidenceControl(ids, label) {
-    const wrapper = make("details", "resume-evidence");
+  function renderEvidenceControl(wrapper, ids, label) {
     const unresolved = [];
+    wrapper.replaceChildren();
     wrapper.append(make("summary", "evidence-summary", "Supporting evidence"));
     for (const id of ids) {
       const item = recordById.get(id);
@@ -389,7 +448,69 @@
       wrapper.append(missing);
     }
     wrapper.setAttribute("aria-label", `Supporting evidence for ${label}`);
+  }
+
+  function evidenceControl(ids, label) {
+    const wrapper = make("details", "resume-evidence");
+    wrapper.dataset.recordIds = JSON.stringify(ids);
+    wrapper.dataset.label = label;
+    renderEvidenceControl(wrapper, ids, label);
     return wrapper;
+  }
+
+  function missingResumeEvidence(resume) {
+    const missing = [];
+    const appendMissingIds = (ids, label) => {
+      for (const id of ids) {
+        if (!recordById.has(id)) missing.push(`Missing evidence for ${label}: ${id}`);
+      }
+    };
+
+    if (resume.summary.sourceRecordIds?.length) {
+      appendMissingIds(resume.summary.sourceRecordIds, "summary");
+    } else {
+      missing.push("Summary is missing supporting evidence.");
+    }
+
+    for (const category of resume.skillsAndLanguages.skillsCategories || []) {
+      for (const skill of category.skills || []) {
+        if (!skill.manualAdded && Array.isArray(skill.sourceRecordIds)) {
+          appendMissingIds(skill.sourceRecordIds, `skill ${skill.name}`);
+        }
+      }
+    }
+
+    for (const entry of resume.experience || []) {
+      for (const bullet of entry.bullets || []) {
+        if (bullet.manualAdded) continue;
+        if (Array.isArray(bullet.sourceRecordIds) && bullet.sourceRecordIds.length) {
+          appendMissingIds(bullet.sourceRecordIds, bullet.text);
+        } else {
+          missing.push(`Experience bullet is missing supporting evidence: ${bullet.text}`);
+        }
+      }
+    }
+    return missing;
+  }
+
+  function refreshResumeEvidenceDisplays() {
+    const container = document.querySelector("#assembled-resume");
+    for (const wrapper of container.querySelectorAll(".resume-evidence")) {
+      renderEvidenceControl(
+        wrapper,
+        JSON.parse(wrapper.dataset.recordIds),
+        wrapper.dataset.label,
+      );
+    }
+    const resume = editingResume || currentResumeDraft?.resume;
+    if (resume) {
+      renderResumeWarnings(
+        document.querySelector("#resume-warnings"),
+        currentResumeDraft.warnings,
+        missingResumeEvidence(resume),
+      );
+    }
+    paginateResume(container);
   }
 
   function addGeneratedInlineEvidence(parent, text, ids, label) {
@@ -438,7 +559,6 @@
     container.replaceChildren();
     resumeLayoutBlocks = [];
     container.classList.toggle("resume-editing", Boolean(editingResume));
-    const missingEvidence = [];
     const header = make("header", "resume-header");
     const headerColumns = make("div", "resume-header-columns");
     const headerLeft = make("div", "resume-header-left");
@@ -512,8 +632,6 @@
     if (resume.summary.manuallyEdited) summaryText.append(manualContentNote("edited"));
     if (resume.summary.sourceRecordIds?.length) {
       summaryText.append(evidenceControl(resume.summary.sourceRecordIds, "summary"));
-    } else {
-      missingEvidence.push("Summary is missing supporting evidence.");
     }
     summary.append(summaryText, editingResume
       ? editableField("p", "resume-fixed-note", resume.summary.CUSMANote, "CUSMA note",
@@ -618,8 +736,6 @@
         else if (bullet.manuallyEdited) item.append(manualContentNote("edited"));
         if (!bullet.manualAdded && Array.isArray(bullet.sourceRecordIds) && bullet.sourceRecordIds.length) {
           item.append(evidenceControl(bullet.sourceRecordIds, bullet.text));
-        } else if (!bullet.manualAdded) {
-          missingEvidence.push(`Experience bullet is missing supporting evidence: ${bullet.text}`);
         }
         if (editingResume) {
           item.append(editAction(`Remove accomplishment ${bulletIndex + 1}`, () => {
@@ -670,11 +786,7 @@
     paginateResume(container);
     if (editingResume) scheduleResumeEditorResize();
 
-    const unresolvedNodes = container.querySelectorAll(".evidence-missing");
-    for (const node of unresolvedNodes) {
-      missingEvidence.push(`Missing evidence for ${node.dataset.label}: ${node.textContent.replace("Missing evidence record: ", "")}`);
-    }
-    renderResumeWarnings(warningsElement, draft.warnings, [...new Set(missingEvidence)]);
+    renderResumeWarnings(warningsElement, draft.warnings, [...new Set(missingResumeEvidence(resume))]);
     status.textContent = editingResume ? "Editing" : "Loaded";
     status.className = `status ${editingResume ? "status-warning" : "status-ok"}`;
     renderResumeEditControls();
@@ -1301,7 +1413,10 @@
       records = collectRecords(inventory);
       recordById = new Map(records.filter((item) => item.record.id).map((item) => [item.id, item]));
       if (currentAnalysis) renderAnalysis(currentAnalysis);
-      if (currentResumeDraft) renderAssembledResume(currentResumeDraft);
+      if (currentResumeDraft) {
+        if (editingResume) refreshResumeEvidenceDisplays();
+        else renderAssembledResume(currentResumeDraft);
+      }
       searchInput.disabled = false;
       typeSelect.disabled = false;
       typeSelect.replaceChildren(new Option("All types", ""));
@@ -1350,10 +1465,14 @@
   document.querySelector("#resume-save-button").addEventListener("click", saveResumeDraft);
   document.querySelector("#resume-cancel-button").addEventListener("click", cancelResumeEditing);
   document.querySelector("#resume-export-button").addEventListener("click", exportSavedResume);
-  document.querySelector("#assembled-resume").addEventListener("focusout", () => {
+  document.querySelector("#assembled-resume").addEventListener("focusout", (event) => {
+    if (
+      event.target.matches(".resume-edit-control") &&
+      event.relatedTarget?.matches?.(".resume-edit-control")
+    ) return;
     requestAnimationFrame(() => {
       const container = document.querySelector("#assembled-resume");
-      if (resumePaginationPending && !container.querySelector(".resume-edit-control:focus")) {
+      if (resumePaginationPending && !hasFocusedResumeEditor(container)) {
         paginateResume(container);
       }
     });

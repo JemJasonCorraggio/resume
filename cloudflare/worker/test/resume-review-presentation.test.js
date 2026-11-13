@@ -88,10 +88,19 @@ test("saved drafts can be reopened and edited without replacing the styled revie
 });
 
 test("pagination does not detach a focused editor and flushes after editing focus leaves", () => {
-  assert.match(app, /container\.contains\(document\.activeElement\)\s*&&\s*document\.activeElement\.matches\("\.resume-edit-control"\)/);
+  assert.match(app, /function hasFocusedResumeEditor\(container\)/);
   assert.match(app, /resumePaginationPending\s*=\s*true/);
-  assert.match(app, /resumePaginationPending\s*&&\s*!container\.querySelector\("\.resume-edit-control:focus"\)/);
+  assert.match(app, /function measureResumePagination\(container\)[\s\S]*container\.cloneNode\(true\)/);
+  assert.match(app, /if \(hasFocusedResumeEditor\(container\)\) \{[\s\S]*scheduleResumePaginationMeasurement\(container\)/);
+  assert.match(app, /if \(resumePaginationPending && hasFocusedResumeEditor\(container\)\) \{\s*measureResumePagination\(container\)/);
+  assert.match(app, /resumePaginationPending\s*&&\s*!hasFocusedResumeEditor\(container\)/);
   assert.match(app, /paginateResume\(container\)/);
+});
+
+test("inventory refresh updates resume evidence without rebuilding an active editor", () => {
+  assert.match(app, /if \(editingResume\) refreshResumeEvidenceDisplays\(\);\s*else renderAssembledResume\(currentResumeDraft\)/);
+  assert.match(app, /function refreshResumeEvidenceDisplays\(\)[\s\S]*renderEvidenceControl/);
+  assert.match(app, /wrapper\.dataset\.recordIds = JSON\.stringify\(ids\)/);
 });
 
 test("saved-only PDF export excludes review UI and preserves the draft filename privacy", () => {
