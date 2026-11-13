@@ -96,7 +96,7 @@
   }
 
   function editAction(label, action, className = "button button-secondary") {
-    const button = make("button", className, label);
+    const button = make("button", `${className} resume-review-only`, label);
     button.type = "button";
     button.addEventListener("click", action);
     return button;
@@ -117,7 +117,7 @@
   function manualContentNote(kind) {
     return make(
       "span",
-      "resume-manual-note",
+      "resume-manual-note resume-review-only",
       kind === "added"
         ? "Manually added · no generated evidence"
         : "Manually edited · original evidence retained, not revalidated",
@@ -200,9 +200,10 @@
     return blocks;
   }
 
-  function layoutResumePages(container, layoutBlocks) {
+  function layoutResumePages(container, layoutBlocks, pageBreaks = null) {
     const pageNodes = [];
     let activeSection = null;
+    const calculatedPageBreaks = new Set();
 
     function newPage() {
       const page = make("div", "resume-page");
@@ -234,7 +235,8 @@
     }
 
     let pageContent = newPage();
-    for (const block of layoutBlocks) {
+    for (const [blockIndex, block] of layoutBlocks.entries()) {
+      if (pageBreaks?.has(blockIndex)) pageContent = newPage();
       let destination;
       let bulletList = null;
       if (block.type === "header") {
@@ -263,7 +265,8 @@
       );
       const nodes = block.type === "bullet" ? [block.node] : block.nodes;
       nodes.forEach((node) => destination.append(node));
-      if (pageContent.scrollHeight > pageContent.clientHeight + 1) {
+      if (!pageBreaks && pageContent.scrollHeight > pageContent.clientHeight + 1) {
+        calculatedPageBreaks.add(blockIndex);
         nodes.forEach((node) => node.remove());
         if (bulletList?.childElementCount === 0) bulletList.remove();
         if (sectionDestination?.childElementCount === 0) {
@@ -290,6 +293,7 @@
     for (const [index, page] of pageNodes.entries()) {
       page.prepend(make("p", "resume-page-number", `Page ${index + 1} of ${pageNodes.length}`));
     }
+    return calculatedPageBreaks;
   }
 
   function measureResumePagination(container) {
@@ -297,6 +301,7 @@
     const sourceNodes = [...container.querySelectorAll("*")];
     const clonedNodes = [...measurementContainer.querySelectorAll("*")];
     const nodeCopies = new Map(sourceNodes.map((node, index) => [node, clonedNodes[index]]));
+    measurementContainer.querySelectorAll(".resume-review-only").forEach((node) => node.remove());
 
     for (const [index, control] of [...container.querySelectorAll(".resume-edit-control")].entries()) {
       const copy = measurementContainer.querySelectorAll(".resume-edit-control")[index];
@@ -310,7 +315,6 @@
       top: "0",
       width: `${width}px`,
       margin: "0",
-      visibility: "hidden",
       pointerEvents: "none",
     });
     document.body.append(measurementContainer);
@@ -322,7 +326,7 @@
       node: block.node ? nodeCopies.get(block.node) : undefined,
     }));
     try {
-      layoutResumePages(measurementContainer, copiedBlocks);
+      return layoutResumePages(measurementContainer, copiedBlocks);
     } finally {
       measurementContainer.remove();
     }
@@ -353,7 +357,8 @@
     clearTimeout(resumePaginationMeasurementTimer);
     resumePaginationMeasurementTimer = null;
     resumePaginationPending = false;
-    layoutResumePages(container, resumeLayoutBlocks);
+    const pageBreaks = measureResumePagination(container);
+    layoutResumePages(container, resumeLayoutBlocks, pageBreaks);
   }
 
   let resumeResizeFrameScheduled = false;
@@ -451,7 +456,7 @@
   }
 
   function evidenceControl(ids, label) {
-    const wrapper = make("details", "resume-evidence");
+    const wrapper = make("details", "resume-evidence resume-review-only");
     wrapper.dataset.recordIds = JSON.stringify(ids);
     wrapper.dataset.label = label;
     renderEvidenceControl(wrapper, ids, label);

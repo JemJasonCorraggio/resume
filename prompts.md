@@ -2666,3 +2666,83 @@ Add or update tests covering:
 - Changing the fixed Languages category or FMP note.
 - Changing the canonical inventory or fixed resume configuration.
 - AI-generated recommendations about which categories to remove. 
+
+## 34. Task: # Exclude review annotations from resume pagination and PDF layout
+Correct resume pagination so that review-only elements, such as supporting evidence links and manual-edit annotations, do not consume printable page space or affect page-break calculations.
+
+The resume should paginate based exclusively on content that appears in the exported PDF. Review and editing interfaces must retain their supporting evidence and manual-edit information without allowing those elements to push resume content onto additional pages.
+
+### Requirements
+
+#### 1. Separate printable content from review annotations
+Treat the following as review-only annotations, not printable resume content:
+- Supporting evidence links and controls.
+- Evidence record details and provenance information.
+- Indicators or notes identifying manually edited content.
+- Other review-only explanatory controls or metadata.
+
+These elements must remain available in the review and editing interfaces.
+
+Do not remove or discard provenance information from the assembled resume or saved draft.
+
+#### 2. Pagination must measure printable content only
+- Calculate page breaks using only elements that appear in the exported PDF.
+- Review-only annotations must not contribute to the measured height of resume sections, paragraphs, bullets, or other layout blocks.
+- Annotations must not cause content to move to another page.
+- Do not allow annotation margins, padding, borders, or other styling to affect printable layout calculations.
+- Do not use `visibility: hidden` or `opacity: 0` as a substitute for excluding elements from layout measurements.
+
+Use a clear, maintainable distinction between printable resume elements and review-only UI elements. Prefer a shared layout model or explicit printable-content boundaries over scattered selectors and special-case exclusions.
+
+#### 3. Preserve review and editing behavior
+- Keep supporting evidence links visible and functional.
+- Keep manual-edit indicators visible and understandable.
+- Associate each annotation with its corresponding resume content.
+- Preserve existing evidence lookup and provenance behavior.
+- Annotations may take additional vertical space in the review interface, but that space must be outside the printable page layout.
+- Editing resume content must continue to update pagination immediately, without requiring a save or leaving editing mode.
+- Changes to annotations must not change the number of printable pages.
+
+#### 4. Keep browser preview and PDF export consistent
+- The browser preview and PDF export must use the same printable-content boundaries and pagination rules.
+- Page breaks must reflect the actual PDF output, not the total height of the review interface.
+- Export must exclude supporting evidence links, provenance details, manual-edit indicators, and editing controls.
+- Exported text, spacing, and page count must remain consistent with the printable resume preview.
+- Do not introduce separate hardcoded pagination calculations for review mode and PDF export.
+
+#### 5. Preserve existing layout and pagination behavior
+- Retain the existing US Letter page dimensions, margins, typography, and section styling.
+- Do not shrink fonts, reduce spacing, or otherwise compress the resume to compensate for annotation space.
+- Do not change the resume content or provenance data.
+- Preserve automatic pagination, page boundaries in editing mode, and natural content flow across pages.
+- Do not introduce manual page-break controls as part of this change.
+
+### Acceptance Criteria
+- Supporting evidence links do not contribute to printable page height.
+- Manual-edit annotations do not contribute to printable page height.
+- Review-only annotations remain visible and functional in review and editing modes.
+- Adding or removing an annotation does not change printable page count or page breaks.
+- Editing actual resume text still recalculates pagination correctly.
+- The browser preview and exported PDF agree on page count and page boundaries.
+- PDF export contains no review-only annotations or editing controls.
+- Provenance information remains intact in the saved draft.
+- Existing styling, editing, save, cancel, and export behavior continues to work.
+
+### Tests
+Add or update tests covering:
+- A resume where evidence links previously caused an additional page.
+- A resume with multiple manual-edit annotations.
+- A resume containing both evidence links and manual-edit annotations.
+- Adding and removing annotations without changing pagination.
+- Editing printable text and verifying that pagination still changes appropriately.
+- A resume that fits on one page when only printable content is measured.
+- A multi-page resume to ensure legitimate page breaks remain correct.
+- Comparing browser preview page count and boundaries against the exported PDF.
+- Confirming that exported PDFs exclude all review-only annotations.
+
+### Out of Scope
+- Removing evidence links or manual-edit indicators from the review interface.
+- Changing provenance or evidence-generation behavior.
+- Changing resume content, typography, or page dimensions.
+- Automatically rewriting or shortening resume content.
+- Adding manual page-break controls.

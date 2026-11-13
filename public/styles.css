@@ -270,7 +270,7 @@ footer { padding: 1rem; color: var(--muted); text-align: center; font-size: .85r
   }
   .resume-page:last-child { break-after: auto; page-break-after: auto; }
   .resume-page-content { width: 7.3in; height: 9.8in; }
-  .resume-page-number, .resume-evidence, .resume-manual-note, .button-inline, .resume-edit-control {
+  .resume-page-number, .resume-review-only, .resume-edit-control {
     display: none !important;
   }
   .resume-page-content a { color: #111; text-decoration: none; }

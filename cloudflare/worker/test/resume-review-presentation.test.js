@@ -97,6 +97,21 @@ test("pagination does not detach a focused editor and flushes after editing focu
   assert.match(app, /paginateResume\(container\)/);
 });
 
+test("pagination measures printable content and applies identical page breaks to the review preview", () => {
+  assert.match(app, /measurementContainer\.querySelectorAll\("\.resume-review-only"\)\.forEach\(\(node\) => node\.remove\(\)\)/);
+  assert.match(app, /const pageBreaks = measureResumePagination\(container\);\s*layoutResumePages\(container, resumeLayoutBlocks, pageBreaks\)/);
+  assert.match(app, /if \(pageBreaks\?\.has\(blockIndex\)\) pageContent = newPage\(\)/);
+  assert.match(app, /if \(!pageBreaks && pageContent\.scrollHeight > pageContent\.clientHeight \+ 1\)/);
+});
+
+test("review annotations share one exclusion boundary in pagination and PDF output", () => {
+  assert.match(app, /"resume-manual-note resume-review-only"/);
+  assert.match(app, /"resume-evidence resume-review-only"/);
+  assert.match(app, /`\$\{className\} resume-review-only`/);
+  assert.match(styles, /\.resume-page-number,\s*\.resume-review-only,\s*\.resume-edit-control\s*\{\s*display:\s*none !important;/);
+  assert.doesNotMatch(styles, /visibility:\s*hidden|opacity:\s*0/);
+});
+
 test("inventory refresh updates resume evidence without rebuilding an active editor", () => {
   assert.match(app, /if \(editingResume\) refreshResumeEvidenceDisplays\(\);\s*else renderAssembledResume\(currentResumeDraft\)/);
   assert.match(app, /function refreshResumeEvidenceDisplays\(\)[\s\S]*renderEvidenceControl/);
@@ -109,7 +124,7 @@ test("saved-only PDF export excludes review UI and preserves the draft filename 
   assert.match(app, /window\.print\(\)/);
   assert.match(app, /Choose Save as PDF in the browser print dialog/);
   assert.match(styles, /\.resume-review-heading,[^}]*#resume-review-error\s*\{\s*display:\s*none !important/s);
-  assert.match(styles, /\.resume-evidence,\s*\.resume-manual-note,\s*\.button-inline/);
+  assert.match(styles, /\.resume-review-only,\s*\.resume-edit-control\s*\{\s*display:\s*none !important;/);
 });
 
 test("editing covers fixed and generated text fields and keeps add/remove controls draft-local", () => {
