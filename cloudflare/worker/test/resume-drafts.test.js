@@ -241,6 +241,36 @@ test("draft validation permits manual additions and edits while preserving prove
   assert.throws(() => validateEditedResume(fabricatedLanguage, draft.resume), /fixed content cannot have generated provenance/);
 });
 
+test("draft validation permits deleting generated skill categories while preserving Languages and remaining provenance", () => {
+  const draft = makeDraft("draft-delete-categories");
+  draft.resume.skillsAndLanguages.skillsCategories[0].skills.push({
+    name: "Kubernetes",
+    sourceRecordIds: ["SK-005"],
+  });
+  draft.resume.skillsAndLanguages.skillsCategories.splice(1, 0, {
+    name: "Leadership",
+    skills: [{ name: "Mentoring", sourceRecordIds: ["ACC-001"] }],
+  });
+
+  const deletedOne = structuredClone(draft.resume);
+  markLanguagesFixed(deletedOne);
+  deletedOne.skillsAndLanguages.skillsCategories.splice(1, 1);
+  assert.equal(validateEditedResume(deletedOne, draft.resume), deletedOne);
+  assert.equal(deletedOne.skillsAndLanguages.skillsCategories[0].name, "Engineering");
+  assert.deepEqual(deletedOne.skillsAndLanguages.skillsCategories[0].skills[1].sourceRecordIds, ["SK-005"]);
+
+  const deletedAllEditable = structuredClone(draft.resume);
+  markLanguagesFixed(deletedAllEditable);
+  deletedAllEditable.skillsAndLanguages.skillsCategories =
+    deletedAllEditable.skillsAndLanguages.skillsCategories.filter((category) => category.categoryRole === "languages");
+  assert.equal(validateEditedResume(deletedAllEditable, draft.resume), deletedAllEditable);
+  assert.deepEqual(
+    deletedAllEditable.skillsAndLanguages.skillsCategories.map((category) => category.name),
+    ["Languages"],
+  );
+  assert.equal(deletedAllEditable.skillsAndLanguages.FMPNote, draft.resume.skillsAndLanguages.FMPNote);
+});
+
 test("GET and PUT update only the addressed draft, preserve metadata, and enforce versions", async () => {
   const db = createD1TestDouble();
   const draft = makeDraft("draft-1");
@@ -295,6 +325,37 @@ test("GET and PUT update only the addressed draft, preserve metadata, and enforc
     env,
   );
   assert.equal(notFound.status, 404);
+});
+
+test("PUT persists deleted skill categories and reopening the draft retains the deletion", async () => {
+  const db = createD1TestDouble();
+  const draft = makeDraft("draft-delete-category");
+  draft.resume.skillsAndLanguages.skillsCategories.splice(1, 0, {
+    name: "Leadership",
+    skills: [{ name: "Mentoring", sourceRecordIds: ["ACC-001"] }],
+  });
+  await insertResumeDraft(db, draft);
+
+  const edited = structuredClone(draft.resume);
+  markLanguagesFixed(edited);
+  edited.skillsAndLanguages.skillsCategories.splice(0, 1);
+  const response = await handleRequest(
+    putRequest(draft.draftId, { resume: edited, version: 1 }),
+    { DB: db },
+  );
+
+  assert.equal(response.status, 200);
+  const saved = await response.json();
+  assert.deepEqual(
+    saved.resume.skillsAndLanguages.skillsCategories.map((category) => category.name),
+    ["Leadership", "Languages"],
+  );
+  assert.equal(saved.draftId, draft.draftId);
+  assert.equal(saved.jobId, draft.jobId);
+  assert.equal(saved.createdAt, draft.createdAt);
+  assert.equal(saved.inventoryRevision, draft.inventoryRevision);
+  const reopened = await getResumeDraftById(db, draft.draftId);
+  assert.deepEqual(reopened.resume, saved.resume);
 });
 
 test("draft update rejects malformed structures, immutable metadata changes, and unsafe links", async () => {

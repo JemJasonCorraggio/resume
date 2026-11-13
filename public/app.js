@@ -676,6 +676,17 @@
         group.append(skillItem);
         if (index < skillList.length - 1) group.append(document.createTextNode(", "));
       }
+      const isLanguagesCategory =
+        category.categoryRole === "languages" || category.name === "Languages";
+      if (editingResume && !isLanguagesCategory) {
+        group.append(editAction("Delete category", () => {
+          const currentCategory = editingResume.skillsAndLanguages.skillsCategories[currentCategoryIndex];
+          if (!window.confirm(`Delete the "${currentCategory.name}" category and all of its skills?`)) return;
+          editingResume.skillsAndLanguages.skillsCategories.splice(currentCategoryIndex, 1);
+          markResumeChanged();
+          renderAssembledResume(currentResumeDraft);
+        }, "button button-inline"));
+      }
       skills.append(group);
       if (editingResume) {
         skills.append(editAction(`Add skill to ${category.name}`, () => {

@@ -2599,3 +2599,70 @@ Verify that no active editable control is removed or replaced during typing.
 - Changes to the resume data model or persistence API.
 - New editing capabilities.
 - Manual page-break controls.
+
+## 33. Task: Add the ability to delete skill categories
+Allow users to delete skill categories while editing a saved resume. This gives users control over which skill groupings appear in the final resume, including when a category is irrelevant to a particular role.
+
+### Requirements
+
+#### 1. Delete controls
+- Add a clearly identifiable delete action to each editable skill category in the Skills and Languages section.
+- The action must delete the entire category, including all skills within it.
+- Before deleting, ask the user to confirm. The confirmation should identify the category by name so the user understands what will be removed.
+- Cancelling the confirmation must leave the category and its skills unchanged.
+- The fixed **Languages** category must remain protected and must not display a delete action. Its entries remain editable under the existing editing rules.
+
+#### 2. Editing behavior
+- Deleting a category must update the in-memory resume immediately.
+- The deleted category and its skills must disappear from the editor and paginated preview.
+- Mark the resume as having unsaved changes and update the save status consistently with other editing operations.
+- Deletion must work with the existing save, cancel, and unsaved-changes behavior:
+  - Saving persists the category deletion to the existing draft.
+  - Cancelling editing restores the previously saved category.
+  - Navigating away with an unsaved deletion triggers the existing unsaved-changes warning.
+- Deleting one category must not affect other categories, their skills, or their provenance.
+
+#### 3. Persistence and data integrity
+- Persist the updated `skillsAndLanguages.skillsCategories` array as part of the complete assembled resume.
+- Do not change the draft's immutable metadata.
+- Do not modify the canonical inventory or fixed resume configuration. Deletion applies only to the current resume draft.
+- An empty skills-category array is valid if the user deletes every editable skill category.
+- Preserve the fixed Languages category and FMP note even when all generated skill categories are deleted.
+- Reopening the saved draft must show the deletion without regenerating or reassembling the resume.
+
+#### 4. Layout and pagination
+- Recalculate the paginated preview immediately after a category is deleted.
+- Remove the category's space from the document and allow subsequent content to flow naturally across page boundaries.
+- Preserve the existing page dimensions, typography, spacing, and section order.
+- Deleting a category must not cause focus loss or disrupt editing in another field.
+
+### Acceptance Criteria
+- Every editable skill category has a delete action.
+- The Languages category cannot be deleted.
+- The user must confirm before a category is deleted.
+- Cancelling confirmation leaves the resume unchanged.
+- Confirming deletion removes the category and all its skills.
+- The deletion marks the resume as unsaved.
+- Saving and reopening the draft preserves the deletion.
+- Cancelling editing restores the saved category.
+- Deleting all editable categories leaves Languages and the FMP note intact.
+- Pagination updates correctly after deletion, including when the deletion reduces the resume's page count.
+- Other categories, skills, provenance, and draft metadata remain unchanged.
+
+### Tests
+Add or update tests covering:
+- Deleting a category with multiple skills.
+- Cancelling and confirming the deletion prompt.
+- Attempting to delete the protected Languages category.
+- Deleting multiple categories, including all editable categories.
+- Saving, reopening, and cancelling after deletion.
+- Correct unsaved-changes behavior.
+- Pagination updates when deleting a category near a page boundary.
+- Preservation of unrelated category data and provenance.
+
+### Out of Scope
+- Deleting individual skills (already handled by existing functionality).
+- Adding, renaming, or reordering categories.
+- Changing the fixed Languages category or FMP note.
+- Changing the canonical inventory or fixed resume configuration.
+- AI-generated recommendations about which categories to remove. 

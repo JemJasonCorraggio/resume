@@ -112,6 +112,58 @@ function validateProvenanceSequence(originalItems, editedItems, textField, label
   }
 }
 
+function hasCompatibleProvenanceSequence(originalItems, editedItems, textField) {
+  const originalGenerated = originalItems.filter((item) => Array.isArray(item.sourceRecordIds));
+  const editedGenerated = editedItems.filter((item) => Array.isArray(item.sourceRecordIds));
+  let originalIndex = 0;
+  for (const edited of editedGenerated) {
+    while (
+      originalIndex < originalGenerated.length &&
+      JSON.stringify(originalGenerated[originalIndex].sourceRecordIds) !== JSON.stringify(edited.sourceRecordIds)
+    ) originalIndex += 1;
+    if (originalIndex === originalGenerated.length) return false;
+    if (edited[textField] !== originalGenerated[originalIndex][textField] && edited.manuallyEdited !== true) {
+      return false;
+    }
+    originalIndex += 1;
+  }
+  return true;
+}
+
+function matchEditedSkillCategories(categories, originalCategories, originalLanguagesIndex) {
+  function matchFrom(categoryIndex, previousOriginalIndex, matches) {
+    if (categoryIndex === categories.length) {
+      return matches.includes(originalLanguagesIndex) ? matches : null;
+    }
+
+    const category = categories[categoryIndex];
+    const isLanguagesCategory =
+      category?.categoryRole === "languages" || category?.name === "Languages";
+    const candidates = isLanguagesCategory
+      ? [originalLanguagesIndex]
+      : originalCategories
+        .map((_, index) => index)
+        .filter((index) => index !== originalLanguagesIndex && index > previousOriginalIndex);
+
+    for (const originalIndex of candidates) {
+      if (originalIndex <= previousOriginalIndex) continue;
+      if (
+        !isLanguagesCategory &&
+        !hasCompatibleProvenanceSequence(
+          originalCategories[originalIndex].skills,
+          category.skills,
+          "name",
+        )
+      ) continue;
+      const result = matchFrom(categoryIndex + 1, originalIndex, [...matches, originalIndex]);
+      if (result) return result;
+    }
+    return null;
+  }
+
+  return matchFrom(0, -1, []);
+}
+
 export function validateEditedResume(resume, originalResume) {
   exactOptionalKeys(
     resume,
@@ -187,17 +239,22 @@ export function validateEditedResume(resume, originalResume) {
   const originalLanguagesIndex = originalCategories.findIndex(
     (category) => category.categoryRole === "languages" || category.name === "Languages",
   );
-  const editedLanguagesCategory = categories[originalLanguagesIndex];
+  const categoryMatches = matchEditedSkillCategories(categories, originalCategories, originalLanguagesIndex);
+  const editedLanguagesCategory = categories.find(
+    (category) => category.categoryRole === "languages" || category.name === "Languages",
+  );
   const preservesLanguagesCategory = editedLanguagesCategory?.categoryRole === "languages" ||
     (originalCategories[originalLanguagesIndex]?.categoryRole !== "languages" &&
       editedLanguagesCategory?.name === "Languages");
-  if (categories.length !== originalCategories.length || originalLanguagesIndex < 0 ||
+  if (!categoryMatches || originalLanguagesIndex < 0 ||
       originalCategories.filter((category) => category.categoryRole === "languages" || category.name === "Languages").length !== 1 ||
       categories.filter((category) => category?.categoryRole === "languages").length > 1 ||
       !preservesLanguagesCategory) {
-    throw new TypeError("Resume must preserve its skill categories and required Languages category");
+    throw new TypeError("Resume must preserve the required Languages category and skill category order");
   }
   for (const [categoryIndex, category] of categories.entries()) {
+    const originalCategoryIndex = categoryMatches[categoryIndex];
+    const isLanguagesCategory = originalCategoryIndex === originalLanguagesIndex;
     exactOptionalKeys(
       category,
       ["name", "skills"],
@@ -207,12 +264,12 @@ export function validateEditedResume(resume, originalResume) {
     if (typeof category.name !== "string" || !Array.isArray(category.skills)) {
       throw new TypeError(`Resume skill category ${categoryIndex} is invalid`);
     }
-    if (categoryIndex === originalLanguagesIndex && category.categoryRole !== "languages") {
+    if (isLanguagesCategory && category.categoryRole !== "languages") {
       if (category.categoryRole !== undefined || category.name !== "Languages") {
         throw new TypeError("The required Languages category cannot be removed");
       }
     }
-    if (categoryIndex !== originalLanguagesIndex &&
+    if (!isLanguagesCategory &&
         (category.categoryRole !== undefined || category.name === "Languages")) {
       throw new TypeError("Only the required category may represent Languages");
     }
@@ -220,12 +277,12 @@ export function validateEditedResume(resume, originalResume) {
       validateEditableItem(
         skill,
         `resume.skillsAndLanguages.skillsCategories[${categoryIndex}].skills[${skillIndex}]`,
-        { allowFixed: categoryIndex === originalLanguagesIndex },
+        { allowFixed: isLanguagesCategory },
       );
     }
-    if (categoryIndex !== originalLanguagesIndex) {
+    if (!isLanguagesCategory) {
       validateProvenanceSequence(
-        originalCategories[categoryIndex].skills,
+        originalCategories[originalCategoryIndex].skills,
         category.skills,
         "name",
         `Skill category ${categoryIndex}`,

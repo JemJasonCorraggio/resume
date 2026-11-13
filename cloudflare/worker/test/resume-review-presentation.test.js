@@ -140,3 +140,10 @@ test("editing covers fixed and generated text fields and keeps add/remove contro
   assert.match(app, /function cancelResumeEditing/);
   assert.match(app, /function saveResumeDraft/);
 });
+
+test("skill category deletion confirms by name and protects the Languages category", () => {
+  assert.match(app, /const isLanguagesCategory\s*=\s*category\.categoryRole === "languages" \|\| category\.name === "Languages"/);
+  assert.match(app, /if \(editingResume && !isLanguagesCategory\) \{\s*group\.append\(editAction\("Delete category"/);
+  assert.match(app, /if \(!window\.confirm\(`Delete the "\$\{currentCategory\.name\}" category and all of its skills\?`\)\) return;\s*editingResume\.skillsAndLanguages\.skillsCategories\.splice\(currentCategoryIndex, 1\)/);
+  assert.match(app, /skillsCategories\.splice\(currentCategoryIndex, 1\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
+});
