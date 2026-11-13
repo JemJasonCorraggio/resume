@@ -2419,7 +2419,7 @@ Do not expose stack traces, internal implementation details, or sensitive invent
 
 Choose an implementation approach that supports accurate text measurement and pagination. Do not assume that ordinary browser CSS pagination alone is sufficient if it cannot guarantee that the preview matches the exported PDF.
 
-## 10. Automated tests and visual verification
+### 10. Automated tests and visual verification
 Add tests covering at least:
 
 #### Page layout
@@ -2490,7 +2490,7 @@ Compare the browser preview and exported PDF page by page.
 - Existing editing, saving, evidence, and warning functionality continues working.
 - Automated tests cover the requirements above.
 
-## Out of scope
+### Out of scope
 - DOCX export.
 - Manual page-break insertion.
 - Drag-and-drop content positioning.
@@ -2501,3 +2501,36 @@ Compare the browser preview and exported PDF page by page.
 - Changing the canonical inventory or fixed resume configuration.
 - Creating a new draft as part of PDF export.
 - Adding page numbers or footers to the actual resume.
+
+## 31. Task: Fix editing inputs losing focus after typing
+In resume editing mode, editable content is presented in separate input boxes. When the user starts editing a field and types a character, the editor immediately exits that field or loses focus. The user must repeatedly click back into the field to continue typing.
+
+This makes editing impractical.
+
+### Requirements
+1. Identify why editable fields lose focus immediately after a state update caused by typing.
+2. Determine whether the input component is being unmounted/remounted, whether its React key or component identity is changing, or whether another interaction is stealing focus.
+3. Fix the underlying cause rather than applying a workaround that manually restores focus after every keystroke.
+4. Ensure React keys for editable fields are stable and based on field identity, not the current field value.
+5. Ensure editable components retain stable component identity across parent renders.
+6. Ensure typing updates the relevant resume state without replacing the active input or switching it out of edit mode.
+7. Preserve all existing editing behavior, including save, cancel, validation, unsaved-change tracking, and pagination updates.
+
+### Acceptance Criteria
+- Clicking an editable field enters editing mode.
+- Typing multiple consecutive characters does not cause the field to lose focus or exit editing mode.
+- The user can select text, move the cursor, use backspace/delete, and paste text normally.
+- Editing one field does not cause another field to unexpectedly receive focus.
+- The behavior works across all editable field types, including summary text, skills, experience bullets, header fields, and education fields.
+- Updating the resume while editing continues to update pagination correctly without interrupting typing.
+- Existing save/cancel behavior and unsaved-change warnings continue to work.
+
+### Testing
+Test each editable field type by typing several characters continuously, moving the cursor into the middle of the text, editing there, and pasting text. Verify that focus and cursor position remain stable throughout.
+
+Also verify that changing a field does not unexpectedly remount its input component.
+
+### Out of Scope
+- Changes to resume layout or styling.
+- Changes to the resume data model or persistence API.
+- New editing capabilities.

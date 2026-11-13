@@ -87,6 +87,13 @@ test("saved drafts can be reopened and edited without replacing the styled revie
   assert.match(app, /Page \$\{index \+ 1\} of \$\{pageNodes\.length\}/);
 });
 
+test("pagination does not detach a focused editor and flushes after editing focus leaves", () => {
+  assert.match(app, /container\.contains\(document\.activeElement\)\s*&&\s*document\.activeElement\.matches\("\.resume-edit-control"\)/);
+  assert.match(app, /resumePaginationPending\s*=\s*true/);
+  assert.match(app, /resumePaginationPending\s*&&\s*!container\.querySelector\("\.resume-edit-control:focus"\)/);
+  assert.match(app, /paginateResume\(container\)/);
+});
+
 test("saved-only PDF export excludes review UI and preserves the draft filename privacy", () => {
   assert.match(app, /if \(!currentResumeDraft \|\| editingResume \|\| hasUnsavedResumeEdits \|\| isSavingResume\) return/);
   assert.match(app, /document\.title = `resume-draft-\$\{safeDraftId\}`/);

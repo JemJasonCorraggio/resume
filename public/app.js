@@ -36,6 +36,7 @@
   let hasUnsavedResumeEdits = false;
   let isSavingResume = false;
   let resumeLayoutBlocks = [];
+  let resumePaginationPending = false;
 
   function make(tag, className, text) {
     const element = document.createElement(tag);
@@ -200,6 +201,11 @@
 
   function paginateResume(container) {
     if (!container || !resumeLayoutBlocks.length) return;
+    if (container.contains(document.activeElement) && document.activeElement.matches(".resume-edit-control")) {
+      resumePaginationPending = true;
+      return;
+    }
+    resumePaginationPending = false;
     const pageNodes = [];
     let activeSection = null;
 
@@ -1344,6 +1350,14 @@
   document.querySelector("#resume-save-button").addEventListener("click", saveResumeDraft);
   document.querySelector("#resume-cancel-button").addEventListener("click", cancelResumeEditing);
   document.querySelector("#resume-export-button").addEventListener("click", exportSavedResume);
+  document.querySelector("#assembled-resume").addEventListener("focusout", () => {
+    requestAnimationFrame(() => {
+      const container = document.querySelector("#assembled-resume");
+      if (resumePaginationPending && !container.querySelector(".resume-edit-control:focus")) {
+        paginateResume(container);
+      }
+    });
+  });
   document.querySelector("#resume-back-link").addEventListener("click", (event) => {
     if (!confirmDiscardResumeChanges()) event.preventDefault();
   });
