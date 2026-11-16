@@ -104,6 +104,15 @@ test("pagination measures printable content and applies identical page breaks to
   assert.match(app, /if \(!pageBreaks && pageContent\.scrollHeight > pageContent\.clientHeight \+ 1\)/);
 });
 
+test("repeated pagination keeps section identity independent from detached DOM elements", () => {
+  assert.match(app, /function collectResumeLayoutBlocks\(container\)[\s\S]*let sectionId = 0;[\s\S]*sectionId: currentSectionId/);
+  assert.match(app, /function sectionFor\(pageContent, sourceSectionId\)[\s\S]*String\(sourceSectionId\)/);
+  assert.match(app, /const sameSection = activeSection\?\.dataset\.sourceSection === String\(block\.sectionId\)/);
+  assert.match(app, /const copiedBlocks = resumeLayoutBlocks\.map\(\(block\) => \(\{\s*\.\.\.block,\s*nodes: block\.nodes\?\.map\(\(node\) => nodeCopies\.get\(node\)\)/);
+  assert.match(app, /return layoutResumePages\(measurementContainer, copiedBlocks\)/);
+  assert.doesNotMatch(app, /_resumeLayoutId|block\.section\b/);
+});
+
 test("review annotations share one exclusion boundary in pagination and PDF output", () => {
   assert.match(app, /"resume-manual-note resume-review-only"/);
   assert.match(app, /"resume-evidence resume-review-only"/);
@@ -161,4 +170,12 @@ test("skill category deletion confirms by name and protects the Languages catego
   assert.match(app, /if \(editingResume && !isLanguagesCategory\) \{\s*group\.append\(editAction\("Delete category"/);
   assert.match(app, /if \(!window\.confirm\(`Delete the "\$\{currentCategory\.name\}" category and all of its skills\?`\)\) return;\s*editingResume\.skillsAndLanguages\.skillsCategories\.splice\(currentCategoryIndex, 1\)/);
   assert.match(app, /skillsCategories\.splice\(currentCategoryIndex, 1\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
+});
+
+test("structural skill and experience edits mark the draft and rerender without saving", () => {
+  assert.match(app, /skillsCategories\[currentCategoryIndex\]\.skills\.splice\(index, 1\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
+  assert.match(app, /skillsCategories\[currentCategoryIndex\]\.skills\.push\(\{\s*name: "",\s*manualAdded: true,\s*\}\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
+  assert.match(app, /experience\[currentEntryIndex\]\.bullets\.splice\(bulletIndex, 1\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
+  assert.match(app, /experience\[currentEntryIndex\]\.bullets\.push\(\{\s*text: "",\s*manualAdded: true\s*\}\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
+  assert.match(app, /async function saveResumeDraft\(\)[\s\S]*method: "PUT"/);
 });

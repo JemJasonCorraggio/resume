@@ -143,6 +143,7 @@
 
   function collectResumeLayoutBlocks(container) {
     const blocks = [];
+    let sectionId = 0;
     for (const child of [...container.children]) {
       if (child.classList.contains("resume-header")) {
         blocks.push({ type: "header", nodes: [child] });
@@ -150,12 +151,14 @@
       }
 
       const section = child;
+      const currentSectionId = sectionId;
+      sectionId += 1;
       const heading = section.firstElementChild;
       const content = [...section.children].slice(1);
       if (section.querySelector(".resume-experience-entry")) {
         const entries = content.filter((node) => node.classList.contains("resume-experience-entry"));
         let headingIncluded = false;
-        if (!entries.length) blocks.push({ type: "section", section, nodes: [heading] });
+        if (!entries.length) blocks.push({ type: "section", sectionId: currentSectionId, nodes: [heading] });
         for (const [entryIndex, entry] of entries.entries()) {
           const entryChildren = [...entry.children];
           const companyRow = entryChildren[0];
@@ -164,21 +167,21 @@
           const addButton = entryChildren.find((node) => node.matches("button"));
           const rowNodes = [companyRow, titleRow].filter(Boolean);
           if (!headingIncluded) {
-            blocks.push({ type: "section", section, nodes: [heading, ...rowNodes] });
+            blocks.push({ type: "section", sectionId: currentSectionId, nodes: [heading, ...rowNodes] });
             headingIncluded = true;
           } else {
-            blocks.push({ type: "section", section, nodes: rowNodes });
+            blocks.push({ type: "section", sectionId: currentSectionId, nodes: rowNodes });
           }
           for (const bullet of [...(bullets?.children || [])]) {
-            blocks.push({ type: "bullet", section, entryIndex, node: bullet });
+            blocks.push({ type: "bullet", sectionId: currentSectionId, entryIndex, node: bullet });
           }
-          if (addButton) blocks.push({ type: "section", section, nodes: [addButton] });
+          if (addButton) blocks.push({ type: "section", sectionId: currentSectionId, nodes: [addButton] });
         }
         continue;
       }
 
       if (!content.length) {
-        blocks.push({ type: "section", section, nodes: [heading] });
+        blocks.push({ type: "section", sectionId: currentSectionId, nodes: [heading] });
         continue;
       }
 
@@ -194,8 +197,8 @@
           index += 1;
         }
       }
-      blocks.push({ type: "section", section, nodes: [heading, groupedContent.shift()] });
-      for (const node of groupedContent) blocks.push({ type: "section", section, nodes: [node] });
+      blocks.push({ type: "section", sectionId: currentSectionId, nodes: [heading, groupedContent.shift()] });
+      for (const node of groupedContent) blocks.push({ type: "section", sectionId: currentSectionId, nodes: [node] });
     }
     return blocks;
   }
@@ -215,25 +218,19 @@
       return content;
     }
 
-    function sectionFor(pageContent, sourceSection) {
+    function sectionFor(pageContent, sourceSectionId) {
       if (
         activeSection?.parentElement === pageContent &&
-        activeSection.dataset.sourceSection === String(sourceSection._resumeLayoutId)
+        activeSection.dataset.sourceSection === String(sourceSectionId)
       ) return activeSection;
       const section = make("section", "resume-section");
-      section.dataset.sourceSection = String(sourceSection._resumeLayoutId);
+      section.dataset.sourceSection = String(sourceSectionId);
       pageContent.append(section);
       activeSection = section;
       return section;
     }
 
     container.replaceChildren();
-    for (const [sectionIndex, section] of [...new Set(
-      layoutBlocks.filter((block) => block.section).map((block) => block.section),
-    )].entries()) {
-      section._resumeLayoutId = sectionIndex;
-    }
-
     let pageContent = newPage();
     for (const [blockIndex, block] of layoutBlocks.entries()) {
       if (pageBreaks?.has(blockIndex)) pageContent = newPage();
@@ -242,8 +239,8 @@
       if (block.type === "header") {
         destination = pageContent;
       } else {
-        const sameSection = activeSection?.dataset.sourceSection === String(block.section._resumeLayoutId);
-        destination = sameSection ? activeSection : sectionFor(pageContent, block.section);
+        const sameSection = activeSection?.dataset.sourceSection === String(block.sectionId);
+        destination = sameSection ? activeSection : sectionFor(pageContent, block.sectionId);
         if (block.type === "bullet") {
           const lastList = destination.lastElementChild;
           if (
@@ -277,7 +274,7 @@
         if (block.type === "header") {
           nodes.forEach((node) => pageContent.append(node));
         } else {
-          const section = sectionFor(pageContent, block.section);
+          const section = sectionFor(pageContent, block.sectionId);
           if (block.type === "bullet") {
             const list = make("ul", "resume-bullets resume-bullet-fragment");
             list.dataset.entryIndex = String(block.entryIndex);
@@ -321,7 +318,6 @@
 
     const copiedBlocks = resumeLayoutBlocks.map((block) => ({
       ...block,
-      section: block.section ? nodeCopies.get(block.section) : undefined,
       nodes: block.nodes?.map((node) => nodeCopies.get(node)),
       node: block.node ? nodeCopies.get(block.node) : undefined,
     }));

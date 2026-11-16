@@ -2746,3 +2746,100 @@ Add or update tests covering:
 - Changing resume content, typography, or page dimensions.
 - Automatically rewriting or shortening resume content.
 - Adding manual page-break controls.
+
+## 35. Task: Fix resume pagination breaking structural editing operations
+Fix a pagination bug that causes skill and experience editing operations to fail with:
+
+`Cannot read properties of undefined (reading '_resumeLayoutId')`
+
+The failure occurs when pagination attempts to measure a previously paginated resume. Layout blocks retain references to original section DOM elements, but those elements are detached when the pagination renderer rebuilds the document.
+
+Correct the pagination model so that layout metadata remains valid across repeated measurements and renders.
+
+### 1. Use Stable Section Identifiers
+- Stop using DOM element references as the identity of resume sections.
+- Assign each logical resume section a stable identifier when collecting layout blocks.
+- Store that identifier directly on each relevant layout block.
+- Use the identifier when grouping blocks into sections and creating page fragments.
+- Do not depend on reading `_resumeLayoutId` from a DOM element.
+- Preserve the same logical section identity across:
+  - Initial pagination.
+  - Subsequent pagination measurements.
+  - DOM cloning.
+  - Page rebuilding.
+  - Editing operations.
+
+A layout block may retain references to its content nodes where necessary, but its section identity must be independent of those nodes.
+
+### 2. Correct Pagination Measurement
+Update `measureResumePagination()` and `layoutResumePages()` to use the stable section identifiers.
+- Mapping original content nodes to their cloned counterparts must continue to work.
+- Section identifiers must survive cloning without requiring a corresponding source section DOM element.
+- Measurement must work when the live resume is already divided into multiple page wrappers.
+- Repeated measurement and rendering must not invalidate the layout metadata.
+- Preserve the existing exclusion of review-only annotations from printable-content measurements.
+- Preserve current page-break rules and page dimensions.
+
+Do not solve this by simply suppressing the exception or skipping blocks whose section reference is missing. All resume content must remain represented in pagination.
+
+### 3. Restore Structural Editing Operations
+Verify that all existing structural editing operations work again:
+- Remove a skill.
+- Add a skill.
+- Delete a skill category.
+- Add an experience bullet.
+- Remove an experience bullet.
+
+For each operation:
+- Update `editingResume` correctly.
+- Mark the draft as having unsaved changes.
+- Recalculate pagination.
+- Re-render the editor with the updated content.
+- Update the save controls and status.
+- Preserve the existing provenance behavior for generated and manually added content.
+
+The pagination operation must not throw an exception that prevents the editing handler from completing.
+
+### 4. Preserve Save and Cancel Behavior
+- Structural edits must not initiate a save automatically.
+- The Save button should enter its loading state only when an actual save operation is initiated.
+- Saving must persist the updated resume normally.
+- Cancelling must restore the previously saved draft.
+- A failed pagination calculation must not leave the save controls or editor in an inconsistent state.
+- Do not change draft versioning, persistence, or concurrency behavior.
+
+### Acceptance Criteria
+- No `_resumeLayoutId` undefined error occurs during normal editing.
+- Adding and removing skills works.
+- Deleting skill categories works.
+- Adding and removing experience bullets works.
+- Every operation updates the visible resume immediately.
+- Every operation updates the unsaved-changes state.
+- Pagination recalculates correctly after each operation.
+- The Save button does not enter a loading state until Save is actually selected.
+- Saving and reopening a modified draft preserves all changes.
+- Cancelling editing restores the previously saved version.
+- Evidence links and manual-edit annotations remain excluded from printable pagination.
+- Existing page boundaries and PDF export behavior remain intact.
+
+### Tests
+Add regression tests covering:
+1. Initial pagination followed by a second pagination measurement.
+2. Repeated pagination of an already paginated resume.
+3. Adding and removing individual skills.
+4. Deleting a skill category.
+5. Adding and removing experience bullets.
+6. Multiple consecutive structural edits without refreshing the page.
+7. Structural edits that increase and decrease the number of pages.
+8. Saving after structural edits and reopening the draft.
+9. Cancelling after structural edits.
+10. Confirming that structural edits do not initiate network save requests.
+
+Include a regression test that reproduces the original failure: paginate a resume, then invoke pagination again using the existing layout blocks. This must complete without an exception.
+
+### Out of Scope
+- Adding new skill categories.
+- Changing resume content generation.
+- Changing the resume data schema.
+- Changing the visual styling or pagination rules.
+- Changing PDF export functionality beyond ensuring existing behavior continues to work.
