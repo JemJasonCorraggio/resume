@@ -203,6 +203,8 @@ export async function extractJobAnalysis(ai, description, maxTokens, gatewayId) 
     throw new AIOutputInvalidError("Workers AI returned an invalid response");
   }
 
+  console.info(parsed)
+
   const analysis = validateExtraction(parsed);
   return analysis;
 }
