@@ -214,8 +214,9 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
   if (!Array.isArray(value.experience)) throw new AIOutputInvalidError("Workers AI returned invalid experience");
 
   const allIds = inventoryRecordIds(inventory);
-  const summaryIds = new Set(value.summary.sourceRecordIds);
-  if (summaryIds.size !== value.summary.sourceRecordIds.length || value.summary.sourceRecordIds.some((id) => typeof id !== "string" || !allIds.has(id))) {
+  const summaryIds = [...new Set(value.summary.sourceRecordIds)];
+
+  if (summaryIds.some((id) => typeof id !== "string" || !allIds.has(id))) {
     throw new AIOutputInvalidError("Workers AI returned invalid summary provenance");
   }
 
@@ -285,7 +286,7 @@ function validateGeneratedContent(value, inventory, employmentInOrder) {
     return { employmentRecordId: entry.employmentRecordId, bullets };
   });
 
-  return { title: value.title.trim(), summary: { text: value.summary.text.trim(), sourceRecordIds: [...summaryIds] }, skillsCategories: cleanSkills, experience };
+  return { title: value.title.trim(), summary: { text: value.summary.text.trim(), sourceRecordIds: summaryIds }, skillsCategories: cleanSkills, experience };
 }
 
 function employmentOrder(inventory) {
