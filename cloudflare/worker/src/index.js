@@ -135,6 +135,8 @@ async function handleCreateJob(request, env) {
     console.error("Job analysis failed:", error instanceof Error ? error.name : "Unknown error");
     return errorResponse(500, "INTERNAL_ERROR", "The job analysis could not be completed.");
   }
+
+  console.info(extractedRequirements)
   let selection;
   try {
     selection = limitRequirements(
