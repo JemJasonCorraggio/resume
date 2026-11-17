@@ -185,6 +185,8 @@ export async function extractJobAnalysis(ai, description, maxTokens, gatewayId) 
     throw new AIOutputInvalidError("Workers AI returned no result");
   }
 
+  console.info(result)
+
   let parsed;
 
   if (typeof result.response === "string") {
@@ -202,8 +204,6 @@ export async function extractJobAnalysis(ai, description, maxTokens, gatewayId) 
   } else {
     throw new AIOutputInvalidError("Workers AI returned an invalid response");
   }
-
-  console.info(parsed)
 
   const analysis = validateExtraction(parsed);
   return analysis;
