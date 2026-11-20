@@ -2843,3 +2843,135 @@ Include a regression test that reproduces the original failure: paginate a resum
 - Changing the resume data schema.
 - Changing the visual styling or pagination rules.
 - Changing PDF export functionality beyond ensuring existing behavior continues to work.
+
+## 36. Task: Make weak or missing skill provenance a review warning instead of a generation error
+Change resume generation so that missing, incomplete, ambiguous, or questionable provenance for generated skills does not cause the entire resume generation process to fail.
+
+Instead, preserve the generated skill, attach a provenance warning to it, and make that warning visible when the user reviews its provenance.
+
+The user should be able to inspect the evidence, decide whether it adequately supports the skill, and remove the skill if necessary.
+
+### 1. Distinguish Invalid Structure from Weak Provenance
+Keep structural validation strict. Malformed AI output, unexpected fields, invalid data types, and other genuine schema violations should continue to produce errors.
+
+However, the following provenance conditions must not abort resume generation:
+- A skill has an empty `sourceRecordIds` array.
+- A skill has no matching inventory skill record.
+- A skill's name does not exactly match a canonical skill name.
+- A skill has ambiguous name matching.
+- A referenced record exists but is not one of the currently accepted skill provenance record types.
+- A provenance reference is otherwise questionable or insufficient to establish that the skill is supported.
+
+Do not automatically discard a generated skill solely because its provenance is questionable.
+
+### 2. Allow Multiple Valid Evidence Types
+A record may legitimately provide evidence for more than one kind of claim.
+
+For example, a leadership record can also document technical experience with AI-assisted development. Its classification as a leadership record must not automatically disqualify it from supporting a skill.
+
+Do not reject a skill merely because one of its provenance records is an accomplishment, project, or leadership record rather than a canonical skill record.
+
+Preserve valid existing record references, including references to records that have multiple legitimate uses.
+
+Do not weaken unrelated validation of experience-bullet provenance or other evidence relationships.
+
+### 3. Normalize Provenance and Attach Warnings
+Continue attempting deterministic skill-name matching against the canonical inventory.
+- Exact, unambiguous matches should automatically receive the corresponding skill record ID.
+- Existing valid provenance references should be preserved.
+- Duplicate provenance IDs should be deduplicated.
+- Ambiguous matches should not arbitrarily select one record.
+- Missing or questionable provenance should result in a warning attached to the affected skill.
+
+Each skill should retain its existing generated-content structure, with an additional optional `provenanceWarning` field.
+
+Example:
+
+```json
+{
+  "name": "AI-assisted development",
+  "sourceRecordIds": ["LEAD-008"],
+  "provenanceWarning": "Review this skill: its supporting evidence has not been verified as sufficient."
+}
+```
+
+For a skill with no usable evidence:
+
+```json
+{
+  "name": "JavaScript",
+  "sourceRecordIds": [],
+  "provenanceWarning": "No matching evidence was found in the inventory. Verify that this skill is supported before including it."
+}
+```
+
+Warnings should be specific enough to help the user understand why the skill needs attention. Do not produce a warning merely because a record belongs to a different evidence category if it otherwise provides legitimate support.
+
+### 4. Preserve Provenance Warnings Through Resume Assembly and Persistence
+Ensure that `provenanceWarning` survives:
+- Generated-content validation and normalization.
+- Complete resume assembly.
+- Draft persistence.
+- Loading an existing saved draft.
+- Editing and saving a draft.
+
+Do not silently discard warnings when converting generated content into the assembled resume.
+
+When the user manually edits a skill, retain its existing evidence associations and warning unless the application has a reliable reason to update them. Manually editing the skill name must not automatically imply that its provenance has been verified.
+
+Manually added skills should also be allowed without provenance, but must be clearly identified as manually added rather than presented as AI-verified.
+
+### 5. Display Warnings in the Provenance Interface
+When viewing a skill's provenance:
+- Display its provenance warning prominently enough that the user notices it.
+- Display any available evidence records normally, even when a warning exists.
+- Explain when no evidence is available.
+- Allow the user to inspect all referenced records.
+- Do not prevent the user from removing the skill through the existing editing interface.
+
+In the resume review interface, the clickable text or control used to open skill provenance must display a warning icon whenever that skill has a provenance warning.
+
+The icon should be visible before opening the provenance details so the user knows which skills need inspection.
+
+Skills without warnings should retain the existing appearance and interaction.
+
+Use an accessible warning indicator with an appropriate text alternative; do not rely on color alone.
+
+### 6. Keep Generation and Saving Functional
+A questionable skill provenance reference must not:
+- Abort resume generation.
+- Prevent the complete resume from being assembled.
+- Prevent the draft from being saved.
+- Prevent the draft from being reopened.
+- Prevent PDF export.
+
+Warnings should remain associated with the relevant skills throughout these operations.
+
+Genuine malformed output and unrelated validation errors must still be handled normally.
+
+### 7. Acceptance Criteria
+- A skill with no provenance can be generated with a warning instead of failing generation.
+- A skill whose name cannot be matched to the canonical inventory can be generated with a warning.
+- Ambiguous skill-name matching produces a warning without arbitrarily selecting a record.
+- A leadership record can legitimately support a technical skill.
+- Existing valid provenance references are preserved.
+- Duplicate provenance IDs are normalized.
+- Questionable provenance does not cause the entire resume generation to fail.
+- Warnings survive assembly, saving, and reopening drafts.
+- The provenance control displays a warning icon for affected skills.
+- Opening provenance displays the associated warning and available evidence.
+- The user can remove a skill with questionable provenance.
+- Skills without warnings retain their normal provenance interface.
+- Manually added skills are distinguishable from AI-generated skills and are not falsely represented as verified.
+- Genuine schema violations still produce errors.
+- Existing experience-bullet provenance validation remains intact.
+- Existing editing, persistence, and PDF export behavior continues to work.
+
+### Out of Scope
+- Automatically deciding whether a questionable skill should be removed.
+- Automatically rewriting generated skill names to force a provenance match.
+- Requiring the AI to generate replacement skills.
+- Changing the canonical inventory or its record classifications.
+- Adding a general-purpose evidence-scoring system.
+
+The user remains responsible for deciding whether a skill with questionable evidence belongs on the final resume.

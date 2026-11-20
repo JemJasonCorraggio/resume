@@ -46,7 +46,7 @@ test("skills stay in ordered comma-separated category paragraphs with Languages 
   assert.match(app, /make\("p",\s*"resume-skills-category"\)/);
   assert.match(app, /make\("strong",\s*"resume-skill-category-name",\s*`\$\{category\.name\}:`\)/);
   assert.match(app, /group\.append\(document\.createTextNode\(", "\)\)/);
-  assert.match(app, /skillItem\.append\(evidenceControl\(skill\.sourceRecordIds, `skill \$\{skill\.name\}`\)\)/);
+  assert.match(app, /skillItem\.append\(evidenceControl\(\s*skill\.sourceRecordIds \|\| \[\],\s*`skill \$\{skill\.name\}`,\s*skill\.provenanceWarning \|\| ""/);
   assert.match(app, /make\("p",\s*"resume-fixed-note",\s*resume\.skillsAndLanguages\.FMPNote\)/);
   assert.match(styles, /\.resume-skills-category\s*\{[^}]*margin:\s*0 0 3pt/);
 });
@@ -71,6 +71,14 @@ test("evidence controls and review warnings remain connected to generated conten
   assert.match(app, /evidenceControl\(bullet\.sourceRecordIds,\s*bullet\.text\)/);
   assert.match(app, /renderResumeWarnings\(warningsElement,\s*draft\.warnings/);
   assert.match(app, /Missing evidence record:/);
+});
+
+test("skill provenance warnings show an accessible icon, warning details, and empty-evidence text", () => {
+  assert.match(app, /indicator\.setAttribute\("role", "img"\)/);
+  assert.match(app, /indicator\.setAttribute\("aria-label", "Provenance warning"\)/);
+  assert.match(app, /make\("p", "evidence-warning", provenanceWarning\)/);
+  assert.match(app, /No evidence records are available\./);
+  assert.match(styles, /\.evidence-warning\s*\{[^}]*font-weight:\s*700/);
 });
 
 test("saved drafts can be reopened and edited without replacing the styled review", () => {

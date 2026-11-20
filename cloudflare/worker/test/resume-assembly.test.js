@@ -104,3 +104,18 @@ test("assembled resume captures a snapshot of fixed configuration values", () =>
   assert.notEqual(draft.resume.header.name, "Changed Name");
   fixedConfig.resume.header.name = "Jason/Jem Corraggio";
 });
+
+test("assembly preserves warned skills with no provenance and rejects malformed warning fields", () => {
+  const generated = generatedContent();
+  generated.skillsCategories[0].skills = [{
+    name: "Unlisted skill",
+    sourceRecordIds: [],
+    provenanceWarning: "No matching evidence was found; verify this skill before including it.",
+  }];
+  const draft = assemble(generated);
+  assert.deepEqual(draft.resume.skillsAndLanguages.skillsCategories[0].skills[0], generated.skillsCategories[0].skills[0]);
+
+  const malformed = generatedContent();
+  malformed.skillsCategories[0].skills[0].provenanceWarning = 42;
+  assert.throws(() => assemble(malformed), /Generated skill is invalid/);
+});

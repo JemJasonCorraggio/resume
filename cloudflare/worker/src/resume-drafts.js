@@ -60,9 +60,13 @@ function validStringArray(value, label) {
 }
 
 function validateEditableItem(item, label, { allowFixed = false } = {}) {
-  exactOptionalKeys(item, ["name"], ["sourceRecordIds", "manualAdded", "manuallyEdited", "contentOrigin"], label);
+  exactOptionalKeys(item, ["name"], ["sourceRecordIds", "manualAdded", "manuallyEdited", "contentOrigin", "provenanceWarning"], label);
   if (typeof item.name !== "string") throw new TypeError(`${label}.name must be a string`);
   if ("sourceRecordIds" in item) validStringArray(item.sourceRecordIds, `${label}.sourceRecordIds`);
+  if ("provenanceWarning" in item &&
+      (typeof item.provenanceWarning !== "string" || !item.provenanceWarning.trim())) {
+    throw new TypeError(`${label}.provenanceWarning must be a nonempty string`);
+  }
   if ("manualAdded" in item && typeof item.manualAdded !== "boolean") {
     throw new TypeError(`${label}.manualAdded must be a boolean`);
   }
@@ -75,6 +79,9 @@ function validateEditableItem(item, label, { allowFixed = false } = {}) {
   if (allowFixed && "sourceRecordIds" in item) {
     throw new TypeError(`${label} fixed content cannot have generated provenance`);
   }
+  if (allowFixed && "provenanceWarning" in item) {
+    throw new TypeError(`${label} fixed content cannot have generated provenance warnings`);
+  }
   if (allowFixed && !item.manualAdded && item.contentOrigin !== "fixed") {
     throw new TypeError(`${label} must remain marked as fixed content or be marked manually added`);
   }
@@ -84,15 +91,20 @@ function validateEditableItem(item, label, { allowFixed = false } = {}) {
   if (item.manualAdded && "sourceRecordIds" in item) {
     throw new TypeError(`${label} cannot be manually added and have generated provenance`);
   }
+  if (item.manualAdded && "provenanceWarning" in item) {
+    throw new TypeError(`${label} cannot be manually added and have generated provenance warnings`);
+  }
   if (item.manualAdded && "contentOrigin" in item) {
     throw new TypeError(`${label} cannot be manually added and marked as fixed content`);
   }
-  if (!allowFixed && !item.manualAdded && !("sourceRecordIds" in item && item.sourceRecordIds.length)) {
+  if (!allowFixed && !item.manualAdded &&
+      (!("sourceRecordIds" in item) ||
+       (!item.sourceRecordIds.length && !("provenanceWarning" in item)))) {
     throw new TypeError(`${label} must retain provenance or be marked manually added`);
   }
 }
 
-function validateProvenanceSequence(originalItems, editedItems, textField, label) {
+function validateProvenanceSequence(originalItems, editedItems, textField, label, preserveWarning = false) {
   const originalGenerated = originalItems.filter((item) => Array.isArray(item.sourceRecordIds));
   const editedGenerated = editedItems.filter((item) => Array.isArray(item.sourceRecordIds));
   let originalIndex = 0;
@@ -107,6 +119,9 @@ function validateProvenanceSequence(originalItems, editedItems, textField, label
     const original = originalGenerated[originalIndex];
     if (edited[textField] !== original[textField] && edited.manuallyEdited !== true) {
       throw new TypeError(`${label} text edits must be marked manually edited`);
+    }
+    if (preserveWarning && edited.provenanceWarning !== original.provenanceWarning) {
+      throw new TypeError(`${label} provenance warnings must remain associated with their original generated item`);
     }
     originalIndex += 1;
   }
@@ -286,6 +301,7 @@ export function validateEditedResume(resume, originalResume) {
         category.skills,
         "name",
         `Skill category ${categoryIndex}`,
+        true,
       );
     }
   }

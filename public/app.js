@@ -427,10 +427,22 @@
       .join(" · ");
   }
 
-  function renderEvidenceControl(wrapper, ids, label) {
+  function renderEvidenceControl(wrapper, ids, label, provenanceWarning = "") {
     const unresolved = [];
     wrapper.replaceChildren();
-    wrapper.append(make("summary", "evidence-summary", "Supporting evidence"));
+    const summary = make("summary", "evidence-summary");
+    if (provenanceWarning) {
+      const indicator = make("span", "evidence-warning-icon", "!");
+      indicator.setAttribute("role", "img");
+      indicator.setAttribute("aria-label", "Provenance warning");
+      summary.append(indicator, document.createTextNode(" "));
+    }
+    summary.append(document.createTextNode("Supporting evidence"));
+    wrapper.append(summary);
+    if (provenanceWarning) wrapper.append(make("p", "evidence-warning", provenanceWarning));
+    if (!ids.length) {
+      wrapper.append(make("p", "evidence-empty", "No evidence records are available."));
+    }
     for (const id of ids) {
       const item = recordById.get(id);
       if (!item) unresolved.push(id);
@@ -451,11 +463,12 @@
     wrapper.setAttribute("aria-label", `Supporting evidence for ${label}`);
   }
 
-  function evidenceControl(ids, label) {
+  function evidenceControl(ids, label, provenanceWarning = "") {
     const wrapper = make("details", "resume-evidence resume-review-only");
     wrapper.dataset.recordIds = JSON.stringify(ids);
     wrapper.dataset.label = label;
-    renderEvidenceControl(wrapper, ids, label);
+    wrapper.dataset.provenanceWarning = provenanceWarning;
+    renderEvidenceControl(wrapper, ids, label, provenanceWarning);
     return wrapper;
   }
 
@@ -501,6 +514,7 @@
         wrapper,
         JSON.parse(wrapper.dataset.recordIds),
         wrapper.dataset.label,
+        wrapper.dataset.provenanceWarning,
       );
     }
     const resume = editingResume || currentResumeDraft?.resume;
@@ -664,8 +678,13 @@
           }));
         if (skill.manualAdded) skillItem.append(manualContentNote("added"));
         else if (skill.manuallyEdited) skillItem.append(manualContentNote("edited"));
-        if (!skill.manualAdded && Array.isArray(skill.sourceRecordIds)) {
-          skillItem.append(evidenceControl(skill.sourceRecordIds, `skill ${skill.name}`));
+        if (!skill.manualAdded &&
+            (Array.isArray(skill.sourceRecordIds) || skill.provenanceWarning)) {
+          skillItem.append(evidenceControl(
+            skill.sourceRecordIds || [],
+            `skill ${skill.name}`,
+            skill.provenanceWarning || "",
+          ));
         }
         if (editingResume) {
           skillItem.append(editAction(`Remove ${category.name} skill ${index + 1}`, () => {

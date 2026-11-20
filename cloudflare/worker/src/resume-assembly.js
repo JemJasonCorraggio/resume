@@ -120,8 +120,10 @@ function validateGenerated(value) {
       throw new GeneratedResumeContentError("Generated skills category is invalid");
     }
     for (const skill of category.skills) {
-      exactGeneratedKeys(skill, ["name", "sourceRecordIds"], "Generated skill");
-      if (!nonemptyString(skill.name) || !validNonemptyStringArray(skill.sourceRecordIds)) {
+      exactOptionalGeneratedKeys(skill, ["name", "sourceRecordIds"], ["provenanceWarning"], "Generated skill");
+      if (!nonemptyString(skill.name) || !validStringArray(skill.sourceRecordIds) ||
+          (!skill.sourceRecordIds.length && !nonemptyString(skill.provenanceWarning)) ||
+          ("provenanceWarning" in skill && !nonemptyString(skill.provenanceWarning))) {
         throw new GeneratedResumeContentError("Generated skill is invalid");
       }
     }
@@ -135,6 +137,15 @@ function exactGeneratedKeys(value, expected, label) {
   const actual = Object.keys(value).sort();
   const required = [...expected].sort();
   if (actual.length !== required.length || actual.some((key, index) => key !== required[index])) {
+    throw new GeneratedResumeContentError(`${label} has missing or unexpected properties`);
+  }
+}
+
+function exactOptionalGeneratedKeys(value, required, optional, label) {
+  if (!isObject(value)) throw new GeneratedResumeContentError(`${label} must be an object`);
+  const keys = Object.keys(value);
+  if (required.some((key) => !keys.includes(key)) ||
+      keys.some((key) => !required.includes(key) && !optional.includes(key))) {
     throw new GeneratedResumeContentError(`${label} has missing or unexpected properties`);
   }
 }

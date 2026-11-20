@@ -133,6 +133,45 @@ test("draft persistence stores independent snapshots and retrieves by draft ID",
   assert.doesNotMatch(db.calls[0].sql, /ON CONFLICT/);
 });
 
+test("skill provenance warnings survive reopening, manual edits, and saving", async () => {
+  const db = createD1TestDouble();
+  const draft = makeDraft("draft-skill-warning");
+  const skill = draft.resume.skillsAndLanguages.skillsCategories[0].skills[0];
+  skill.provenanceWarning = "Review whether the referenced evidence adequately supports this skill.";
+  await insertResumeDraft(db, draft);
+
+  const reopened = await getResumeDraftById(db, draft.draftId);
+  assert.deepEqual(
+    reopened.resume.skillsAndLanguages.skillsCategories[0].skills[0],
+    skill,
+  );
+  const edited = structuredClone(reopened.resume);
+  markLanguagesFixed(edited);
+  const editedSkill = edited.skillsAndLanguages.skillsCategories[0].skills[0];
+  editedSkill.name = "Renamed skill";
+  editedSkill.manuallyEdited = true;
+  assert.doesNotThrow(() => validateEditedResume(edited, reopened.resume));
+
+  const warningRemoved = structuredClone(edited);
+  delete warningRemoved.skillsAndLanguages.skillsCategories[0].skills[0].provenanceWarning;
+  assert.throws(
+    () => validateEditedResume(warningRemoved, reopened.resume),
+    /provenance warnings must remain associated/,
+  );
+
+  const response = await handleRequest(
+    putRequest(draft.draftId, { resume: edited, version: reopened.version }),
+    { DB: db },
+  );
+  assert.equal(response.status, 200);
+  const saved = await response.json();
+  assert.equal(
+    saved.resume.skillsAndLanguages.skillsCategories[0].skills[0].provenanceWarning,
+    skill.provenanceWarning,
+  );
+  assert.deepEqual((await getResumeDraftById(db, draft.draftId)).resume, saved.resume);
+});
+
 test("resume generation creates separate persisted drafts that reopen by draft ID", async () => {
   const db = createD1TestDouble();
   db.jobs.set("job-1", {
