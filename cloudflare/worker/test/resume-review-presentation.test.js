@@ -180,6 +180,14 @@ test("skill category deletion confirms by name and protects the Languages catego
   assert.match(app, /skillsCategories\.splice\(currentCategoryIndex, 1\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
 });
 
+test("editing exposes an Add skill category control before the fixed Languages category", () => {
+  assert.match(app, /Add skill category/);
+  assert.match(app, /const languagesIndex = categories\.findIndex/);
+  assert.match(app, /if \(languagesIndex >= 0\) categories\.splice\(languagesIndex, 0, newCategory\)/);
+  assert.match(app, /name: "",\s*skills: \[\]/);
+  assert.match(app, /markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
+});
+
 test("structural skill and experience edits mark the draft and rerender without saving", () => {
   assert.match(app, /skillsCategories\[currentCategoryIndex\]\.skills\.splice\(index, 1\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);
   assert.match(app, /skillsCategories\[currentCategoryIndex\]\.skills\.push\(\{\s*name: "",\s*manualAdded: true,\s*\}\);\s*markResumeChanged\(\);\s*renderAssembledResume\(currentResumeDraft\)/);

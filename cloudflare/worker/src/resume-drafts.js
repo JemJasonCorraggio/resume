@@ -173,6 +173,15 @@ function matchEditedSkillCategories(categories, originalCategories, originalLang
       const result = matchFrom(categoryIndex + 1, originalIndex, [...matches, originalIndex]);
       if (result) return result;
     }
+
+    if (!isLanguagesCategory) {
+      const isManualCategory = Array.isArray(category?.skills) &&
+        category.skills.every((skill) => skill?.manualAdded === true);
+      if (isManualCategory) {
+        const result = matchFrom(categoryIndex + 1, previousOriginalIndex, [...matches, null]);
+        if (result) return result;
+      }
+    }
     return null;
   }
 
@@ -269,6 +278,7 @@ export function validateEditedResume(resume, originalResume) {
   }
   for (const [categoryIndex, category] of categories.entries()) {
     const originalCategoryIndex = categoryMatches[categoryIndex];
+    const isNewCategory = originalCategoryIndex === null;
     const isLanguagesCategory = originalCategoryIndex === originalLanguagesIndex;
     exactOptionalKeys(
       category,
@@ -278,6 +288,24 @@ export function validateEditedResume(resume, originalResume) {
     );
     if (typeof category.name !== "string" || !Array.isArray(category.skills)) {
       throw new TypeError(`Resume skill category ${categoryIndex} is invalid`);
+    }
+    if (isNewCategory) {
+      if (!category.name.trim()) {
+        throw new TypeError(`Resume skill category ${categoryIndex} name is required`);
+      }
+      if (category.categoryRole !== undefined || category.name === "Languages") {
+        throw new TypeError("Only the required category may represent Languages");
+      }
+      for (const [skillIndex, skill] of category.skills.entries()) {
+        validateEditableItem(
+          skill,
+          `resume.skillsAndLanguages.skillsCategories[${categoryIndex}].skills[${skillIndex}]`,
+        );
+        if (!skill.manualAdded) {
+          throw new TypeError("Skills in a new category must be manually added");
+        }
+      }
+      continue;
     }
     if (isLanguagesCategory && category.categoryRole !== "languages") {
       if (category.categoryRole !== undefined || category.name !== "Languages") {

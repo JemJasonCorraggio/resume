@@ -310,6 +310,76 @@ test("draft validation permits deleting generated skill categories while preserv
   assert.equal(deletedAllEditable.skillsAndLanguages.FMPNote, draft.resume.skillsAndLanguages.FMPNote);
 });
 
+test("draft validation permits adding a manual skill category without duplicating Languages", () => {
+  const draft = makeDraft("draft-add-category");
+  const edited = structuredClone(draft.resume);
+  markLanguagesFixed(edited);
+  edited.skillsAndLanguages.skillsCategories.splice(-1, 0, {
+    name: "Cloud Platforms",
+    skills: [
+      { name: "AWS", manualAdded: true },
+      { name: "GCP", manualAdded: true },
+    ],
+  });
+
+  assert.equal(validateEditedResume(edited, draft.resume), edited);
+
+  const duplicateLanguages = structuredClone(edited);
+  duplicateLanguages.skillsAndLanguages.skillsCategories.splice(-1, 0, {
+    name: "Languages",
+    skills: [{ name: "German", manualAdded: true }],
+  });
+  assert.throws(() => validateEditedResume(duplicateLanguages, draft.resume), /Languages category/);
+
+  const emptyName = structuredClone(edited);
+  emptyName.skillsAndLanguages.skillsCategories.at(-2).name = "  ";
+  assert.throws(() => validateEditedResume(emptyName, draft.resume), /name is required/);
+});
+
+test("PUT and reopen persist a newly added skill category", async () => {
+  const db = createD1TestDouble();
+  const draft = makeDraft("draft-added-category");
+  await insertResumeDraft(db, draft);
+
+  const getResponse = await handleRequest(
+    new Request("https://worker.example/api/resume-drafts/draft-added-category"),
+    { DB: db },
+  );
+  const loaded = await getResponse.json();
+  const edited = structuredClone(loaded.resume);
+  markLanguagesFixed(edited);
+  const languagesIndex = edited.skillsAndLanguages.skillsCategories
+    .findIndex((category) => category.categoryRole === "languages");
+  edited.skillsAndLanguages.skillsCategories.splice(languagesIndex, 0, {
+    name: "Cloud Platforms",
+    skills: [
+      { name: "AWS", manualAdded: true },
+      { name: "GCP", manualAdded: true },
+    ],
+  });
+
+  const savedResponse = await handleRequest(
+    putRequest("draft-added-category", { resume: edited, version: loaded.version }),
+    { DB: db },
+  );
+  assert.equal(savedResponse.status, 200);
+
+  const reopenedResponse = await handleRequest(
+    new Request("https://worker.example/api/resume-drafts/draft-added-category"),
+    { DB: db },
+  );
+  const reopened = await reopenedResponse.json();
+  assert.equal(reopened.resume.skillsAndLanguages.skillsCategories[languagesIndex].name, "Cloud Platforms");
+  assert.deepEqual(
+    reopened.resume.skillsAndLanguages.skillsCategories[languagesIndex].skills,
+    [
+      { name: "AWS", manualAdded: true },
+      { name: "GCP", manualAdded: true },
+    ],
+  );
+  assert.equal(reopened.resume.skillsAndLanguages.skillsCategories.at(-1).categoryRole, "languages");
+});
+
 test("GET and PUT update only the addressed draft, preserve metadata, and enforce versions", async () => {
   const db = createD1TestDouble();
   const draft = makeDraft("draft-1");

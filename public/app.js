@@ -720,6 +720,19 @@
       }
       categoryIndex += 1;
     }
+    if (editingResume) {
+      skills.append(editAction("Add skill category", () => {
+        const categories = editingResume.skillsAndLanguages.skillsCategories;
+        const languagesIndex = categories.findIndex((category) =>
+          category.categoryRole === "languages" || category.name === "Languages"
+        );
+        const newCategory = { name: "", skills: [] };
+        if (languagesIndex >= 0) categories.splice(languagesIndex, 0, newCategory);
+        else categories.push(newCategory);
+        markResumeChanged();
+        renderAssembledResume(currentResumeDraft);
+      }, "button button-inline"));
+    }
     skills.append(editingResume
       ? editableField("p", "resume-fixed-note", resume.skillsAndLanguages.FMPNote, "FMP note",
         (value) => { editingResume.skillsAndLanguages.FMPNote = value; })

@@ -2975,3 +2975,36 @@ Genuine malformed output and unrelated validation errors must still be handled n
 - Adding a general-purpose evidence-scoring system.
 
 The user remains responsible for deciding whether a skill with questionable evidence belongs on the final resume.
+
+## 37. Task: Add skill categories to resume editing
+Allow users to add new skill categories while editing a resume.
+
+### Requirements
+1. Add an **Add skill category** control to the Skills and Languages section in editing mode.
+2. When selected, create a new empty category and allow the user to enter its name.
+3. The new category must support the existing skill-editing operations:
+   - Add individual skills.
+   - Edit skill names.
+   - Remove individual skills.
+4. New categories must appear in the resume preview using the existing category styling and layout.
+5. New categories must participate in pagination, including when adding or removing them changes the number of pages.
+6. New categories must be included in the saved resume and restored when the draft is reopened.
+7. New categories must follow the existing provenance behavior:
+   - Manually added skills must be marked as manually added, not presented as AI-verified.
+   - Existing provenance and provenance warnings must be preserved when editing existing skills.
+8. Preserve the fixed Languages category. Users must not be able to create a duplicate Languages category or use this feature to remove the existing one.
+9. New categories must be removable, subject to the same unsaved-change and save/cancel behavior as other resume edits.
+
+### Acceptance Criteria
+- Users can add, rename, populate, and remove a skill category.
+- Users can add, edit, and remove skills within a newly created category.
+- Changes immediately appear in the preview and update pagination.
+- New categories and their contents survive saving and reopening the draft.
+- Cancel restores the previously saved version.
+- Existing skill categories, Languages, provenance controls, and PDF export continue to work.
+- Adding or removing categories does not trigger an automatic save or regenerate resume content.
+
+### Out of Scope
+- AI-generated skill categories.
+- Changes to the canonical career inventory.
+- Reordering existing categories or changing the overall section order.
