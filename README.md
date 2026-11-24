@@ -1,378 +1,352 @@
-# resume
-An AI tool for tailoring a resume to a given job description while using only veritably true facts about the candidate
+# Resume Tailoring Tool
 
-## Career inventory schema
+An AI-powered application that tailors a resume to a specific job description using only verifiably supported facts about the candidate.
 
-[`career_inventory_schema.py`](./career_inventory_schema.py) defines the Python 3.11+ typed schema and standard-library validator for [`data/master-career-inventory.json`](./data/master-career-inventory.json). It is the source of truth for the local Python tools. The current schema version is **1.2.0**. The validator also accepts the baseline's **1.1.0** version for backward compatibility; use 1.2.0 for new or updated inventories. Additive optional fields require a minor version bump; incompatible changes require a major version bump.
+The application maintains a structured career inventory, analyzes job requirements, identifies relevant evidence, and generates an editable resume draft. Users can review evidence, edit the draft, save it, and export it as a PDF.
 
-Run the inventory audit and regression tests from the repository root:
+## Features
 
-```sh
+- **Career inventory:** A structured, versioned record of employment, accomplishments, skills, projects, leadership experience, education, and supporting evidence.
+- **Job analysis:** Extracts requirements from a job description and matches them against relevant career-inventory records.
+- **Resume generation:** Uses matched evidence to generate a tailored summary, skills, and experience bullets.
+- **Review and editing:** Displays supporting evidence and warnings, and allows users to edit and save resume drafts.
+- **PDF export:** Produces a paginated, US Letter resume through the browser's print dialog.
+- **Validation:** Checks inventory structure, record IDs, references, and compatibility between the Python and JavaScript validators.
+
+## Architecture
+
+The application has two primary components:
+
+**Frontend**
+- Static HTML, CSS, and JavaScript in `public/`.
+- Calls same-origin API endpoints under `/api`, configured in `public/config.js`.
+- Displays the inventory, job analyses, and saved resume drafts.
+
+**Backend**
+- A Cloudflare Pages Function forwards API requests through a Service Binding to the JavaScript Worker in `cloudflare/worker/`.
+- The Worker reads the career inventory through its Assets binding.
+- Workers AI performs job analysis and resume-content generation.
+- D1 stores completed job analyses and saved resume drafts.
+
+The local Python tools provide inventory validation and a lightweight development server. The Python schema in `career_inventory_schema.py` is the source of truth for local validation; the Worker implements the corresponding JavaScript rules. Parity tests check that both validators behave consistently.
+
+## Local Development
+
+### Requirements
+
+- Python 3.11 or later
+- Node.js 22 or later
+- npm
+
+The Python inventory tools use only the standard library. The Cloudflare Worker uses Wrangler, declared as a development dependency in `cloudflare/worker/package.json`.
+
+### Run the local inventory browser
+
+From the repository root:
+
+```bash
+python -m career_inventory_api
+```
+
+Open `http://127.0.0.1:8000`.
+
+This server reads `data/master-career-inventory.json` directly and serves the inventory browser and API without Cloudflare tooling. It does not provide the Workers AI job-analysis workflow.
+
+To use a different inventory file:
+
+```bash
+python -m career_inventory_api --inventory /path/to/inventory.json
+```
+
+Alternatively, set `CAREER_INVENTORY_PATH`.
+
+### Run the Cloudflare application locally
+
+Install the Worker dependencies:
+
+```bash
+cd cloudflare/worker
+npm install
+```
+
+Use two terminals.
+
+**Terminal 1 — Start the Worker:**
+
+```bash
+cd cloudflare/worker
+npm run dev
+```
+
+**Terminal 2 — Start Pages from the repository root:**
+
+```bash
+npm --prefix cloudflare/worker exec -- wrangler pages dev ./public --service INVENTORY_API=career-inventory-api
+```
+
+Open the Pages development URL, normally `http://127.0.0.1:8788`.
+
+The Pages Function forwards `/api` requests to the local Worker through the Service Binding. This environment supports the application API and Workers AI integration.
+
+### Local D1 database
+
+From `cloudflare/worker`, apply the migrations and start the Worker:
+
+```bash
+npx wrangler d1 migrations apply career-inventory-db --local
+npm run dev
+```
+
+The version-controlled migrations create the `jobs` and `resume_drafts` tables.
+
+## Testing and Validation
+
+Run the inventory audit and Python tests from the repository root:
+
+```bash
 python -m career_inventory_schema data/master-career-inventory.json
 python -m unittest test_career_inventory_schema.py
 python -m unittest test_career_inventory_api.py
 ```
 
-The audit exits unsuccessfully for schema, duplicate-ID, or broken-reference errors. It prints non-blocking warnings for unresolved verification questions and source notes that explicitly flag conflicts or uncorroborated claims. Diagnostics include the record and field path. `audit_inventory()` returns both `errors` and `warnings`; `validate_inventory()` remains available when only blocking errors are needed.
+The inventory audit reports blocking errors for schema violations, duplicate IDs, and broken references. It also reports non-blocking warnings for unresolved verification questions and source notes that explicitly identify conflicts or uncorroborated claims.
 
-### Looking up records and related evidence
+Run the Worker tests:
 
-[`career_inventory.py`](./career_inventory.py) provides `get_accomplishment()`, `get_skill()`, `get_employment()`, `get_project()`, and `get_leadership_example()` helpers. Each takes the loaded inventory and an ID, and returns a deep-copied record or `None` when the ID is not found. `get_related_evidence()` returns deep copies of records explicitly linked to the requested record in either direction; it returns an empty list for a known record without links and `None` for an unknown ID. Returned copies can be edited by callers without changing the source inventory.
-
-### Read-only inventory browser and Cloudflare deployment
-
-The browser consists of static HTML, CSS, and JavaScript in [`public/`](./public/).
-The browser calls same-origin endpoints under `/api`, configured centrally in
-[`public/config.js`](./public/config.js). In Cloudflare, a
-Pages Function in [`functions/api/inventory.js`](./functions/api/inventory.js)
-forwards that request through a Service Binding to the JavaScript Worker in
-[`cloudflare/worker/`](./cloudflare/worker/). The Worker reads the canonical
-inventory bundled through its Cloudflare Assets binding and runs the
-JavaScript port of the schema and audit rules in
-[`cloudflare/worker/src/validation.js`](./cloudflare/worker/src/validation.js).
-The root [`career_inventory_schema.py`](./career_inventory_schema.py) remains
-the validator source of truth for local Python tools; parity tests compare the
-Worker validator against it. Pages cannot run the local Python HTTP server or
-read the repository's working-tree files at runtime, so the Worker package
-includes the inventory needed in production.
-
-The API response contains `loaded`, `inventory`, and `validation` (`errors`
-and `warnings`). A file retrieval or JSON parse failure returns HTTP 500 with
-`loaded: false`; validation failures return the loaded inventory with the
-canonical audit errors. The frontend only renders these results; it does not
-implement inventory validation or upload rules. The same Pages app also
-submits job analyses and can reopen saved analyses and resume drafts. The browser uses
-the configurable `/api` base in `public/config.js`; Pages Functions forward
-requests through the existing Worker Service Binding, so browser traffic is
-same-origin and does not require CORS.
-
-#### Resume preview and PDF export
-
-Saved drafts are shown as US Letter pages with 0.6-inch margins. The browser
-lays out the preview blocks and page breaks using the same DOM and dimensions
-that are printed, and recalculates those breaks as fields are edited. Review
-evidence, warnings, editing controls, and page labels are excluded from print.
-
-To export, save the draft or cancel editing, then choose **Export saved PDF**.
-The browser's print dialog opens; select **Save as PDF**. The suggested
-filename uses the draft ID (`resume-draft-<draft-id>.pdf`), not contact or
-role information. Export is disabled while editing so unsaved content cannot
-be mistaken for the saved version. The browser print engine provides selectable
-text and preserves supported links.
-
-Run the local development server from the repository root:
-
-```sh
-python -m career_inventory_api
-```
-
-Open <http://127.0.0.1:8000>. This local server reads
-`data/master-career-inventory.json` directly and serves the same UI and API
-for inventory browsing without Cloudflare. Job analysis requires the Pages
-preview and Worker service binding described below. The local server uses
-Python's standard-library `http.server` and the existing inventory service and
-validator, with no third-party Python dependencies. Use
-`--inventory /path/to/inventory.json` or
-`CAREER_INVENTORY_PATH` to test another local file.
-
-For an end-to-end Cloudflare local preview, install Node.js 22+ and npm, then
-install the Worker tooling:
-
-```sh
-cd cloudflare/worker
-npm install
-```
-
-Use two terminals. Start the Worker:
-
-```sh
-cd cloudflare/worker
-npm run dev
-```
-
-Start Pages from the repository root:
-
-```sh
-npm --prefix cloudflare/worker exec -- wrangler pages dev ./public --service INVENTORY_API=career-inventory-api
-```
-
-Open the Pages dev URL (normally <http://127.0.0.1:8788>). The service binding
-routes `/api` requests to the local JavaScript Worker. The Python server above
-remains available for local inventory browsing without Cloudflare tooling.
-
-Run the Worker contract tests and the cross-language compatibility tests from
-the repository root:
-
-```sh
+```bash
 cd cloudflare/worker
 npm test
-cd ../..
+```
+
+Run the cross-language compatibility and API regression tests from the repository root:
+
+```bash
 python -m unittest test_cloudflare_worker.py test_career_inventory_api.py test_career_inventory_schema.py
 ```
 
-#### Deploying to Cloudflare
+The tests cover Worker behavior, API contracts, inventory validation, and compatibility between the Python and JavaScript validators. Worker tests mock AI responses and do not make billed model requests.
 
-Deploy the Worker first, then the Pages site. Requirements are Node.js 22+/npm
-and a Cloudflare account. Authenticate from the Worker directory with
-`npx wrangler login`. The deployed backend does not require a Python runtime.
+## Deployment
 
-```sh
-cd cloudflare/worker
-npm run deploy
-cd ../..
-npm --prefix cloudflare/worker exec -- wrangler pages deploy ./public --project-name career-inventory
-```
+Deployment requires a Cloudflare account and Wrangler authentication.
 
-`cloudflare/worker/wrangler.jsonc` names the Worker `career-inventory-api`,
-bundles `data/` as its internal asset binding, and disables the public
-`workers.dev` endpoint. `wrangler.jsonc` configures the Pages output directory
-and binds the Pages Function's `INVENTORY_API` service to that Worker. The
-frontend continues to call `/api/inventory`, so there is no hard-coded API
-hostname, production URL replacement, or cross-origin CORS configuration.
-Keep the configured Worker service name consistent with the deployed Worker
-name in each Pages environment.
+### 1. Configure D1
 
-The inventory file is included in the Worker deployment artifact, not
-published in the Pages `public/` directory. The Worker invokes its handler
-before checking bundled static assets and answers `/api/inventory`,
-`/api/ai/smoke-test`, and `/api/jobs`, so the raw inventory asset is not served
-as a public URL. The Pages Functions expose only these API routes. Before
-deploying the personal inventory, protect the Pages custom domain, `pages.dev`
-hostname, and preview deployments with Cloudflare Access; the Worker is not
-directly reachable, and its Service Binding is only available to the Pages
-Functions. Authentication is not implemented by this repository.
+From `cloudflare/worker`:
 
-#### Workers AI smoke test
-
-The Worker has a Workers AI binding for
-`@cf/meta/llama-3.1-8b-instruct-fast`. Wrangler configuration sets
-`AI_MAX_TOKENS` to `2048` and `AI_GATEWAY_ID` to `default`. All Workers AI
-invocations, including the smoke test, requirement extraction, and evidence
-matching, pass that gateway ID through the supported `env.AI.run()` gateway
-options. The default gateway is created in the authenticated Cloudflare
-account on its first request; to use a named gateway, change `AI_GATEWAY_ID`
-in `cloudflare/worker/wrangler.jsonc`. These are non-secret settings; no API
-key is stored in the repository.
-
-Authenticate Wrangler with `npx wrangler login` and use a remote Worker
-session to invoke the model:
-
-```sh
-cd cloudflare/worker
-npm run dev -- --remote
-```
-
-In another terminal, call the fixed-prompt endpoint:
-
-```sh
-curl -X POST http://127.0.0.1:8787/api/ai/smoke-test
-```
-
-A successful call returns `{ "ok": true, "response": "Workers AI is ready." }`.
-The same endpoint is available to application code at
-`POST /api/ai/smoke-test` through the Pages Service Binding. Invalid, truncated,
-or unexpected model output and invocation errors return a generic HTTP 502
-response; internal provider details are neither logged nor sent to the browser.
-Run the Worker unit tests with `npm test` from
-`cloudflare/worker` to verify the configured token limit and failure behavior
-without making a billed model request.
-
-##### Inspecting AI Gateway requests
-
-In the Cloudflare dashboard, select the account that owns the Worker, open
-**AI > AI Gateway**, select the gateway named by `AI_GATEWAY_ID` (initially
-`default`), and open **Logs**. Gateway logging is explicitly enabled for each
-invocation. Logs can show the model/provider, timestamp, status, token usage,
-cost, duration, and available provider error details. The Worker adds
-`application` and `operation` metadata (`smoke-test`, `job-analysis`, or
-`evidence-matching`) to help identify the request type.
-
-For each invocation, the Worker also emits a sanitized application log with
-the operation name and `aiGatewayLogId`. Match that ID to the Gateway log ID
-when investigating a failed request; the Worker does not log the prompt or
-model response. It also sends Cloudflare's per-request
-`cf-aig-collect-log-payload: false` header, so Gateway logs retain diagnostic
-metadata without storing request/response payloads. Gateway logging controls
-and available fields are described in
-Cloudflare's [AI Gateway logging documentation](https://developers.cloudflare.com/ai-gateway/observability/logging/)
-and [Workers AI binding reference](https://developers.cloudflare.com/ai-gateway/usage/worker-binding-methods/).
-
-To check the smoke-test request, run the remote command above and call
-`POST /api/ai/smoke-test`, then locate the matching operation and log ID in
-the dashboard. If it succeeds, submit a normal `POST /api/jobs` request to
-exercise requirement extraction; the corresponding Gateway entry is marked
-`job-analysis`. Evidence matching is separately marked
-`evidence-matching`. A Gateway entry can confirm whether the provider request
-was accepted and expose status/error metadata, but it may not expose the
-underlying cause of a Workers AI `parseError`. If the log has no more specific
-provider error, the cause remains unconfirmed; the next step is to use the
-Gateway log's request ID/status and timestamp when reporting the issue to
-Cloudflare, rather than inferring a cause from the parse error alone.
-
-#### Job-analysis API
-
-`POST /api/jobs` accepts a JSON object with non-empty `company`, `title`, and
-`jobDescription` strings. `title` is returned as `roleTitle`. Company and title
-are limited to 200 Unicode code
-points; the Worker enforces a maximum of 50,000 Unicode code points for the
-posting after JSON parsing. Workers AI extracts structured requirements only;
-company and role title come from the submitted fields.
-The Worker validates output against its application-owned schema, trims
-normalized fields, removes duplicate requirements only when their normalized
-descriptions and categories match, and generates requirement IDs. It accepts
-at most 25 requirements, 500-character descriptions, and 10 keywords of at
-most 50 characters each. After normalization, the Worker retains at most
-`MAX_REQUIREMENTS_PER_JOB` requirements (default 15), prioritizing high,
-medium, then low importance and preserving extraction order. Omitted
-requirements are reported in the response warnings; retained requirements
-keep their generated IDs and extraction order. Invalid request fields return
-400; unsupported or malformed model output returns a controlled 502 response. Completed
-analyses return HTTP 201 with UTC timestamps and preserve the original
-`jobDescription` separately from normalized analysis fields. Completed results
-are persisted in D1; `GET /api/jobs/{jobId}` returns the same response shape,
-and unknown IDs return the standard 404 error envelope.
-Before matching, deterministic retrieval selects up to five candidates per
-requirement from the validated inventory, preserving each record's original
-ID and limitations. Workers AI assesses each requirement using only those
-candidates. The API's `evidenceMatches` contains one assessment per
-requirement: match strength, selected evidence record IDs, concise rationale,
-and any evidence gap. Workers AI is invoked with a JSON Schema response format
-requiring all match fields, including `evidenceRecordIds` and `gap`; application
-validation still checks output structure, match strengths, and evidence IDs
-against each requirement's candidates. The prompt prohibits treating shared
-keywords as proof or inferring unsupported ownership, seniority, scale,
-metrics, or production experience. Job creation rejects an inventory that
-fails the existing schema validator. AI matching failures and malformed output
-return controlled 502 responses and are logged for inspection. API errors use
-an
-`{ "error": { "code": "...", "message": "..." } }` response envelope. The
-Worker tests mock AI responses and do not make billed model requests.
-
-`POST /api/jobs/{jobId}/generated-content` creates a new, independent resume
-draft for each generation. `GET /api/resume-drafts/{draftId}` retrieves that
-saved snapshot without regeneration. The review page can reopen a draft by its
-displayed draft ID, edit its text, and save it with
-`PUT /api/resume-drafts/{draftId}` using `{ "resume": ..., "version": n }`.
-Updates validate the resume structure and preserve the original draft and job
-IDs, inventory revision, creation time, warnings, and employment order.
-Version-checked writes return HTTP 409 rather than replacing a newer edit.
-Manual additions carry a `manualAdded` marker and no generated evidence IDs;
-edited generated content keeps its original evidence IDs and is marked as
-manually edited.
-
-#### D1 jobs database
-
-The Worker binds the `career-inventory` D1 database as `env.DB`. The migrations
-in `cloudflare/worker/migrations/` create a `jobs` table for completed analyses
-and a `resume_drafts` table for complete assembled resume snapshots. Resume
-drafts carry a version counter used for optimistic concurrency. The repository helpers in
-`cloudflare/worker/src/jobs.js` write JSON fields as serialized JSON using
-bound parameters, and parse them back when retrieving a record. Job rows store
-the inventory revision used, not a redundant inventory snapshot or AI prompt.
-
-To create and migrate a local database, run these commands from
-`cloudflare/worker`:
-
-```sh
-npx wrangler d1 migrations apply career-inventory-db --local
-npm run dev
-```
-
-For a deployed database, authenticate Wrangler and create the database once:
-
-```sh
+```bash
 npx wrangler login
 npx wrangler d1 create career-inventory-db
 ```
 
-Copy the returned `database_id` into the `DB` entry under `d1_databases` in
-`cloudflare/worker/wrangler.jsonc`, then apply the version-controlled schema and
-deploy the Worker:
+Copy the returned database ID into the `DB` entry under `d1_databases` in `cloudflare/worker/wrangler.jsonc`.
 
-```sh
+Apply the migrations:
+
+```bash
 npx wrangler d1 migrations apply career-inventory-db --remote
+```
+
+### 2. Deploy the Worker
+
+From `cloudflare/worker`:
+
+```bash
 npm run deploy
 ```
 
-The database ID identifies the Cloudflare account resource; it is not an API
-credential. Do not put API tokens or other secrets in Wrangler config or source
-control. `npm test` exercises parameterized insert/retrieve behavior and
-round-trips nested JSON fields without connecting to a remote database.
+### 3. Deploy Pages
 
-#### Component and validation dependencies
+From the repository root:
 
-- **Frontend:** `public/index.html`, `public/styles.css`, and `public/app.js`;
-  configured in `public/config.js` to use `/api/inventory`.
-- **Pages routing:** `functions/api/inventory.js`,
-  `functions/api/ai/smoke-test.js`, `functions/api/jobs.js`, and the
-  `INVENTORY_API` Service Binding in `wrangler.jsonc`.
-- **Backend:** `cloudflare/worker/src/index.js` is a JavaScript Cloudflare
-  Worker. Its Wrangler configuration is
-  [`cloudflare/worker/wrangler.jsonc`](./cloudflare/worker/wrangler.jsonc);
-  `cloudflare/worker/package.json` supplies local development, test, and deploy
-  scripts and declares Wrangler as a development dependency. The Worker uses
-  Wrangler's `INVENTORY_ASSETS` binding for the inventory, `AI` binding for
-  Workers AI, and `DB` binding for D1 persistence; it needs no API keys or
-  third-party runtime dependencies.
-- **Inventory:** `data/master-career-inventory.json`, bundled with the Worker
-  from the repository during deployment.
-- **Validation:** the local Python tools use
-  [`career_inventory_schema.py`](./career_inventory_schema.py); the Worker
-  ports those schema and cross-reference rules in
-  [`cloudflare/worker/src/validation.js`](./cloudflare/worker/src/validation.js).
-  `test_cloudflare_worker.py` compares the Worker audit output with the Python
-  validator for the canonical inventory and representative invalid cases.
-- **Behavior differences:** the schema versions, rules, diagnostic structure,
-  and API response shape are covered by parity tests. JavaScript's JSON parser
-  cannot distinguish an integer token such as `1` from a decimal token such as
-  `1.0`; both parse as a number, while Python distinguishes them during
-  integer validation.
+```bash
+npm --prefix cloudflare/worker exec -- wrangler pages deploy ./public --project-name career-inventory
+```
 
-### Updating the inventory fixture
+The Worker must be deployed before Pages. Keep the Worker service name in the Pages Service Binding consistent with the deployed Worker name in each environment.
 
-Prepare a replacement inventory JSON file, then install it from the repository root:
+### Security
 
-```sh
+**The repository does not implement user authentication.**
+
+The career inventory is bundled with the Worker deployment, not placed in the Pages `public/` directory. The Worker handles API requests through the Pages Service Binding, and its public `workers.dev` endpoint is disabled.
+
+Before deploying a personal inventory, protect the Pages custom domain, `pages.dev` hostname, and preview deployments with Cloudflare Access. The Worker Service Binding is not a substitute for user authentication or access control.
+
+Do not commit API tokens, credentials, or other secrets to source control or Wrangler configuration. The AI Gateway settings in the Worker configuration are non-secret configuration values.
+
+## Application API
+
+The Pages frontend calls same-origin `/api` routes. Pages Functions forward requests to the Worker, so the browser does not need a hard-coded backend hostname or cross-origin CORS configuration.
+
+### Inventory
+
+`GET /api/inventory` returns:
+
+- `loaded`: whether the inventory could be retrieved and parsed.
+- `inventory`: the loaded inventory.
+- `validation`: audit errors and warnings.
+
+Retrieval or JSON parsing failures return HTTP 500 with `loaded: false`. Validation failures return the loaded inventory with its audit results.
+
+### Job analysis
+
+`POST /api/jobs`
+
+Accepts a JSON object containing non-empty `company`, `title`, and `jobDescription` strings.
+
+The Worker:
+1. Validates the request.
+2. Extracts structured job requirements using Workers AI.
+3. Normalizes and validates the requirements.
+4. Retrieves relevant candidate evidence from the inventory.
+5. Uses Workers AI to assess the evidence for each requirement.
+6. Saves the completed analysis in D1.
+
+Limits include:
+- Company and title: 200 Unicode code points each.
+- Job description: 50,000 Unicode code points.
+- Extracted requirements: at most 25 before prioritization.
+- Retained requirements: at most `MAX_REQUIREMENTS_PER_JOB` (default 15).
+- Requirement descriptions: 500 characters.
+- Keywords: at most 10 per requirement, each no longer than 50 characters.
+
+The response includes requirement descriptions, categories, importance, keywords, evidence matches, and warnings. Each evidence match includes a match strength, selected evidence record IDs, a rationale, and any identified evidence gap.
+
+`GET /api/jobs/{jobId}` retrieves a saved analysis. Completed analyses return HTTP 201 when created; unknown IDs return 404.
+
+### Resume drafts
+
+`POST /api/jobs/{jobId}/generated-content` generates a new, independent resume draft.
+
+`GET /api/resume-drafts/{draftId}` retrieves a saved draft without regenerating it.
+
+`PUT /api/resume-drafts/{draftId}` saves edits to an existing draft. The request includes the updated `resume` and its current `version`. Version-checked writes prevent stale edits from overwriting newer changes; conflicts return HTTP 409.
+
+Each draft preserves its original job ID, inventory revision, creation time, warnings, and employment order. Manual additions are marked as manually added and do not receive generated evidence IDs. Edited generated content retains its original evidence associations and is marked as manually edited.
+
+## Resume Preview and PDF Export
+
+Saved drafts are displayed as paginated US Letter pages with 0.6-inch margins. The browser recalculates page breaks as content changes, including during editing.
+
+Review evidence, warnings, editing controls, and page labels are excluded from the exported document.
+
+To export a PDF:
+1. Save the draft or cancel editing.
+2. Select **Export saved PDF**.
+3. In the browser's print dialog, choose **Save as PDF**.
+
+Export is disabled while unsaved edits are present. The suggested filename uses the draft ID (`resume-draft-<draft-id>.pdf`) rather than personal contact or role information. The browser print engine preserves selectable text and supported links.
+
+## Workers AI and AI Gateway
+
+The Worker uses a Workers AI binding and routes AI invocations through the configured AI Gateway. The gateway ID and token limit are configured in `cloudflare/worker/wrangler.jsonc`.
+
+The default gateway is named `default` and is created in the authenticated Cloudflare account on its first request. To use a different gateway, update `AI_GATEWAY_ID`.
+
+### Smoke test
+
+Authenticate Wrangler and start a remote Worker session:
+
+```bash
+cd cloudflare/worker
+npx wrangler login
+npm run dev -- --remote
+```
+
+In another terminal, call the smoke-test endpoint:
+
+```bash
+curl -X POST http://127.0.0.1:8787/api/ai/smoke-test
+```
+
+A successful response looks like:
+
+```json
+{ "ok": true, "response": "Workers AI is ready." }
+```
+
+The endpoint is also available through Pages at `POST /api/ai/smoke-test`.
+
+### Inspecting AI Gateway requests
+
+In the Cloudflare dashboard, open **AI → AI Gateway**, select the configured gateway, and open its logs.
+
+The Worker logs a sanitized operation name and Gateway log ID for each invocation. Use that ID to locate the corresponding Gateway entry. Operations are identified as `smoke-test`, `job-analysis`, or `evidence-matching`.
+
+Gateway logs can provide request status, model/provider information, token usage, cost, duration, and available provider error details. The Worker does not log prompts or model responses, and requests use Cloudflare's `cf-aig-collect-log-payload: false` header to avoid storing request/response payloads.
+
+A Gateway entry can help establish whether a provider request was accepted and expose available error metadata. It may not identify the underlying cause of a Workers AI parsing error.
+
+## Career Inventory
+
+The canonical inventory is `data/master-career-inventory.json`. Its structure is defined by `career_inventory_schema.py`, which also provides the standard-library validator.
+
+The current schema version is **1.2.0**. Version 1.1.0 remains accepted for backward compatibility; use 1.2.0 for new or updated inventories.
+
+### Main record collections
+
+| Collection | Contents |
+|---|---|
+| `subject` | Candidate profile and contact information |
+| `employment_history` | Employment, role scope, technologies, responsibilities, and linked accomplishments |
+| `accomplishments` | Problems, contributions, ownership, technical details, outcomes, metrics, evidence, and limitations |
+| `skills` | Skills, aliases, contexts, usage levels, recency, evidence, and limitations |
+| `leadership_examples` | Leadership situations, actions, reasoning, outcomes, and linked accomplishments |
+| `projects` | Project descriptions, contributions, technologies, and evidence |
+| `education_and_credentials` | Education and certifications |
+| `career_preferences` | Target roles, work preferences, geography, compensation, work authorization, and tailoring preferences |
+| `verification_questions` | Open or answered questions and affected records |
+| `source_notes` | Sources and their role in supporting inventory facts |
+| `negative_qualifications` | Optional, evidence-backed boundaries or areas of non-experience |
+
+### IDs and references
+
+IDs are stable record keys, not sequence positions. Preserve existing IDs when editing records and assign new unique IDs when adding records.
+
+| Prefix | Record type |
+|---|---|
+| `EMP-` | Employment |
+| `ACC-` | Accomplishment |
+| `SK-` | Skill |
+| `LEAD-` | Leadership example |
+| `PROJ-` | Project |
+| `EDU-` | Education or credential |
+| `VQ-` | Verification question |
+| `SRC-` | Source note |
+
+References must point to existing records of the permitted type. IDs must be unique within their collection, and the validator also checks for duplicates across collections.
+
+### Updating the inventory
+
+To install a replacement inventory, run this command from the repository root:
+
+```bash
 python -m tools.update_inventory_fixture /path/to/new-inventory.json
 ```
 
-The updater checks that the source is valid JSON and conforms to the inventory schema, preserves every existing record ID (new IDs may be added), sets `schema_version` to the current supported schema version, records today's date in `inventory_revision_date`, and atomically replaces `data/master-career-inventory.json`. To provide a specific revision date:
+The updater:
+- Checks that the source is valid JSON and conforms to the inventory schema.
+- Preserves every existing record ID.
+- Allows new IDs to be added.
+- Sets the current supported schema version.
+- Updates `inventory_revision_date`.
+- Replaces the canonical inventory atomically.
 
-```sh
+To specify a revision date:
+
+```bash
 python -m tools.update_inventory_fixture /path/to/new-inventory.json --revision-date YYYY-MM-DD
 ```
 
-This updates the inventory fixture, not the schema definition: ordinary content updates use the current schema version. If the inventory structure changes, update the Python schema and `SCHEMA_VERSION` first, then upload a source file that conforms to that schema. The tool refuses unsupported source versions or an upload that removes an existing ID.
+This tool updates inventory content, not the schema definition. If the inventory structure changes, update the Python schema and `SCHEMA_VERSION` first.
 
-### Expected inventory structure
+### Validation rules and limitations
 
-- `schema_version`, `inventory_generation_date`, and `inventory_revision_date` identify the schema and the dates the inventory was generated/revised.
-- `subject` holds the person's profile and contact fields.
-- `employment_history` contains one record per role: stable ID, employer/title/type, dates and location, context, role/ownership, team information, technologies, systems, operational responsibilities, related accomplishments, and unknowns. `accomplishment_ids` points to `ACC-*` records.
-- `accomplishments` records the problem, the person's contribution and ownership, technical details, scope, outcome, metrics, evidence/confidence, relevance, candidate resume bullets, and follow-up questions. `employer_id` points to an `EMP-*` record. A metric stores string `value`, `unit`, and `confidence`; values remain strings so approximate and qualified figures are not converted into false precision.
-- `skills` describes the skill/category, aliases, contexts, usage level, recency, evidence examples, and limitations. Examples may point to `ACC-*`, `PROJ-*`, or `LEAD-*` records.
-- `leadership_examples` stores situation, actions, reasoning, outcome, and links to `ACC-*` records.
-- `projects` stores project description, contribution, technologies, related `SK-*` IDs, evidence, and verification questions.
-- `education_and_credentials` records education/certifications; unknown institution or dates may be `null`.
-- `career_preferences` records target roles, work preferences, geography, compensation context, work authorization, and tailoring preferences.
-- `verification_questions` tracks open or answered questions and IDs of affected records.
-- `source_notes` records the source and its role in supporting inventory facts.
-- Optional `negative_qualifications` is a list of explicit, evidence-backed boundaries/non-experience, each with a statement, scope, evidence, and a `related_ids` list that may be empty. This is an addition to the baseline shape; it can be omitted or be an empty list.
+Fields are required unless marked `NotRequired` in the Python schema. Optional fields may be omitted; nullable fields must be present but may contain JSON `null`. Empty strings and lists are not substitutes for `null`.
 
-### Required, optional, and nullable values
+The validator rejects unexpected fields, missing required fields, type mismatches, unsupported schema versions, duplicate IDs, and dangling or wrong-kind references. It does not coerce values.
 
-Every field in the Python `TypedDict` definitions is required unless marked `NotRequired`. A `NotRequired` field may be omitted; this does **not** mean its value may be `null`. Fields whose annotations include `| None` are required keys that explicitly permit JSON `null`. Empty strings/lists are not interchangeable with `null`; use them only when they accurately represent known empty content. The validator rejects unexpected fields, missing required fields, type mismatches, unsupported schema versions, duplicate record IDs (including duplicates across collections), and dangling/wrong-kind references. It does not coerce values. Missing `NotRequired` fields and nullable references do not produce errors.
+Validation confirms structural consistency, not factual truth. It cannot determine whether a statement is accurate or whether its evidence supports the wording. Source-conflict warnings depend on explicit conflict or uncorroborated markers in source notes; the validator does not semantically compare prose. Dates, confidence values, and many limitations are represented as strings and still require human review.
 
-Optional fields present in the baseline include employment notes/constraints, accomplishment `employer_note`, leadership related-accomplishment links, and a verification question's `answered_date`. See the Python definitions for the complete required/nullability contract.
-
-### IDs, references, and truthful limitations
-
-IDs are stable record keys, not sequence positions: `EMP-*` employment, `ACC-*` accomplishment, `SK-*` skill, `LEAD-*` leadership example, `PROJ-*` project, `EDU-*` education/credential, `VQ-*` verification question, and `SRC-*` source note. Preserve an existing ID when editing a record; allocate a new unique ID when adding one. IDs are unique within their collection and references must point to an existing record of the permitted kind. `verification_questions.affects` may reference employment, accomplishment, skill, leadership, project, or education IDs.
-
-Do not turn absence of evidence into experience. Put confirmed skill boundaries in `skills[].limitations`, role constraints in `employment_history[].constraints_and_limitations`, unknown/missing facts in `employment_history[].missing_or_unconfirmed` or `verification_questions`, and explicit negative qualifications in `negative_qualifications`. Keep claims qualified by the evidence/confidence field. For example, a work item known not to have reached production belongs as a limitation; do not describe it as a production outcome.
-
-### Known limitations
-
-- This schema validates shape, JSON-compatible primitive types, version, and ID references; it cannot determine whether a factual statement is true or whether evidence supports its wording. Source-conflict warnings rely on explicit conflict/uncorroborated markers in source notes, not semantic comparison of prose.
-- Dates and confidence/status vocabulary are strings because the baseline uses partial dates and descriptive confidence values. Their semantic consistency requires human review.
-- Detailed limitations and unknowns are mostly prose, so the validator cannot infer whether all facts requiring qualification have been recorded.
+Do not turn an absence of evidence into a claim of experience. Record confirmed skill boundaries, role constraints, unknown facts, and explicit negative qualifications in their corresponding inventory fields. Preserve qualifications around scope, ownership, metrics, and production experience.
